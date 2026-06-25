@@ -26,6 +26,25 @@
 
 **Explicit non-dependencies (guaranteed self-contained):** no dependency on the `superpowers` plugin or any other plugin (md2pdf, generate-docs, mobile-sdlc); no MCP servers (uses the `gh` CLI, not the GitHub MCP); no Python; no husky/global hooks; no user `settings.json`/auto-memory. `superpowers` is noted as an *optional companion* (for deeper brainstorm/TDD skills) but govkit works fully without it.
 
+## How it's installed & enabled (per machine)
+
+govkit is a **Claude Code plugin**, so it is used **from within Claude Code**, after a **one-time per-machine install**:
+
+```
+claude plugin marketplace add tektekgo/govkit
+claude plugin install govkit
+```
+
+Once installed, the skills (`/sdlc`, `/govkit-init`) are available in every Claude Code session on that machine; nothing else is enabled globally. You then run `/govkit-init` inside whatever project you're in. If the `govkit` repo is **private**, installing it on a new machine requires git/`gh` access to that repo.
+
+## Language scope
+
+2a is **Node/TypeScript-first**, but not Node-only:
+
+- The **guardrail structure is language-agnostic** — `CLAUDE.md`, `docs/PROJECT-HUB.md`, `docs/PRIORITY-ROADMAP.md`, the `dev`→`main` flow, and `/sdlc` are git/GitHub/markdown and work for any project.
+- The **release gate's checks are arbitrary shell commands** — the config can hold `cargo test`, `pytest`, `go build`, `npm run lint`, etc. The only Node tie is that the gate *script* (`release-gate.ts`) runs via `tsx`, so a non-Node project just needs Node available to run the gate.
+- The **scaffold wiring** (npm scripts in `package.json`) assumes Node/npm. First-class non-Node scaffolding (e.g. a `justfile`/`make` target instead of npm scripts, or a compiled gate binary) is a **future enhancement**, not 2a.
+
 ## Architecture
 
 ### Plugin repo layout (`tektekgo/govkit`)
@@ -48,7 +67,7 @@ govkit/
 │   └── sdlc/
 │       └── SKILL.md         # self-contained generic /sdlc
 ├── docs/superpowers/{specs,plans}/            # this design + its plan
-└── README.md               # what it is, prerequisites, install, usage
+└── README.md               # what it is, prerequisites, install/enable, exact step-by-step for NEW and EXISTING projects
 ```
 
 **Skills vs scaffolded files (key distinction):**
@@ -108,4 +127,4 @@ The plugin can't be "unit tested" in the usual sense; verification is behavioral
 | `skills/govkit-init/SKILL.md` | Init scaffolder instructions |
 | `skills/govkit-init/templates/**` | Bundled minimal-tier templates (incl. vendored release-gate) |
 | `skills/sdlc/SKILL.md` | Generic self-contained `/sdlc` |
-| `README.md` | Prerequisites, install, usage |
+| `README.md` | Prerequisites, install/enable, and **exact step-by-step usage for NEW and EXISTING projects** (install plugin → `/govkit-init` → what it creates vs appends → next steps) |
