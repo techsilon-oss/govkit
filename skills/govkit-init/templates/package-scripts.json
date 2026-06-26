@@ -1,0 +1,4 @@
+{
+  "release-gate": "tsx scripts/release-gate.ts",
+  "release-gate:full": "tsx scripts/release-gate.ts --full"
+}

@@ -1,0 +1,16 @@
+{
+  "junitPath": "test-results/junit.xml",
+  "reportPath": "test-results/release-gate-report.md",
+  "checks": [
+    { "label": "Lint", "ciJob": "Lint & Type Check", "cmd": "npm run lint" },
+    { "label": "Type check", "ciJob": "Lint & Type Check", "cmd": "npx tsc --noEmit" },
+    {
+      "label": "Unit & Integration",
+      "ciJob": "Tests",
+      "cmd": "npx vitest run --reporter=junit --outputFile=test-results/junit.xml",
+      "parseJunit": true
+    },
+    { "label": "Build", "ciJob": "Build", "cmd": "npm run build" },
+    { "label": "E2E", "ciJob": "E2E", "cmd": "npm run test:e2e", "full": true }
+  ]
+}
