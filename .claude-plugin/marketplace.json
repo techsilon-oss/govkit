@@ -1,11 +1,14 @@
 {
-  "name": "govkit",
+  "name": "govkit-marketplace",
+  "description": "Marketplace for the govkit project governance starter kit.",
   "owner": { "name": "techsilon-oss" },
   "plugins": [
     {
       "name": "govkit",
-      "source": ".",
-      "description": "Project governance starter kit (govkit-init + sdlc + minimal-tier templates)."
+      "description": "Project governance starter kit (govkit-init + sdlc + minimal-tier templates).",
+      "version": "0.1.0",
+      "source": "./",
+      "author": { "name": "techsilon-oss" }
     }
   ]
 }
