@@ -2,12 +2,12 @@
 
 **Goal:** A distributable Claude Code plugin (`govkit`) that lets you stand up a new (or existing) project with the core build/deploy guardrails in one command — `/govkit-init` — decoupled from any specific project. Sub-project **2a** delivers the plugin skeleton, the `/govkit-init` scaffolder, a self-contained generic `/sdlc`, and the **minimal-tier** templates (branch discipline + release gate + PROJECT-HUB/ROADMAP + a generic CLAUDE.md).
 
-**Origin:** Extracted from the governance system proven in a real project (branch flow, doc-as-source-of-truth, the Local Release Gate CI-fallback). Phase 1 already shipped the standalone release gate (`tektekgo/release-gate-kit`); this vendors it in and wraps the rest of the spine.
+**Origin:** Extracted from the governance system proven in a real project (branch flow, doc-as-source-of-truth, the Local Release Gate CI-fallback). Phase 1 already shipped the standalone release gate (`techsilon-oss/release-gate-kit`); this vendors it in and wraps the rest of the spine.
 
 ## Scope
 
 **In scope (2a):**
-- The `govkit` plugin repo (`tektekgo/govkit`, its own standalone git repo).
+- The `govkit` plugin repo (`techsilon-oss/govkit`, its own standalone git repo).
 - `/govkit-init` skill — preflight + ~4 questions + non-destructive scaffold + summary.
 - A self-contained generic `/sdlc` skill (plugin-level, global once installed).
 - Minimal-tier templates: `CLAUDE.md`, `docs/PROJECT-HUB.md`, `docs/PRIORITY-ROADMAP.md`, `scripts/release-gate.ts` (+ config + npm scripts), `.gitignore` entries.
@@ -31,7 +31,7 @@
 govkit is a **Claude Code plugin**, so it is used **from within Claude Code**, after a **one-time per-machine install**:
 
 ```
-claude plugin marketplace add tektekgo/govkit
+claude plugin marketplace add techsilon-oss/govkit
 claude plugin install govkit
 ```
 
@@ -47,13 +47,13 @@ Once installed, the skills (`/sdlc`, `/govkit-init`) are available in every Clau
 
 ## Architecture
 
-### Plugin repo layout (`tektekgo/govkit`)
+### Plugin repo layout (`techsilon-oss/govkit`)
 
 ```
 govkit/
 ├── .claude-plugin/
 │   ├── plugin.json          # name: govkit, version, description, author, keywords
-│   └── marketplace.json     # enables: claude plugin marketplace add tektekgo/govkit
+│   └── marketplace.json     # enables: claude plugin marketplace add techsilon-oss/govkit
 ├── skills/
 │   ├── govkit-init/
 │   │   ├── SKILL.md         # the init instructions (preflight, questions, scaffold, summary)
@@ -102,9 +102,9 @@ A clean re-authoring (NOT a copy of any project-specific `/sdlc`): status review
 
 ## Distribution
 
-Push `tektekgo/govkit` (private or public). Install:
+Push `techsilon-oss/govkit` (private or public). Install:
 ```
-claude plugin marketplace add tektekgo/govkit
+claude plugin marketplace add techsilon-oss/govkit
 claude plugin install govkit
 ```
 Then in any project: `/govkit-init`. (Update/version polish = 2c.)

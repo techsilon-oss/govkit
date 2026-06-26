@@ -1,6 +1,6 @@
 {
   "name": "govkit",
-  "owner": { "name": "tektekgo" },
+  "owner": { "name": "techsilon-oss" },
   "plugins": [
     {
       "name": "govkit",

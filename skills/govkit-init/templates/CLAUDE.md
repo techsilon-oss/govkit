@@ -1,7 +1,7 @@
 <!-- govkit:start -->
 # {{PROJECT_NAME}} — Engineering Guardrails
 
-> Scaffolded by [govkit](https://github.com/tektekgo/govkit) `/govkit-init`. This block is delimited by `govkit:start`/`govkit:end` markers so re-running init won't duplicate it. Edit freely — but keep the markers if you want idempotent updates.
+> Scaffolded by [govkit](https://github.com/techsilon-oss/govkit) `/govkit-init`. This block is delimited by `govkit:start`/`govkit:end` markers so re-running init won't duplicate it. Edit freely — but keep the markers if you want idempotent updates.
 
 ## Branch Strategy
 

@@ -20,7 +20,7 @@ govkit does **not** require the `superpowers` plugin (optional companion), any o
 govkit is used **from within Claude Code**, after a one-time per-machine install:
 
 ```bash
-claude plugin marketplace add tektekgo/govkit
+claude plugin marketplace add techsilon-oss/govkit
 claude plugin install govkit
 ```
 

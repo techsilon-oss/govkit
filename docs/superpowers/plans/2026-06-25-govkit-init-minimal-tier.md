@@ -50,7 +50,7 @@
   "name": "govkit",
   "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the Local Release Gate (CI-fallback), PROJECT-HUB/ROADMAP, and a generic /sdlc into any project.",
   "version": "0.1.0",
-  "author": { "name": "tektekgo" },
+  "author": { "name": "techsilon-oss" },
   "license": "CC0-1.0",
   "keywords": ["governance", "sdlc", "release-gate", "ci-fallback", "scaffolding", "claude-code"]
 }
@@ -59,7 +59,7 @@
 ```json
 {
   "name": "govkit",
-  "owner": { "name": "tektekgo" },
+  "owner": { "name": "techsilon-oss" },
   "plugins": [
     { "name": "govkit", "source": ".", "description": "Project governance starter kit (govkit-init + sdlc + minimal-tier templates)." }
   ]
@@ -128,7 +128,7 @@ test-results/
 
 **Files:** Create `README.md`.
 
-- [ ] **Step 1:** Write `README.md` covering: what govkit is; **Prerequisites** (Claude Code, git, gh + `gh auth login`, Node/npm; tsx per-project); **Install/enable** (`claude plugin marketplace add tektekgo/govkit` → `claude plugin install govkit`; private-repo access note); **Usage — new project** (git init → `/govkit-init` → `npm i -D tsx` → `npm run release-gate`); **Usage — existing project** (run `/govkit-init`; it appends to CLAUDE.md + merges scripts, never overwrites; review the summary); **What it scaffolds** (the minimal-tier list); **Language scope** (Node-first, gate checks are any shell command); **Tiers** (minimal now; full tier = 2b, future). No project-specific references.
+- [ ] **Step 1:** Write `README.md` covering: what govkit is; **Prerequisites** (Claude Code, git, gh + `gh auth login`, Node/npm; tsx per-project); **Install/enable** (`claude plugin marketplace add techsilon-oss/govkit` → `claude plugin install govkit`; private-repo access note); **Usage — new project** (git init → `/govkit-init` → `npm i -D tsx` → `npm run release-gate`); **Usage — existing project** (run `/govkit-init`; it appends to CLAUDE.md + merges scripts, never overwrites; review the summary); **What it scaffolds** (the minimal-tier list); **Language scope** (Node-first, gate checks are any shell command); **Tiers** (minimal now; full tier = 2b, future). No project-specific references.
 - [ ] **Step 2:** Commit: `git add README.md && git commit -m "docs(govkit): README — prerequisites, install, new+existing usage"`.
 
 ---
@@ -146,9 +146,9 @@ No new files (uses a throwaway dir). This proves the skill works end-to-end.
 
 ## Task 7: Publish
 
-- [ ] **Step 1:** `gh repo create tektekgo/govkit --private --source . --remote origin --push` (mirror release-gate-kit's owner/visibility).
+- [ ] **Step 1:** `gh repo create techsilon-oss/govkit --private --source . --remote origin --push` (mirror release-gate-kit's owner/visibility).
 - [ ] **Step 2:** Confirm the repo + push; print the install commands for a new machine.
-- [ ] **Step 3 (optional, user-driven):** Install locally to verify the plugin loads: `claude plugin marketplace add tektekgo/govkit` → `claude plugin install govkit` → confirm `/govkit-init` and `/sdlc` appear. (Requires a Claude Code restart; note for the user.)
+- [ ] **Step 3 (optional, user-driven):** Install locally to verify the plugin loads: `claude plugin marketplace add techsilon-oss/govkit` → `claude plugin install govkit` → confirm `/govkit-init` and `/sdlc` appear. (Requires a Claude Code restart; note for the user.)
 
 ---
 
