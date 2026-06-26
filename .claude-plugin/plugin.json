@@ -1,0 +1,8 @@
+{
+  "name": "govkit",
+  "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the Local Release Gate (CI-fallback), PROJECT-HUB/ROADMAP, and a generic /sdlc into any project.",
+  "version": "0.1.0",
+  "author": { "name": "tektekgo" },
+  "license": "CC0-1.0",
+  "keywords": ["governance", "sdlc", "release-gate", "ci-fallback", "scaffolding", "claude-code"]
+}

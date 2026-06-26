@@ -1,0 +1,11 @@
+{
+  "name": "govkit",
+  "owner": { "name": "tektekgo" },
+  "plugins": [
+    {
+      "name": "govkit",
+      "source": ".",
+      "description": "Project governance starter kit (govkit-init + sdlc + minimal-tier templates)."
+    }
+  ]
+}
