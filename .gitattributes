@@ -1,0 +1,30 @@
+# govkit's OWN line endings — distinct from the snippet it ships to projects.
+#
+# This repo distributes `skills/govkit-init/templates/githooks/pre-push`. If it is checked out
+# here with CRLF, every project scaffolded from this clone inherits a broken hook: the kernel
+# looks for an interpreter named `sh`, exec fails, and git treats a hook it could not run as no
+# hook at all. The tool that hands out push protection would be the thing removing it.
+#
+# Normalise everything to LF in the repository.
+#
+# This is load-bearing, not hygiene — the pre-push hook depends on it.
+#
+# Checked out with CRLF, `#!/bin/sh\r` makes the kernel look for an interpreter literally named
+# `sh\r`. It does not exist, exec fails, and git treats a hook it could not run as NO HOOK AT ALL.
+# The push protection is then simply gone: no error, nothing in any log, and on a private repo
+# under a free plan that hook is the only enforcement there is, because GitHub saves a branch
+# protection rule there but does not enforce it.
+#
+# The failure is invisible from the developer's side — pushes to the release branch just start
+# working again — so this line is the difference between a guardrail and the appearance of one.
+* text=auto eol=lf
+
+# Genuinely binary — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

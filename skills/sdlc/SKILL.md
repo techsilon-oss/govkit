@@ -9,12 +9,21 @@ A generic, self-contained workflow for any project scaffolded by `/govkit-init`.
 
 ## /sdlc status (or no argument)
 
-Give a current-state read:
+Give a current-state read. **Ground truth first, prose second — that order is the point.**
 
-1. Read `docs/PROJECT-HUB.md` (Current Status + Key Decisions) and `docs/PRIORITY-ROADMAP.md` (tiers).
-2. `gh issue list --state open --limit 30` — open work.
-3. `git log --oneline -10` — what changed recently.
-4. Report: the top-priority items, anything new, blockers, and a recommended next step.
+1. **`npm run docs:sync-check`** (or `node scripts/docs-sync-check.mjs`). Prints what `git` and `gh` actually report, and fails if a bootstrap doc's declared date predates the newest code commit.
+
+   **If a doc is stale, say so before anything else and offer to reconcile it first.** A session that starts from a stale hub produces work premised on a false picture, and the cost lands later, when someone acts on it.
+
+2. Read `docs/PROJECT-HUB.md` (Current Status + Key Decisions) and `docs/PRIORITY-ROADMAP.md` (tiers) — **against the ground truth from step 1, not on their own terms.**
+
+   Watch specifically for prose that asserts repo state: which branches exist, what the default branch is, whether anything is deployed, how many issues there are, whether CI runs. **These are the claims that rot**, because they were true when written and nothing re-checks them. Every one is in step 1's output. Where they disagree, the repo is right and the doc is a bug — fix it in the same session rather than noting it.
+
+3. `gh issue list --state open --limit 30` — open work.
+4. `git log --oneline -10` — what changed recently. **If the docs and git disagree, trust git, then fix the doc.**
+5. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.
+
+> If `scripts/docs-sync-check.mjs` is absent, this project predates it or opted out. Check `govkit.json`; run `/govkit-doctor` to see what else is missing.
 
 ## /sdlc <task> — development cycle
 

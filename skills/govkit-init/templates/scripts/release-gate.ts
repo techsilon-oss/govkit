@@ -1,4 +1,20 @@
 /**
+ * ⚠️  VENDORED FILE — govkit is NOT the owner of this code.
+ *
+ * Canonical source: https://github.com/techsilon-oss/release-gate-kit  (release-gate.ts)
+ * Vendored version: recorded as `guardrails.release-gate.vendoredVersion` in govkit.json
+ *
+ * govkit carries a copy only so `/govkit-init` works offline and in one step. **Fix bugs and add
+ * features upstream in release-gate-kit**, then re-vendor here and bump the recorded version — do
+ * not patch this copy, or the two forks and the "one source of truth per concern" rule is broken
+ * at exactly the layer that is supposed to enforce it.
+ *
+ * `/govkit-doctor` compares the RECORDED VERSION, deliberately not the file bytes: every project
+ * runs its own formatter, so a byte comparison reports drift on every repo that uses Prettier,
+ * gets ignored within a week, and then says nothing useful when the file genuinely diverges.
+ */
+
+/**
  * Local Release Gate (CI-fallback)
  * ────────────────────────────────────────────────────────────────────────────
  * A single local command that reproduces your CI checks, so you can keep
