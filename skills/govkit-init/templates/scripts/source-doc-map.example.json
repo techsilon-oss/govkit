@@ -1,0 +1,25 @@
+{
+  "_comment": "EXAMPLE registry for sdlc-docs. Copy to <project>/scripts/source-doc-map.json and replace with your project's real code→doc mappings. severity 'gate' fails PR→main if the mapped doc isn't updated in the same PR; 'warn' only comments. Globs: ** = any path, * = any non-slash run.",
+  "mappings": [
+    {
+      "source": ["src/lib/billing/**", "src/app/api/webhooks/**"],
+      "docs": ["docs/BILLING.md"],
+      "severity": "gate"
+    },
+    {
+      "source": ["supabase/migrations/**", "db/migrations/**"],
+      "docs": ["docs/ARCHITECTURE.md"],
+      "severity": "gate"
+    },
+    {
+      "source": ["src/app/api/**"],
+      "docs": ["docs/ARCHITECTURE.md"],
+      "severity": "warn"
+    },
+    {
+      "source": ["src/components/**"],
+      "docs": ["docs/UI-UX-SPEC.md"],
+      "severity": "warn"
+    }
+  ]
+}

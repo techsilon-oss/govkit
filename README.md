@@ -54,17 +54,45 @@ It is **non-destructive**:
 
 It prints a created/appended/merged/skipped summary, and **re-running is safe** (idempotent — it detects the markers/keys and skips). Review the summary, then `npm i -D tsx` and edit `release-gate.config.json`.
 
-## What it scaffolds (minimal tier)
+## What it scaffolds
 
-| File | Purpose |
-|---|---|
-| `CLAUDE.md` | Branch strategy (`feature → dev → main`, per-merge approval), tests-with-features policy, the **Local Release Gate — CI-fallback** rule, pointer to PROJECT-HUB |
-| `docs/PROJECT-HUB.md` | Status · Key Decisions Log (DEC-###) · Session Handoff |
-| `docs/PRIORITY-ROADMAP.md` | Priority tiers · revision history |
-| `scripts/release-gate.ts` + `release-gate.config.json` | The local CI-fallback gate (config-driven) |
-| `.gitignore` | `node_modules/`, `test-results/` |
+**All guardrails are installed by default.** Excluding one takes `--skip <name>` and a recorded reason, so a gap is always a decision you can point at — never an oversight.
 
-Plus the global skills `/govkit-init` and `/sdlc` (from the plugin, not copied per repo).
+| Guardrail | Files | Purpose |
+|---|---|---|
+| `trackers` | `CLAUDE.md`, `docs/PROJECT-HUB.md`, `docs/PRIORITY-ROADMAP.md` | Branch strategy, per-merge approval, decisions log, session handoff |
+| `release-gate` | `scripts/release-gate.ts`, `release-gate.config.json` | Local CI-fallback gate. **Vendored from [release-gate-kit](https://github.com/techsilon-oss/release-gate-kit)** — fix bugs upstream, not here |
+| `pre-push-hook` | `.githooks/pre-push`, `.gitattributes` | Blocks direct pushes to the release branch |
+| `doc-sync` | `scripts/sdlc-docs.mjs`, `scripts/source-doc-map.json`, `.github/workflows/sdlc-docs.yml` | Per-PR: code changed without its mapped doc. Warn on PR to working branch, **gate** on PR to release |
+| `docs-sync-check` | `scripts/docs-sync-check.mjs` | Per-session: bootstrap-doc freshness + `git`/`gh` ground truth |
+| — | `govkit.json` | The manifest: what is installed, what was skipped and why |
+
+Plus the skills `/govkit-init`, `/sdlc` and `/govkit-doctor` (from the plugin, not copied per repo).
+
+The `.mjs` runners are **dependency-free** — Node built-ins and `git` only, no install step.
+
+## Two checks, two different questions
+
+They are not redundant, and neither substitutes for the other:
+
+- **`sdlc-docs`** asks *"did code change without its doc?"* — a **diff** question, answered per PR.
+- **`docs-sync-check`** asks *"do the trackers still match the repo?"* — which involves **no diff at all**. A tracker rots while the code it describes sits untouched: "no `main` branch" after `main` exists, "nothing deployed" after launch, "zero issues" after a dozen are filed. Each was true when written. Nothing re-checks prose, so nothing catches it.
+
+That is why `/sdlc status` runs `docs-sync-check` **first**, and stops if a bootstrap doc is stale. A session that starts from a stale hub produces work premised on a false picture.
+
+## `/govkit-doctor` — is this project actually conformant?
+
+Every other guardrail checks the code. This one checks the guardrails.
+
+```bash
+node scripts/govkit-doctor.mjs          # report
+node scripts/govkit-doctor.mjs --ci     # exit 1 if a declared guardrail is missing
+node scripts/govkit-doctor.mjs config   # show the current configuration
+```
+
+Every guardrail is **OK**, **SKIPPED** (declared off, with a reason — a decision), or **MISSING** (declared on, absent — a finding). Never silently absent.
+
+It exists because of a real failure: a project adopted govkit, govkit did not yet ship the hooks or the doc-sync runner, and the project ran for weeks **less protected than repos that had ignored the standard** and kept their own copies. Nothing errored, because adopting a standard feels like a completion. `/govkit-doctor` is the command that would have said so on day one.
 
 ## The Local Release Gate (why this exists)
 
@@ -79,8 +107,15 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 
 ## Roadmap
 
-- **Minimal tier** (this release): branch flow + release gate + PROJECT-HUB/ROADMAP + generic `/sdlc`.
-- **Full tier** (planned): the heavier doc-governance layer — frontmatter convention, `docs-audit` / `docs-sync-check` / `docs-stamp`, `source-doc-map` + `/sdlc-docs`, CI workflow templates, pre-commit hooks. Opt-in via an init tier.
+- **0.1.0** — branch flow + release gate + PROJECT-HUB/ROADMAP + generic `/sdlc`.
+- **0.2.0** (this release) — pre-push hook + `.gitattributes`, `sdlc-docs` watchdog, `docs-sync-check`, the `govkit.json` manifest, and `/govkit-doctor`. Guardrails on by default with recorded opt-out.
+- **Planned** — doc frontmatter convention and stamping; a lessons log; first-class non-Node scaffolding (`make`/`just` instead of npm scripts).
+
+### Note on 0.2.0
+
+0.1.0 deferred the hooks and doc-sync to a "full tier" that did not exist. The effect was that projects adopting govkit as their **only** source of guardrails ended up less protected than projects that ignored it — the opposite of the intent.
+
+That is why guardrails are now **on by default**, why skipping one requires a recorded reason, and why `/govkit-doctor` exists. **Upgrading from 0.1.0:** re-run `/govkit-init` in an existing project — it is non-destructive and installs only what is absent — then `node scripts/govkit-doctor.mjs` to confirm.
 
 ## License
 

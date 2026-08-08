@@ -1,8 +1,20 @@
 {
   "name": "govkit",
-  "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the Local Release Gate (CI-fallback), PROJECT-HUB/ROADMAP, and a generic /sdlc into any project.",
-  "version": "0.1.0",
-  "author": { "name": "techsilon-oss" },
+  "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the pre-push guard, the Local Release Gate (CI-fallback), doc-sync + ground-truth checks, PROJECT-HUB/ROADMAP and a generic /sdlc into any project. /govkit-doctor reports what a project is actually missing.",
+  "version": "0.2.0",
+  "author": {
+    "name": "techsilon-oss"
+  },
   "license": "CC0-1.0",
-  "keywords": ["governance", "sdlc", "release-gate", "ci-fallback", "scaffolding", "claude-code"]
+  "keywords": [
+    "governance",
+    "sdlc",
+    "release-gate",
+    "ci-fallback",
+    "scaffolding",
+    "claude-code",
+    "doc-sync",
+    "git-hooks",
+    "conformance"
+  ]
 }

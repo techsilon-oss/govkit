@@ -1,0 +1,77 @@
+name: sdlc-docs
+
+# Documentation Sync Watchdog (CLAUDE.md §Doc-Sync Mechanism). Replaces the earlier
+# doc-sync.yml. Runner: scripts/sdlc-docs.mjs (dependency-free Node — no install needed).
+#   • PR to dev  → --warn  (comments, never blocks)
+#   • PR to main → --gate  (comments AND fails on gating drift)
+# Registry: scripts/source-doc-map.json. Override a gate with /skip-doc-sync isn't used here —
+# instead justify in the PR body and update the mapped doc, or downgrade the mapping to "warn".
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  doc-sync:
+    name: Doc-sync (${{ github.base_ref == 'main' && 'gate' || 'warn' }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run doc-sync audit
+        id: audit
+        run: |
+          BASE="${{ github.base_ref }}"
+          MODE=$([ "$BASE" = "main" ] && echo gate || echo warn)
+          git fetch --no-tags --depth=100 origin "$BASE"
+          set +e
+          node scripts/sdlc-docs.mjs audit --$MODE --base "origin/$BASE" | tee /tmp/sdlc-docs.txt
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Comment findings on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const MARKER = "<!-- sdlc-docs-bot -->";
+            const body = fs.readFileSync("/tmp/sdlc-docs.txt", "utf-8").trim();
+            const mode = "${{ steps.audit.outputs.mode }}";
+            const clean = /No drift detected|nothing to check/.test(body);
+            const msg = [
+              MARKER,
+              `### 🧾 sdlc-docs (${mode} mode)`,
+              clean ? "✅ No code→doc drift detected." : "",
+              clean ? "" : "```\n" + body.slice(0, 60000) + "\n```",
+              clean ? "" : mode === "gate"
+                ? "**Gating** findings block merge to `main`. Update the mapped doc(s) in this PR."
+                : "Warnings don't block — but gating rules will at the PR-to-main gate.",
+            ].filter(Boolean).join("\n");
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const existing = (await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number,
+            })).find((c) => (c.body || "").includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: msg });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: msg });
+            }
+
+      - name: Enforce gate
+        if: steps.audit.outputs.mode == 'gate' && steps.audit.outputs.exit != '0'
+        run: |
+          echo "❌ Doc-sync gate failed — mapped docs missing for changed code. See the PR comment."
+          exit 1

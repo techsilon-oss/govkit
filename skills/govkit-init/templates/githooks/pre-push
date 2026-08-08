@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Pre-push guard — blocks direct pushes to the protected branch.
+#
+# Why this exists: GitHub branch protection is only *enforced* on PRIVATE repos
+# when the org is on Team/Enterprise. Under the free plan a protection rule saves
+# but shows "Not enforced". This hook is the local, $0, harness-agnostic
+# substitute — honored by any agent or plain terminal, no subscription required.
+# Keep it even where server-side protection IS enabled: local rejection is faster
+# feedback than a server-side push rejection, and it fires before the network
+# round-trip (defense in depth).
+#
+# Activated by `git config core.hooksPath .githooks` — run install-hooks.sh, or
+# the package.json "prepare" script on JS projects (see README.md).
+#
+# Customize: set PROTECTED_BRANCHES to the space-separated refs to guard.
+# Emergency override (discouraged, leaves an audit gap):  git push --no-verify
+
+PROTECTED_BRANCHES="refs/heads/main"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	for protected in $PROTECTED_BRANCHES; do
+		if [ "$remote_ref" = "$protected" ]; then
+			branch=${protected#refs/heads/}
+			echo "" >&2
+			echo "  ✖ Direct push to '$branch' is blocked." >&2
+			echo "    '$branch' is production — it advances only by merging a PR." >&2
+			echo "" >&2
+			echo "    Open one:  gh pr create --base $branch --head dev --fill" >&2
+			echo "    Override (discouraged):  git push --no-verify" >&2
+			echo "" >&2
+			exit 1
+		fi
+	done
+done
+
+exit 0

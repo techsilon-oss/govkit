@@ -1,0 +1,63 @@
+{
+  "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
+
+  "govkitVersion": "0.2.0",
+
+  "guardrails": {
+    "trackers": {
+      "enabled": true,
+      "description": "CLAUDE.md + docs/PROJECT-HUB.md + docs/PRIORITY-ROADMAP.md",
+      "expects": ["CLAUDE.md", "docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md"]
+    },
+
+    "release-gate": {
+      "enabled": true,
+      "description": "Local CI-fallback gate for when Actions minutes run out",
+      "expects": ["scripts/release-gate.ts", "release-gate.config.json"],
+      "expectsScripts": ["release-gate"],
+      "vendoredFrom": "techsilon-oss/release-gate-kit",
+      "vendoredVersion": "0.1.0",
+      "$comment": "The gate is NOT owned by govkit — release-gate-kit is canonical. govkit vendors a copy so init works offline, and records the upstream version here. The doctor compares this version, NOT the file bytes: every project runs its own formatter, so a byte comparison would report drift on every repo that uses Prettier and be ignored within a week."
+    },
+
+    "ci": {
+      "enabled": true,
+      "description": "CI running the same checks as the release gate",
+      "expects": [".github/workflows/ci.yml"]
+    },
+
+    "pre-push-hook": {
+      "enabled": true,
+      "description": "Blocks direct pushes to the release branch. On a private repo under a free plan this is the ONLY enforcement — GitHub saves a protection rule there but does not enforce it.",
+      "expects": [".githooks/pre-push", ".gitattributes"],
+      "expectsScripts": ["prepare"]
+    },
+
+    "doc-sync": {
+      "enabled": true,
+      "description": "Per-PR watchdog: code changed without its mapped doc",
+      "expects": [
+        "scripts/sdlc-docs.mjs",
+        "scripts/source-doc-map.json",
+        ".github/workflows/sdlc-docs.yml"
+      ],
+      "expectsScripts": ["sdlc-docs:audit", "sdlc-docs:gate"]
+    },
+
+    "docs-sync-check": {
+      "enabled": true,
+      "description": "Per-session: bootstrap-doc freshness + git/gh ground truth",
+      "expects": ["scripts/docs-sync-check.mjs"],
+      "expectsScripts": ["docs:sync-check"],
+      "bootstrapDocs": ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md", "CLAUDE.md"],
+      "watchedPaths": ["src/", "scripts/", "package.json", ".github/"],
+      "$comment": "watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."
+    }
+  },
+
+  "branches": {
+    "working": "dev",
+    "release": "main",
+    "$comment": "The pre-push hook protects `release`. Merge strategy follows branch shape: a long-lived working->release pair takes MERGE COMMITS, never squash — squashing writes a new SHA with no ancestry link, so the release branch stops containing the working branch and every later PR replays already-merged commits."
+  }
+}

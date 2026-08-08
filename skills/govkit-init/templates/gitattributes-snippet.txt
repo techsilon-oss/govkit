@@ -1,0 +1,23 @@
+# Normalise everything to LF in the repository.
+#
+# This is load-bearing, not hygiene — the pre-push hook depends on it.
+#
+# Checked out with CRLF, `#!/bin/sh\r` makes the kernel look for an interpreter literally named
+# `sh\r`. It does not exist, exec fails, and git treats a hook it could not run as NO HOOK AT ALL.
+# The push protection is then simply gone: no error, nothing in any log, and on a private repo
+# under a free plan that hook is the only enforcement there is, because GitHub saves a branch
+# protection rule there but does not enforce it.
+#
+# The failure is invisible from the developer's side — pushes to the release branch just start
+# working again — so this line is the difference between a guardrail and the appearance of one.
+* text=auto eol=lf
+
+# Genuinely binary — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
