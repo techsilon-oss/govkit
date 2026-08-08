@@ -3,6 +3,23 @@
 
   "govkitVersion": "0.2.0",
 
+  "upstreams": {
+    "$comment": "Where this project's guardrails come from. Dependencies run ONE WAY: release-gate-kit <- govkit <- house layer <- this project. Nothing upstream references a consumer. Fix a guardrail in the repo that owns it, never in the local copy — a local patch forks it silently and the fix never reaches the other projects.",
+    "release-gate-kit": {
+      "url": "https://github.com/techsilon-oss/release-gate-kit",
+      "owns": "The local CI-fallback release gate, standalone. Usable with zero governance buy-in — which is why it is its own repo.",
+      "vendoredHere": "scripts/release-gate.ts"
+    },
+    "govkit": {
+      "url": "https://github.com/techsilon-oss/govkit",
+      "owns": "The transferable guardrail spine: /govkit-init, /sdlc, /govkit-doctor, the pre-push hook, the doc-sync runners, the tracker convention."
+    },
+    "house-layer": {
+      "url": "(private, if your org has one)",
+      "owns": "Org-specific delta: stack runbooks, the user CLAUDE.md profile, adoption cheatsheets. Consumes govkit; never competes with it."
+    }
+  },
+
   "guardrails": {
     "trackers": {
       "enabled": true,

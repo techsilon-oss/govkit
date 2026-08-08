@@ -6,6 +6,54 @@ Decoupled and self-contained: it depends on nothing beyond `git`, the `gh` CLI, 
 
 ---
 
+## Where govkit sits — read this before changing anything
+
+Three repos, one methodology, **strictly one-way dependencies**. govkit is the middle layer.
+
+```
+  release-gate-kit          ONE capability, standalone
+  techsilon-oss (public)    The local CI-fallback gate, and nothing else.
+         ▲                  Deliberately its own repo so it can be dropped into ANY
+         │ vendored by      project, in any stack, with zero governance buy-in.
+         │
+  govkit                    THE TRANSFERABLE SPINE  ← you are here
+  techsilon-oss (public)    Skills (/govkit-init, /sdlc, /govkit-doctor), guardrail
+         ▲                  templates, tracker convention. Product-agnostic: nothing
+         │ consumed by      here names a company, a client, or a stack.
+         │
+  dev-standards             THE HOUSE LAYER
+  techsilon-apps (private)  TechSilon's delta on top: stack runbooks (Supabase, Vercel,
+         ▲                  Resend, Cloudflare), the user CLAUDE.md profile, the
+         │ applied to       guardrails cheatsheet. CONSUMES govkit, never competes.
+         │
+  consumer repos            The actual products.
+  (omnisilon, pulsilon,     Install the govkit plugin per machine, scaffold guardrails
+   techsilon-website, RAV)  per repo, follow dev-standards for house specifics.
+```
+
+**Nothing upstream ever references a consumer.** Context flows down only.
+
+### Where do I file a change?
+
+| The change is… | Goes in |
+|---|---|
+| A bug or feature in the release gate itself | **release-gate-kit** — then re-vendor into govkit |
+| A guardrail, skill, or scaffolding rule that any project would want | **govkit** |
+| TechSilon-specific: a stack runbook, house convention, the user profile | **dev-standards** |
+| True only of one product | **that project's own repo** |
+
+Ask "would a stranger's project want this?" — if yes it belongs here or in release-gate-kit, not in the house layer.
+
+### Why release-gate-kit is separate rather than folded in
+
+So the gate can be used **on its own**. It solves one problem — reproducing CI checks locally when Actions can't run — and that problem exists for people who want nothing to do with a governance spine. Folding it into govkit would force adopting the whole methodology to get one script.
+
+govkit **vendors** a copy so `/govkit-init` works offline and in one step. release-gate-kit stays canonical: fix bugs there, then re-vendor. `/govkit-doctor` reports the vendored version.
+
+---
+
+---
+
 ## Prerequisites (per machine)
 
 - **Claude Code** (govkit is a plugin).

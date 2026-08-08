@@ -71,6 +71,19 @@ if (process.argv.includes("config")) {
     if (!g.enabled && g.skippedReason) console.log(`        reason: ${g.skippedReason}`);
     if (g.vendoredFrom) console.log(`        vendored from ${g.vendoredFrom}@${g.vendoredVersion}`);
   }
+  const ups = manifest.upstreams ?? {};
+  const names = Object.keys(ups).filter((k) => !k.startsWith("$"));
+  if (names.length) {
+    console.log(`\n  Upstreams — fix a guardrail in the repo that OWNS it, not in the local copy:\n`);
+    for (const n of names) {
+      console.log(`    ${n.padEnd(18)} ${ups[n].url ?? ""}`);
+      if (ups[n].owns) console.log(`    ${"".padEnd(18)} ${ups[n].owns}`);
+      if (ups[n].vendoredHere) {
+        console.log(`    ${"".padEnd(18)} vendored here as ${ups[n].vendoredHere} — do not patch locally`);
+      }
+    }
+  }
+
   console.log(
     `\n  Change what is installed with /govkit-init --skip <name>, or by editing ${MANIFEST}\n` +
       `  and re-running /govkit-init. Turning one OFF requires a skippedReason — an unexplained\n` +
