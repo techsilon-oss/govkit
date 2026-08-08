@@ -1,14 +1,18 @@
 {
   "name": "govkit-marketplace",
   "description": "Marketplace for the govkit project governance starter kit.",
-  "owner": { "name": "techsilon-oss" },
+  "owner": {
+    "name": "techsilon-oss"
+  },
   "plugins": [
     {
       "name": "govkit",
-      "description": "Project governance starter kit (govkit-init + sdlc + minimal-tier templates).",
-      "version": "0.1.0",
+      "description": "Project governance starter kit: guardrails scaffolding (/govkit-init), /sdlc, and /govkit-doctor conformance reporting.",
+      "version": "0.2.0",
       "source": "./",
-      "author": { "name": "techsilon-oss" }
+      "author": {
+        "name": "techsilon-oss"
+      }
     }
   ]
 }
