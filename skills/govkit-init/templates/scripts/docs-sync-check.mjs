@@ -60,9 +60,12 @@ const WATCHED = CFG.watchedPaths ?? ["src/", "scripts/", "package.json", ".githu
 
 /** Dates a doc may declare. First match wins; all are ISO so string compare is date compare. */
 const DATE_PATTERNS = [
-  /last checked (\d{4}-\d{2}-\d{2})/i,
-  /last reviewed (\d{4}-\d{2}-\d{2})/i,
-  /as of (\d{4}-\d{2}-\d{2})/i,
+  // `[:\s]+`, not a bare space: real docs write "last reviewed: 2026-07-12" as often as without
+  // the colon. A parser that accepts only one form reports "declares no date" for a doc that
+  // declares one — pushing someone to add a SECOND date line, which then drifts from the first.
+  /last checked[:\s]+(\d{4}-\d{2}-\d{2})/i,
+  /last reviewed[:\s]+(\d{4}-\d{2}-\d{2})/i,
+  /as of[:\s]+(\d{4}-\d{2}-\d{2})/i,
   /last_updated:\s*"?(\d{4}-\d{2}-\d{2})/i,
 ];
 

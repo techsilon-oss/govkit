@@ -1,7 +1,7 @@
 {
   "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
 
-  "govkitVersion": "0.2.0",
+  "govkitVersion": "0.2.1",
 
   "upstreams": {
     "$comment": "Where this project's guardrails come from. Dependencies run ONE WAY: release-gate-kit <- govkit <- house layer <- this project. Nothing upstream references a consumer. Fix a guardrail in the repo that owns it, never in the local copy — a local patch forks it silently and the fix never reaches the other projects.",

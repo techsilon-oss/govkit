@@ -115,7 +115,7 @@ It prints a created/appended/merged/skipped summary, and **re-running is safe** 
 | `docs-sync-check` | `scripts/docs-sync-check.mjs` | Per-session: bootstrap-doc freshness + `git`/`gh` ground truth |
 | — | `govkit.json` | The manifest: what is installed, what was skipped and why |
 
-Plus the skills `/govkit-init`, `/sdlc` and `/govkit-doctor` (from the plugin, not copied per repo).
+Plus the skills `/govkit-init`, `/sdlc`, `/sdlc-docs` and `/govkit-doctor` (from the plugin, not copied per repo).
 
 The `.mjs` runners are **dependency-free** — Node built-ins and `git` only, no install step.
 
@@ -157,6 +157,7 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 
 - **0.1.0** — branch flow + release gate + PROJECT-HUB/ROADMAP + generic `/sdlc`.
 - **0.2.0** (this release) — pre-push hook + `.gitattributes`, `sdlc-docs` watchdog, `docs-sync-check`, the `govkit.json` manifest, and `/govkit-doctor`. Guardrails on by default with recorded opt-out.
+- **0.2.1** — adds the `/sdlc-docs` skill (0.2.0 shipped its runner but no skill, so consumers had to keep a local wrapper), and fixes the `docs-sync-check` date parser to accept `last reviewed: <date>` with a colon.
 - **Planned** — doc frontmatter convention and stamping; a lessons log; first-class non-Node scaffolding (`make`/`just` instead of npm scripts).
 
 ### Note on 0.2.0
