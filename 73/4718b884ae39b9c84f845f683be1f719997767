@@ -1,0 +1,14 @@
+skills/govkit-init/templates/scripts/supabase.mjs
+  h_b0eae2c6bc2300 131-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "734718b884ae39b9c84f845f683be1f719997767",
+  "prompts": {},
+  "humans": {
+    "h_b0eae2c6bc2300": {
+      "author": "Sujit Gangadharan <gsujit@gmail.com>"
+    }
+  }
+}
