@@ -8,5 +8,7 @@
   "sdlc-docs:gate": "node scripts/sdlc-docs.mjs audit --gate",
   "sdlc-docs:report": "node scripts/sdlc-docs.mjs report",
   "govkit:doctor": "node scripts/govkit-doctor.mjs",
-  "govkit:config": "node scripts/govkit-doctor.mjs config"
+  "govkit:config": "node scripts/govkit-doctor.mjs config",
+  "supabase": "node scripts/supabase.mjs",
+  "supabase:whoami": "node scripts/supabase.mjs --whoami"
 }
