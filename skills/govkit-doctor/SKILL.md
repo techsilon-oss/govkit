@@ -49,6 +49,7 @@ If there is no `govkit.json`, the project was never scaffolded (or the manifest 
 | pre-push-hook | `.githooks/pre-push`, `.gitattributes`, `prepare` script, and `git config core.hooksPath` |
 | doc-sync | `scripts/sdlc-docs.mjs`, `scripts/source-doc-map.json`, `.github/workflows/sdlc-docs.yml` |
 | docs-sync-check | `scripts/docs-sync-check.mjs` + a `docs:sync-check` script |
+| supabase-account | `scripts/supabase.mjs` + `supabase/projects.json` + `supabase`/`supabase:whoami` scripts. Only expected in a project that uses Supabase. |
 
 Then recommend `/govkit-init` to install the gaps. **Report; do not install without saying what you are about to change.**
 
@@ -60,6 +61,12 @@ The doctor verifies files exist and scripts are wired. Two things it cannot see:
 
 ```bash
 git config core.hooksPath      # expect: .githooks
+```
+
+**1b. Is the Supabase binding real?** A `projects.json` full of `REPLACE_ME` placeholders looks installed and protects nothing:
+
+```bash
+npm run supabase:whoami        # names the account, or says exactly why it cannot
 ```
 
 **2. Does the hook actually fire?** Presence is not proof. Verify with a commit that would fast-forward the release branch:

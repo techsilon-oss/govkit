@@ -1,0 +1,15 @@
+{
+  "_comment": "EXAMPLE — replace every value below with this project's own before it does anything useful. Read by scripts/supabase.mjs, which refuses to run a CLI command unless the token in .env can actually see these refs. Safe to commit: project refs are not secrets, they appear in every API URL the browser sends.",
+  "account": "REPLACE_ME@example.com",
+  "organization": "REPLACE_ME_ORG_ID",
+  "projects": {
+    "dev": {
+      "ref": "REPLACE_ME_DEV_REF",
+      "name": "yourproject-dev"
+    },
+    "prod": {
+      "ref": "REPLACE_ME_PROD_REF",
+      "name": "yourproject-prod"
+    }
+  }
+}
