@@ -67,19 +67,6 @@ if (!existsSync(manifestPath)) fail('supabase/projects.json is missing — canno
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 const expected = Object.entries(manifest.projects).map(([env, p]) => ({ env, ...p }))
 
-// Scaffolded unedited, every ref is a placeholder. Say that plainly rather than
-// reporting "wrong account", which would send someone hunting a real problem.
-if (expected.some(p => String(p.ref).startsWith('REPLACE_ME'))) {
-  fail(
-    'supabase/projects.json still contains placeholder values',
-    `  It was scaffolded as an example and gates nothing until edited.
-
-  Fill in this project's account, organization and project refs. You can read
-  them from the URL of any project in the Supabase dashboard:
-  https://supabase.com/dashboard/project/<ref>`
-  )
-}
-
 // --- verify before running anything -----------------------------------------
 
 async function verify() {
@@ -141,9 +128,27 @@ if (args[0] === '--whoami' || args.length === 0) {
   await verify()
 
   // Pass everything through, with the repo's token in the environment.
-  const child = spawn('npx', ['--yes', 'supabase', ...args], {
+  //
+  // Invoke the shell explicitly rather than using spawn(cmd, args, {shell:true}).
+  // Node deprecated that combination because a shell concatenates the args array
+  // instead of escaping it, so an argument containing shell syntax gets executed.
+  // A shell is still needed on Windows (npx is a .cmd), so we build one command
+  // string and quote every argument ourselves.
+  const quote = a => {
+    const s = String(a)
+    if (/^[\w.@/:=-]+$/.test(s)) return s
+    // Inside double quotes a POSIX shell still expands $, `, \ and ".
+    return `"${s.replace(/(["\\$`])/g, '\\$1')}"`
+  }
+  const command = ['npx', '--yes', 'supabase', ...args].map(quote).join(' ')
+
+  const [shellPath, shellArgs] =
+    process.platform === 'win32'
+      ? [process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', command]]
+      : ['/bin/sh', ['-c', command]]
+
+  const child = spawn(shellPath, shellArgs, {
     stdio: 'inherit',
-    shell: process.platform === 'win32',
     env: { ...process.env, SUPABASE_ACCESS_TOKEN: token },
   })
   child.on('exit', code => {
