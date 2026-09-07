@@ -1,0 +1,28 @@
+.claude-plugin/marketplace.json
+  h_b0eae2c6bc2300 11
+.claude-plugin/plugin.json
+  h_b0eae2c6bc2300 4
+skills/govkit-doctor/SKILL.md
+  h_b0eae2c6bc2300 52,66-71
+skills/govkit-init/SKILL.md
+  h_b0eae2c6bc2300 54-55,70-72,80-85,94
+skills/govkit-init/templates/govkit.json
+  h_b0eae2c6bc2300 4,64-71
+skills/govkit-init/templates/package-scripts.json
+  h_b0eae2c6bc2300 11-13
+skills/govkit-init/templates/scripts/supabase.mjs
+  h_b0eae2c6bc2300 1-152
+skills/govkit-init/templates/supabase/projects.example.json
+  h_b0eae2c6bc2300 1-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "e00d521859834b8f1485b8e98328e386bea9784b",
+  "prompts": {},
+  "humans": {
+    "h_b0eae2c6bc2300": {
+      "author": "Sujit Gangadharan <gsujit@gmail.com>"
+    }
+  }
+}
