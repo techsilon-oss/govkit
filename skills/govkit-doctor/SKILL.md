@@ -49,6 +49,7 @@ If there is no `govkit.json`, the project was never scaffolded (or the manifest 
 | pre-push-hook | `.githooks/pre-push`, `.gitattributes`, `prepare` script, and `git config core.hooksPath` |
 | doc-sync | `scripts/sdlc-docs.mjs`, `scripts/source-doc-map.json`, `.github/workflows/sdlc-docs.yml` |
 | docs-sync-check | `scripts/docs-sync-check.mjs` + a `docs:sync-check` script |
+| versioning | `scripts/release-version.mjs` + `release:status`/`release:bump`/`release:tag` scripts. Then run `npm run release:status`: a release-branch version with no tag is a finding. |
 | supabase-account | `scripts/supabase.mjs` + `supabase/projects.json` + `supabase`/`supabase:whoami` scripts. Only expected in a project that uses Supabase. |
 
 Then recommend `/govkit-init` to install the gaps. **Report; do not install without saying what you are about to change.**
