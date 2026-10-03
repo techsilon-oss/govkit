@@ -49,6 +49,7 @@ For each template in this skill's `templates/` directory, substitute the `{{TOKE
 | `templates/scripts/sdlc-docs.mjs` | `./scripts/sdlc-docs.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/docs-sync-check.mjs` | `./scripts/docs-sync-check.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/govkit-doctor.mjs` | `./scripts/govkit-doctor.mjs` | Create if absent; else skip. Verbatim. |
+| `templates/scripts/release-version.mjs` | `./scripts/release-version.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/source-doc-map.example.json` | `./scripts/source-doc-map.json` | Create if absent. **Tell the user it is an example that gates nothing until edited.** |
 | `templates/.github/workflows/sdlc-docs.yml` | `./.github/workflows/sdlc-docs.yml` | Create if absent; else skip. |
 | `templates/scripts/supabase.mjs` | `./scripts/supabase.mjs` | **Only if the project uses Supabase** (a `supabase/` directory, or a `SUPABASE_` variable in `.env.example`). Create if absent; else skip. Verbatim. |
@@ -67,7 +68,7 @@ Install **every** guardrail unless explicitly skipped. `/govkit-init --skip doc-
 
 **Always ask for a reason when skipping**, and record it. This is the whole mechanism: an unexplained gap is indistinguishable from an oversight and will be treated as one. A recorded one is a decision `/govkit-doctor` will report as intentional forever.
 
-Skippable names: `release-gate`, `ci`, `pre-push-hook`, `doc-sync`, `docs-sync-check`, `supabase-account`. `trackers` is not skippable — without it there is no project context for anything else to hang on.
+Skippable names: `release-gate`, `ci`, `pre-push-hook`, `doc-sync`, `docs-sync-check`, `versioning`, `supabase-account`. `trackers` is not skippable — without it there is no project context for anything else to hang on.
 
 **`supabase-account` is the one guardrail that is conditional rather than default-on.** It is meaningless in a project with no Supabase, and scaffolding it there is noise that teaches people to ignore the manifest. Install it when the repo shows a `supabase/` directory or a `SUPABASE_` variable; otherwise record it as `enabled: false` with the reason `project does not use Supabase`.
 
@@ -80,9 +81,10 @@ Print a table: each target file → **created** / **appended** / **merged** / **
 3. **If Supabase was scaffolded, edit `supabase/projects.json`.** It ships with `REPLACE_ME` placeholders and every `npm run supabase` command refuses to run until they are real. Then add a per-repo token: sign in as the account that owns the projects, generate one at `https://supabase.com/dashboard/account/tokens`, and put `SUPABASE_ACCESS_TOKEN=sbp_...` in the gitignored `.env`. Verify with `npm run supabase:whoami`.
 4. **Edit `scripts/source-doc-map.json`.** Shipped as an example, it maps nothing real and therefore **gates nothing.** An unedited registry is a guardrail in appearance only.
 5. Try them: `npm run release-gate`, `npm run docs:sync-check`, `node scripts/govkit-doctor.mjs`
-6. Fill in `docs/PROJECT-HUB.md` (status + first decisions) and `docs/PRIORITY-ROADMAP.md`.
-7. If `gh` was unauthed, run `gh auth login` so `/sdlc` and `--pr` work.
-8. **Verify the hook actually blocks** — presence is not proof:
+6. **Baseline the version.** If the release branch has no `v*` tag yet, run `npm run release:tag` once to tag what is in production now; from then on `npm run release:status` reports drift. If the UI shows a build identifier, make it the commit SHA, not a commit count (see the `versioning` guardrail in `govkit.json`).
+7. Fill in `docs/PROJECT-HUB.md` (status + first decisions) and `docs/PRIORITY-ROADMAP.md`.
+8. If `gh` was unauthed, run `gh auth login` so `/sdlc` and `--pr` work.
+9. **Verify the hook actually blocks** — presence is not proof:
    ```bash
    git config core.hooksPath                          # expect: .githooks
    NEW=$(git commit-tree "$(git rev-parse main^{tree})" -p main -m probe)
@@ -91,7 +93,7 @@ Print a table: each target file → **created** / **appended** / **merged** / **
    Do **not** verify with `git push --dry-run dev:main` — if the branches have diverged git rejects
    the ref as non-fast-forward *before* the hook runs, and a clean result reads as a pass when the
    hook never ran at all.
-9. Set the merge strategy once, so it is never re-decided per PR:
+10. Set the merge strategy once, so it is never re-decided per PR:
    ```bash
    # long-lived working->release pair: MERGE COMMITS, and never auto-delete (the head branch is dev)
    gh api -X PATCH repos/<org>/<repo> -F allow_squash_merge=false \

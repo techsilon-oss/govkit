@@ -113,6 +113,8 @@ It prints a created/appended/merged/skipped summary, and **re-running is safe** 
 | `pre-push-hook` | `.githooks/pre-push`, `.gitattributes` | Blocks direct pushes to the release branch |
 | `doc-sync` | `scripts/sdlc-docs.mjs`, `scripts/source-doc-map.json`, `.github/workflows/sdlc-docs.yml` | Per-PR: code changed without its mapped doc. Warn on PR to working branch, **gate** on PR to release |
 | `docs-sync-check` | `scripts/docs-sync-check.mjs` | Per-session: bootstrap-doc freshness + `git`/`gh` ground truth |
+| `versioning` | `scripts/release-version.mjs` | One version per release: `release:bump` in the release PR, `release:tag` after the merge, `release:status` reports an untagged release or one shipped without a bump |
+| `supabase-account` | `scripts/supabase.mjs`, `supabase/projects.json` | Binds Supabase CLI commands to this repo's account. Only in projects that use Supabase |
 | — | `govkit.json` | The manifest: what is installed, what was skipped and why |
 
 Plus the skills `/govkit-init`, `/sdlc`, `/sdlc-docs` and `/govkit-doctor` (from the plugin, not copied per repo).
@@ -156,8 +158,10 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 ## Roadmap
 
 - **0.1.0** — branch flow + release gate + PROJECT-HUB/ROADMAP + generic `/sdlc`.
-- **0.2.0** (this release) — pre-push hook + `.gitattributes`, `sdlc-docs` watchdog, `docs-sync-check`, the `govkit.json` manifest, and `/govkit-doctor`. Guardrails on by default with recorded opt-out.
+- **0.2.0** — pre-push hook + `.gitattributes`, `sdlc-docs` watchdog, `docs-sync-check`, the `govkit.json` manifest, and `/govkit-doctor`. Guardrails on by default with recorded opt-out.
 - **0.2.1** — adds the `/sdlc-docs` skill (0.2.0 shipped its runner but no skill, so consumers had to keep a local wrapper), and fixes the `docs-sync-check` date parser to accept `last reviewed: <date>` with a colon.
+- **0.3.0** — `supabase-account`: Supabase CLI commands bound to the repo's own account, so a machine with several accounts can't run a migration against the wrong company's database.
+- **0.4.0** — `versioning`: one version per release, a `v<version>` tag on the release branch for each, and `release:status` to report drift. The UI's build identifier should be the commit SHA, never a commit count: hosts that build from a shallow clone count only what the clone holds.
 - **Planned** — doc frontmatter convention and stamping; a lessons log; first-class non-Node scaffolding (`make`/`just` instead of npm scripts).
 
 ### Note on 0.2.0

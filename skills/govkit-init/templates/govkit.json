@@ -1,7 +1,7 @@
 {
   "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
 
-  "govkitVersion": "0.3.0",
+  "govkitVersion": "0.4.0",
 
   "upstreams": {
     "$comment": "Where this project's guardrails come from. Dependencies run ONE WAY: release-gate-kit <- govkit <- house layer <- this project. Nothing upstream references a consumer. Fix a guardrail in the repo that owns it, never in the local copy — a local patch forks it silently and the fix never reaches the other projects.",
@@ -67,6 +67,14 @@
       "expects": ["scripts/supabase.mjs", "supabase/projects.json"],
       "expectsScripts": ["supabase", "supabase:whoami"],
       "$comment": "`supabase login` stores ONE access token per machine. On a machine with several Supabase accounts, whichever was logged into last wins and nothing says which — the failure mode is not an error message, it is a migration applied to the wrong company's database. The wrapper takes a per-repo token from the gitignored .env (the CLI honours it over the global login) and refuses to run unless that token can see the project refs in supabase/projects.json. projects.json is committed deliberately: refs are not secrets, they appear in every API URL the browser sends, and having them in the repo is what lets the wrapper know which account it SHOULD be."
+    },
+
+    "versioning": {
+      "enabled": true,
+      "description": "One version per release, a v<version> tag on the release branch for each, drift reported",
+      "expects": ["scripts/release-version.mjs"],
+      "expectsScripts": ["release:status", "release:bump", "release:tag"],
+      "$comment": "The version names a RELEASE: bumped once, as the last commit of each working->release PR, and tagged on the release branch after the merge. A per-build identifier in the UI is the commit SHA, never `git rev-list --count` - hosts that build from a shallow clone (Vercel does) count the commits inside the clone, so the number differs per branch and means nothing. How the SHA reaches the UI is stack-specific and belongs in the project or the house layer's stack runbook."
     },
 
     "docs-sync-check": {

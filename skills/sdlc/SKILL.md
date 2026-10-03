@@ -19,9 +19,10 @@ Give a current-state read. **Ground truth first, prose second — that order is 
 
    Watch specifically for prose that asserts repo state: which branches exist, what the default branch is, whether anything is deployed, how many issues there are, whether CI runs. **These are the claims that rot**, because they were true when written and nothing re-checks them. Every one is in step 1's output. Where they disagree, the repo is right and the doc is a bug — fix it in the same session rather than noting it.
 
-3. `gh issue list --state open --limit 30` — open work.
-4. `git log --oneline -10` — what changed recently. **If the docs and git disagree, trust git, then fix the doc.**
-5. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.
+3. **`npm run release:status`** — the released version, whether it is tagged, and whether `<working-branch>` has unreleased work. An untagged release, or a release branch that moved past its tag without a bump, is drift: report it with the doc drift.
+4. `gh issue list --state open --limit 30` — open work.
+5. `git log --oneline -10` — what changed recently. **If the docs and git disagree, trust git, then fix the doc.**
+6. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.
 
 > If `scripts/docs-sync-check.mjs` is absent, this project predates it or opted out. Check `govkit.json`; run `/govkit-doctor` to see what else is missing.
 
@@ -36,6 +37,9 @@ Give a current-state read. **Ground truth first, prose second — that order is 
 
 - Land work on the working branch (`dev` by convention) — directly for small changes, or via `feature/* → dev` PR for larger/riskier ones.
 - Release to production via a separate `dev → main` PR (`gh pr create --base main --head dev`). Releases batch multiple merges.
+- **Every release PR bumps the version, as its last commit on the working branch:** `npm run release:bump -- minor` for a release with features, `-- patch` for fixes only (`major` is a product decision, not a default). The version names a release, so it changes here and nowhere else.
+- **After the release PR merges, tag it:** `npm run release:tag`. It tags the release branch's merge commit `v<version>` and pushes the tag, and it refuses if the release branch moved without a bump. Never move a published tag.
+- **A build identifier shown in the UI is the commit SHA, never a commit count.** Hosts that build from a shallow clone (Vercel does) count only the commits inside the clone, so a count differs per branch and means nothing. The SHA is exact at any depth, and `git show <sha>` answers "what is deployed?".
 - **Every merge needs explicit user approval** ("merge it" / "ship it"). Green CI is necessary but not sufficient. Approval is per-merge.
 - **Never push directly to `main`.**
 
@@ -53,7 +57,8 @@ Source of truth for this rule: the "Local Release Gate — CI-fallback" section 
 
 After a merge, before ending the session:
 
-1. **Close the issue** with a one-line, business-language summary: `gh issue close <n> --comment "..."`.
-2. **`docs/PRIORITY-ROADMAP.md`** — remove/mark the completed item; add a revision-history row (date + what changed).
-3. **`docs/PROJECT-HUB.md`** — extend the Session Handoff (or add an entry); update Current Status; add a `DEC-###` if an architectural decision was made.
-4. Ask: would `/sdlc status` give an accurate picture to the next session? If not, fix the docs before closing.
+1. **If a release merged, tag it:** `npm run release:tag`, then `npm run release:status` should be clean.
+2. **Close the issue** with a one-line, business-language summary: `gh issue close <n> --comment "..."`.
+3. **`docs/PRIORITY-ROADMAP.md`** — remove/mark the completed item; add a revision-history row (date + what changed).
+4. **`docs/PROJECT-HUB.md`** — extend the Session Handoff (or add an entry); update Current Status; add a `DEC-###` if an architectural decision was made.
+5. Ask: would `/sdlc status` give an accurate picture to the next session? If not, fix the docs before closing.
