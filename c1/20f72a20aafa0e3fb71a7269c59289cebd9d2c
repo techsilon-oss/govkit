@@ -1,0 +1,35 @@
+.claude-plugin/marketplace.json
+  s_f8ba42139e9b6f::t_7dbc68df13db2a 11
+.claude-plugin/plugin.json
+  s_f8ba42139e9b6f::t_4c92437140451a 4
+README.md
+  s_f8ba42139e9b6f::t_cb468bade10df3 116-117,161,163-164
+skills/govkit-doctor/SKILL.md
+  s_f8ba42139e9b6f::t_89d83c246dbf47 52
+skills/govkit-init/SKILL.md
+  s_f8ba42139e9b6f::t_0f8502bfb6104e 52,71,84-87,96
+skills/govkit-init/templates/govkit.json
+  s_f8ba42139e9b6f::t_a73fff22ebb4be 4,72-79
+skills/govkit-init/templates/package-scripts.json
+  s_f8ba42139e9b6f::t_b2d5544fe10d7c 10-12
+skills/govkit-init/templates/scripts/release-version.mjs
+  s_f8ba42139e9b6f::t_8a2470c200e012 1-268
+skills/sdlc/SKILL.md
+  s_f8ba42139e9b6f::t_da0d4c189d79e4 22-25,40-42,60-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c120f72a20aafa0e3fb71a7269c59289cebd9d2c",
+  "prompts": {},
+  "sessions": {
+    "s_f8ba42139e9b6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_f8ba42139e9b6f",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <gsujit@gmail.com>"
+    }
+  }
+}
