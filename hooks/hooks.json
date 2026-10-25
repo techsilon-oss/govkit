@@ -1,0 +1,27 @@
+{
+  "description": "govkit: tracker-doc freshness at session start; a once-per-change session-close reminder when the working branch moved and no tracker did. No-op in repos without govkit.json.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/docs-freshness.mjs\" session-start",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/docs-freshness.mjs\" stop",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

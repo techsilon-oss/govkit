@@ -61,7 +61,7 @@ govkit **vendors** a copy so `/govkit-init` works offline and in one step. relea
 - **GitHub CLI (`gh`)**, authenticated: `gh auth login`. (Used by `/sdlc` and the release gate's `--pr`.)
 - **Node + npm**. The release gate runs via `tsx`, which is added **per project** as a devDependency (`npm i -D tsx`) — not a machine-global tool.
 
-govkit does **not** require the `superpowers` plugin (optional companion), any other plugin, MCP servers, Python, or global hooks.
+govkit does **not** require the `superpowers` plugin (optional companion), any other plugin, MCP servers, or Python. It ships one Claude Code hook of its own (see *The session hook*); it does nothing in a repo without `govkit.json`.
 
 ## Install / enable
 
@@ -128,7 +128,18 @@ They are not redundant, and neither substitutes for the other:
 - **`sdlc-docs`** asks *"did code change without its doc?"* — a **diff** question, answered per PR.
 - **`docs-sync-check`** asks *"do the trackers still match the repo?"* — which involves **no diff at all**. A tracker rots while the code it describes sits untouched: "no `main` branch" after `main` exists, "nothing deployed" after launch, "zero issues" after a dozen are filed. Each was true when written. Nothing re-checks prose, so nothing catches it.
 
-That is why `/sdlc status` runs `docs-sync-check` **first**, and stops if a bootstrap doc is stale. A session that starts from a stale hub produces work premised on a false picture.
+That is why `/sdlc status` runs `docs-sync-check` **first**, and stops if a bootstrap doc is stale. A session that starts from a stale hub produces work premised on a false picture. When a doc is stale, the check also lists the code commits and merged PRs since its date: that list is the reconciliation work.
+
+## The session hook
+
+`docs-sync-check` finds a stale tracker only when someone runs it, which in practice is the **next** session's status read. The session that caused the drift (it merged a PR, then ended without the `/sdlc` session close) is gone by then. This happened again and again in every govkit repo.
+
+So the plugin ships a Claude Code hook (`hooks/hooks.json` → `hooks/docs-freshness.mjs`) that watches the moment drift starts:
+
+- **Session start:** records where the working branch is, locally and on `origin`. If a tracker is already stale, it tells the session before any work starts.
+- **Stop:** if the working branch gained code commits during this session (a local commit, or a PR merged on GitHub) and **no tracker changed**, it blocks the stop **once** for that state and says why. Claude then does the session close, or says that more work follows. Feature-branch commits do not count, so work in progress is not nagged.
+
+It comes with the plugin, so a plugin update reaches every repo on the machine at once; nothing is copied per repo. It is a silent no-op without `govkit.json`. Opt out per repo with `"sessionHook": false` under `guardrails["docs-sync-check"]` in `govkit.json`. State lives in `.git/govkit/` (untracked, pruned after 14 days).
 
 ## `/govkit-doctor` — is this project actually conformant?
 
@@ -162,6 +173,7 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 - **0.2.1** — adds the `/sdlc-docs` skill (0.2.0 shipped its runner but no skill, so consumers had to keep a local wrapper), and fixes the `docs-sync-check` date parser to accept `last reviewed: <date>` with a colon.
 - **0.3.0** — `supabase-account`: Supabase CLI commands bound to the repo's own account, so a machine with several accounts can't run a migration against the wrong company's database.
 - **0.4.0** — `versioning`: one version per release, a `v<version>` tag on the release branch for each, and `release:status` to report drift. The UI's build identifier should be the commit SHA, never a commit count: hosts that build from a shallow clone count only what the clone holds.
+- **0.5.0** — the session hook: tracker freshness at session start, and a once-per-change session-close reminder when the working branch moved and no tracker did. `docs-sync-check` lists the commits and merged PRs since the oldest stale date. Re-vendor `scripts/docs-sync-check.mjs` to get the list.
 - **Planned** — doc frontmatter convention and stamping; a lessons log; first-class non-Node scaffolding (`make`/`just` instead of npm scripts).
 
 ### Note on 0.2.0

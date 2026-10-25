@@ -55,6 +55,8 @@ Source of truth for this rule: the "Local Release Gate — CI-fallback" section 
 
 ## Session close — documentation checklist
 
+The govkit session hook enforces this: when the working branch gained code in this session and no tracker changed, it stops the session from ending once and points here. When that happens, do the checklist, or say that more work follows.
+
 After a merge, before ending the session:
 
 1. **If a release merged, tag it:** `npm run release:tag`, then `npm run release:status` should be clean.
