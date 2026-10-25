@@ -199,6 +199,7 @@ console.log(
 console.log(`   Newest watched-code commit: ${codeDate ?? "unknown"}\n`);
 
 const problems = [];
+let oldestStale = null;
 
 for (const doc of BOOTSTRAP_DOCS) {
   if (!existsSync(doc.path)) {
@@ -223,6 +224,7 @@ for (const doc of BOOTSTRAP_DOCS) {
       `   \u274c ${doc.path} \u2014 STALE: says ${declared}, code moved ${codeDate}`,
     );
     problems.push(`${doc.path} is stale (${declared} < ${codeDate})`);
+    if (!oldestStale || declared < oldestStale) oldestStale = declared;
   } else {
     console.log(`   \u2705 ${doc.path} \u2014 ${declared}`);
   }
@@ -237,6 +239,42 @@ if (problems.length === 0) {
 
 console.log(`${ci ? "\u274c" : "\u26a0\ufe0f "} ${problems.length} problem(s):`);
 for (const p of problems) console.log(`   \u2022 ${p}`);
+
+// What the stale docs missed. "Stale" alone sends someone to re-read every doc; the list of what
+// changed since the oldest stale date is the actual reconciliation work.
+if (oldestStale) {
+  console.log(`\n\u2500\u2500 Changed since ${oldestStale} (what the stale docs do not know) \u2500\u2500`);
+  const commits = git([
+    "log",
+    "--format=%h %ad %s",
+    "--date=short",
+    `--since=${oldestStale} 23:59:59`,
+    "--",
+    ...WATCHED,
+  ]);
+  const lines = commits ? commits.split("\n") : [];
+  for (const l of lines.slice(0, 15)) console.log(`   ${l}`);
+  if (lines.length > 15) console.log(`   \u2026and ${lines.length - 15} more code commits`);
+
+  const merged = gh([
+    "pr",
+    "list",
+    "--state",
+    "merged",
+    "--search",
+    `merged:>${oldestStale}`,
+    "--limit",
+    "30",
+    "--json",
+    "number,title,baseRefName",
+    "--jq",
+    '.[] | "#\\(.number) \\(.title) (into \\(.baseRefName))"',
+  ]);
+  if (merged) {
+    console.log("   Merged PRs:");
+    for (const l of merged.split("\n")) console.log(`     ${l}`);
+  }
+}
 console.log(
   "\nStale does not always mean wrong \u2014 but it means unverified. Re-read the doc against the\n" +
     "ground truth above, fix what has drifted, then update its declared date in the same commit.\n",

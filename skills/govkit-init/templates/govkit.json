@@ -84,7 +84,8 @@
       "expectsScripts": ["docs:sync-check"],
       "bootstrapDocs": ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md", "CLAUDE.md"],
       "watchedPaths": ["src/", "scripts/", "package.json", ".github/"],
-      "$comment": "watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."
+      "sessionHook": true,
+      "$comment": "sessionHook: the plugin's Claude Code hook reminds a session to update the trackers before it ends, when the working branch gained code and no tracker changed; false turns it off for this repo. watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."
     }
   },
 
