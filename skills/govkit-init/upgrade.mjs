@@ -39,6 +39,7 @@ import { createHash } from "node:crypto";
 import {
   chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -105,6 +106,27 @@ const range = (versions, order) => {
   const sorted = [...versions].sort((a, b) => order.indexOf(a) - order.indexOf(b));
   return sorted.length > 1 ? `${sorted[0]}–${sorted.at(-1)}` : (sorted[0] ?? "?");
 };
+
+/**
+ * The first symlink on the way from the repo root to `rel` (a directory or the file itself),
+ * dangling or not, or null. Owned files and the directories they sit in must be real: a repo that
+ * committed scripts/docs-sync-check.mjs, or scripts/ itself, as a link to somewhere outside would
+ * otherwise have an upgrade write through it. lstat, not exists: a dangling link reads as absent.
+ */
+export function symlinkOnPath(root, rel) {
+  let cur = root;
+  for (const part of rel.split(/[\\/]/).filter(Boolean)) {
+    cur = join(cur, part);
+    let st;
+    try {
+      st = lstatSync(cur);
+    } catch {
+      return null; // nothing further exists, so nothing further can be a link
+    }
+    if (st.isSymbolicLink()) return relative(root, cur).replace(/\\/g, "/");
+  }
+  return null;
+}
 
 /** The nearest existing ancestor of p, resolved through symlinks. */
 function realAncestor(p) {
@@ -205,6 +227,11 @@ export function check(root = process.cwd()) {
       continue;
     }
     const at = located(manifest, entry.path, root);
+    const link = symlinkOnPath(root, at);
+    if (link) {
+      files.push({ path: entry.path, at, status: "symlink", link });
+      continue;
+    }
     const text = readText(join(root, at));
     if (text === null) {
       files.push({ path: entry.path, at, status: "missing" });
@@ -401,10 +428,21 @@ export function record(root = process.cwd()) {
 
 /** Replace the named paths with the current template. Only those; nothing else is written. */
 export function apply(paths, root = process.cwd()) {
-  assertClean(root);
   const manifest = readJson(join(root, "govkit.json"));
-  // Every target confined before anything is written: a refused path must not leave half an upgrade.
-  for (const p of paths) if (OWNED.some((e) => e.path === p)) located(manifest, p, root);
+  // Safety first, then cleanliness; nothing is written until both pass. Every target is confined
+  // to the repo, so a refused path cannot leave half an upgrade, and none may be or pass through a
+  // symlink, whether or not `paths` is set: govkit writes only regular files.
+  for (const p of paths) {
+    const target = OWNED.some((e) => e.path === p) ? located(manifest, p, root) : p;
+    const link = symlinkOnPath(root, target);
+    if (link) {
+      throw new Error(
+        `${link} is a symlink; govkit writes only regular files inside the repo, so it will not write ${p} through it. ` +
+          "Replace the link with the file itself, then re-run.",
+      );
+    }
+  }
+  assertClean(root);
   let reformatted = false;
   for (const path of paths) {
     if (path === CLAUDE_MD) {
@@ -517,10 +555,11 @@ function printReport(r) {
     console.log("  ❌ No govkit.json. Run /govkit-init first.\n");
     return;
   }
-  const icon = { current: "✅", outdated: "⬆️ ", edited: "✏️ ", missing: "❌", skipped: "⏭️ " };
+  const icon = { current: "✅", outdated: "⬆️ ", edited: "✏️ ", missing: "❌", skipped: "⏭️ ", symlink: "⛔" };
   for (const f of r.files) {
     let note = f.status;
     if (f.status === "outdated") note = `outdated — matches ${f.matches}`;
+    if (f.status === "symlink") note = `${f.link} is a symlink; not read or written (replace it with the file)`;
     if (f.status === "edited") {
       note = f.editedSinceRecorded ? "edited since govkit wrote it" : "edited locally (matches no release)";
     }

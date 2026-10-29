@@ -417,3 +417,69 @@ test("one refused path stops the whole apply before anything is written", () => 
   assert.notEqual(pathsBefore, "// old\n");
   assert.deepEqual(readdirSync(outside), []);
 });
+
+// ------------------------------------------------------------------ owned files are regular files
+
+/**
+ * Replace an owned file with a file symlink. File symlinks need a privilege on Windows (Developer
+ * Mode or admin); without it the test skips there, and still runs in CI on Linux.
+ */
+function linkFile(t, target, at) {
+  rmSync(at);
+  try {
+    symlinkSync(target, at, "file");
+    return true;
+  } catch (e) {
+    if (e.code === "EPERM") {
+      t.skip("creating a file symlink needs a privilege on this machine");
+      return false;
+    }
+    throw e;
+  }
+}
+
+test("no `paths`: an owned file that is a symlink to a file outside the repo is not written through", (t) => {
+  const { root, outside } = repoWithOutside();
+  const victim = join(outside, "victim.mjs");
+  writeFileSync(victim, "// not yours\n");
+  if (!linkFile(t, victim, join(root, "scripts/docs-sync-check.mjs"))) return;
+  assert.throws(
+    () => apply(["scripts/docs-sync-check.mjs"], root),
+    /scripts\/docs-sync-check\.mjs is a symlink; govkit writes only regular files/,
+  );
+  assert.equal(readFileSync(victim, "utf-8"), "// not yours\n");
+  const f = check(root).files.find((x) => x.path === "scripts/docs-sync-check.mjs");
+  assert.equal(f.status, "symlink");
+});
+
+test("no `paths`: a dangling symlink is refused too, and its target is not created", (t) => {
+  const { root, outside } = repoWithOutside();
+  const target = join(outside, "not-there-yet.mjs");
+  if (!linkFile(t, target, join(root, "scripts/docs-sync-check.mjs"))) return;
+  assert.equal(existsSync(join(root, "scripts/docs-sync-check.mjs")), false, "dangling: exists() says absent");
+  assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /is a symlink/);
+  assert.equal(existsSync(target), false);
+  assert.equal(status(check(root), "scripts/docs-sync-check.mjs"), "symlink");
+});
+
+test("no `paths`: an owned file's directory that is a symlink out of the repo is refused", () => {
+  const { root, outside } = repoWithOutside();
+  rmSync(join(root, ".githooks"), { recursive: true });
+  symlinkSync(outside, join(root, ".githooks"), "junction");
+  assert.throws(() => apply([".githooks/pre-push"], root), /\.githooks is a symlink/);
+  assert.deepEqual(readdirSync(outside), []);
+  assert.equal(status(check(root), ".githooks/pre-push"), "symlink");
+});
+
+test("with `paths`: a relocated owned file that is a symlink is refused the same way", (t) => {
+  const { root, outside } = repoWithOutside();
+  mkdirSync(join(root, "vendor"));
+  writeFileSync(join(root, "vendor/dsc.mjs"), "");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  const victim = join(outside, "victim.mjs");
+  writeFileSync(victim, "// not yours\n");
+  if (!linkFile(t, victim, join(root, "vendor/dsc.mjs"))) return;
+  // Either guard may name it first: the link leaves the repo, and it is a link.
+  assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /vendor\/dsc\.mjs is a symlink|through a symlink/);
+  assert.equal(readFileSync(victim, "utf-8"), "// not yours\n");
+});
