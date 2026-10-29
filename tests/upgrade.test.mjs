@@ -4,7 +4,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, test } from "node:test";
@@ -339,4 +339,80 @@ test("govkit's own repo: every owned file current where it runs, nothing missing
 test("govkit's own repo: the doctor reports nothing missing", () => {
   const r = runDoctor(GOVKIT);
   assert.equal(r.code, 0, r.out);
+});
+
+// ------------------------------------------------------------------ `paths` stays inside the repo
+
+/** A repo plus an empty sibling directory outside it: the target an escaping `paths` would hit. */
+function repoWithOutside() {
+  const { root } = makeRepo();
+  const outside = mkdtempSync(join(tmpdir(), "govkit-outside-"));
+  repos.push(outside);
+  return { root, outside };
+}
+
+const commitManifest = (root) => {
+  git(root, "add", "govkit.json");
+  git(root, "commit", "-qm", "paths");
+};
+
+const escapes = (outside) => [
+  ["climbs out with ..", `../${outside.split(/[\\/]/).pop()}/dsc.mjs`, /points outside the repo/],
+  ["climbs out midway", "scripts/../../x/dsc.mjs", /points outside the repo/],
+  // Every escaping value targets `outside`, a throwaway temp dir, so even a broken guard cannot
+  // write anywhere that matters.
+  ["absolute (forward slashes)", `${outside.replace(/\\/g, "/")}/dsc.mjs`, /is absolute/],
+  ["absolute (this OS)", join(outside, "dsc.mjs"), /is absolute/],
+  // On Linux a drive path is a plain relative name; it is refused as absolute on every OS.
+  ["absolute (Windows drive)", String.raw`C:\govkit-outside\dsc.mjs`, /is absolute/],
+  ["the repo root", ".", /is the repo root/],
+  ["empty", "", /not a relative path/],
+];
+
+test("apply, check, diff and the doctor refuse a `paths` value outside the repo, and write nothing", () => {
+  const { root, outside } = repoWithOutside();
+  for (const [what, value, why] of escapes(outside)) {
+    setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": value }));
+    commitManifest(root);
+    assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), why, what);
+    assert.throws(() => check(root), why, what);
+    assert.throws(() => diff("scripts/docs-sync-check.mjs", root), why, what);
+    assert.deepEqual(readdirSync(outside), [], `${what}: nothing written outside`);
+
+    setManifest(root, (m) => {
+      for (const [name, g] of Object.entries(m.guardrails)) {
+        if (name !== "docs-sync-check") g.enabled = false;
+        delete g.expectsScripts;
+      }
+    });
+    const doc = runDoctor(root);
+    assert.equal(doc.code, 1, what);
+    assert.match(doc.out, /\(refused\)/, what);
+    git(root, "checkout", "--", "govkit.json");
+  }
+});
+
+test("a `paths` value that leaves the repo through a symlinked directory is refused", () => {
+  const { root, outside } = repoWithOutside();
+  // A junction needs no privileges on Windows; elsewhere the type is ignored.
+  symlinkSync(outside, join(root, "vendor"), "junction");
+  // Untracked but ignored, so the tree stays clean (git cannot commit a Windows junction).
+  writeFileSync(join(root, ".git", "info", "exclude"), "vendor\n");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  commitManifest(root);
+  assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /outside the repo through a symlink/);
+  assert.deepEqual(readdirSync(outside), []);
+});
+
+test("one refused path stops the whole apply before anything is written", () => {
+  const { root, outside } = repoWithOutside();
+  const pathsBefore = readFileSync(join(root, "scripts/supabase.mjs"), "utf-8");
+  writeFileSync(join(root, "scripts/supabase.mjs"), "// old\n");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": `../${outside.split(/[\\/]/).pop()}/escape.mjs` }));
+  git(root, "add", "-A");
+  git(root, "commit", "-qm", "old supabase + bad path");
+  assert.throws(() => apply(["scripts/supabase.mjs", "scripts/docs-sync-check.mjs"], root), /points outside/);
+  assert.equal(readFileSync(join(root, "scripts/supabase.mjs"), "utf-8"), "// old\n", "first file untouched");
+  assert.notEqual(pathsBefore, "// old\n");
+  assert.deepEqual(readdirSync(outside), []);
 });

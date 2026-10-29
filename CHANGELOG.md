@@ -7,7 +7,7 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 ## [0.7.0] - 2026-10-29
 
 ### Added
-- **`govkit.json` `paths`** (optional): map an owned path to where the file actually is, for a repo that runs govkit's files from somewhere else. The doctor, `/govkit-init --upgrade` and the doc-sync workflow all look there; without it nothing changes.
+- **`govkit.json` `paths`** (optional): map an owned path to where the file actually is, for a repo that runs govkit's files from somewhere else. The doctor, `/govkit-init --upgrade` and the doc-sync workflow all look there; without it nothing changes. Values are confined to the repo: an absolute path, one that climbs out with `..`, or one that leaves through a symlinked directory is refused by name, and an upgrade checks every target before it writes anything.
 - **govkit runs its own guardrails**, in place from its templates (#11): `govkit.json`, `CLAUDE.md`, `docs/PROJECT-HUB.md`, the pre-push hook, the doc-sync gate (a changed owned template must be named in this file), and `tools/check-release.mjs` in CI in place of the `versioning` guardrail.
 
 ### Fixed
@@ -16,7 +16,7 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 ### Changed
 - CI pins Claude Code for `plugin validate`, and runs the doctor and the release check. `main` requires a PR and a green CI check.
 
-Changed in your repo: `scripts/govkit-doctor.mjs` (resolves `paths`) and `.github/workflows/sdlc-docs.yml` (reads the runner's path from `paths`). Both work as before without `paths`.
+Changed in your repo: `scripts/govkit-doctor.mjs` (resolves `paths`, and refuses a value outside the repo) and `.github/workflows/sdlc-docs.yml` (reads the runner's path from `paths`). Both work as before without `paths`.
 
 ## [0.6.1] - 2026-10-29
 

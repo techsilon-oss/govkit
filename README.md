@@ -122,7 +122,7 @@ It hashes each owned file against every govkit release and reports it as **curre
 
 `/govkit-doctor` reports outdated files too. Both run from the plugin, so they know about releases newer than the repo's own scripts. Works on repos initialised by any release from 0.2.0 on, with no manual steps first. A 0.1.0 repo has no `govkit.json`: run `/govkit-init` first.
 
-**Running govkit's files from somewhere else?** Map each owned path to where the file is, in `govkit.json` `paths` (for example `"scripts/docs-sync-check.mjs": "tools/docs-sync-check.mjs"`). The doctor, `--upgrade` and the doc-sync workflow all look there. govkit itself uses this to run its guardrails straight from its templates.
+**Running govkit's files from somewhere else?** Map each owned path to where the file is, in `govkit.json` `paths` (for example `"scripts/docs-sync-check.mjs": "tools/docs-sync-check.mjs"`). The doctor, `--upgrade` and the doc-sync workflow all look there. A value must stay inside the repo: absolute paths, `..` that climbs out, and symlinks that leave are refused. govkit itself uses this to run its guardrails straight from its templates.
 
 ## What it scaffolds
 
