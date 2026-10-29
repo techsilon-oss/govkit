@@ -69,8 +69,4 @@ For a check that must hold on **every** commit or push, use a git hook (`.githoo
 
 ## FAQ
 
-**Does govkit run anything from this file on its own, for example from the session hook?** No. Only `/govkit-session` reads it, and only when you invoke the skill. The session hook never looks at it.
-
-**I edited the file, and now my steps don't run.** That's the trust rule: run the `! node … trust` line `/govkit-session status` gives you, after reading the file.
-
-**Can I see what a repo's steps will do before trusting them?** Yes: `/govkit-session status` shows the whole file, and `/govkit-doctor` lists every command.
+Questions about project steps and trust are in [docs/FAQ.md](FAQ.md#your-own-steps).

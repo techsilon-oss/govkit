@@ -1,6 +1,6 @@
 {
   "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
-  "govkitVersion": "0.9.2",
+  "govkitVersion": "0.10.0",
   "project": {
     "name": "govkit",
     "deployTarget": "none (users install the plugin from GitHub)",
@@ -17,28 +17,28 @@
   "files": {
     "$comment": "Written by /govkit-init and /govkit-init --upgrade, never by hand: for each file govkit owns, the release that wrote it and the sha256 of what it wrote (LF line endings). A file whose hash no longer matches was edited locally, and the upgrade will not replace it without an explicit yes.",
     "scripts/docs-sync-check.mjs": {
-      "version": "0.9.2",
+      "version": "0.10.0",
       "sha256": "974bc695f1cd6f83c701d464d1ccc526743fedb47803adf13887a6017aa8aefd"
     },
     "scripts/govkit-doctor.mjs": {
-      "version": "0.9.2",
-      "sha256": "60f4e9a481d1eaacedb017fa4f2fd3454efaa6e8ba013e3981094430e3405d2b"
+      "version": "0.10.0",
+      "sha256": "3c13c8cfdf87e9a9262c823978175b495d8436803c550bcf633d5e46a9be0e83"
     },
     ".githooks/pre-push": {
-      "version": "0.9.2",
+      "version": "0.10.0",
       "sha256": "cff9f96c7973b453b68557f8591a7524a9ef6d4ed0c4c43b59eda5999f22cbb6"
     },
     ".githooks/install-hooks.sh": {
-      "version": "0.9.2",
+      "version": "0.10.0",
       "sha256": "805082669618d992e8e6cdb23fac7864a34a78d0239f16cc0ce70a3f6ea62f86"
     },
     "scripts/govkit-docsync.mjs": {
-      "version": "0.9.2",
+      "version": "0.10.0",
       "sha256": "2d200d4b8a8ce0a4750ce68141c384a6c5023f94ae083bbcabdad33dda277d0d"
     },
     ".github/workflows/govkit-docsync.yml": {
-      "version": "0.9.2",
-      "sha256": "6fee5bb07c7061a3300630eb4b40a7d3fc0066701168b75a4909a8c08344572e"
+      "version": "0.10.0",
+      "sha256": "d7ca88b25121cb55e96ba25ba1ae526efd607b3db20c5a0ae182ae5a46adac8a"
     }
   },
   "upstreams": {
@@ -173,8 +173,9 @@
     "ignore": [
       "docs/archive/**",
       "docs/UPGRADING.md",
-      "docs/PROJECT-HUB.md"
+      "docs/PROJECT-HUB.md",
+      "docs/FAQ.md"
     ],
-    "$comment": "The doctor lists references to names govkit renamed in 0.8.0. Kept on purpose: docs/archive (the 0.1.0 build notes, history), docs/UPGRADING.md (it documents the rename) and docs/PROJECT-HUB.md (its decisions log records it)."
+    "$comment": "The doctor lists references to names govkit renamed in 0.8.0. Kept on purpose: docs/archive (the 0.1.0 build notes, history), docs/UPGRADING.md (it documents the rename) docs/PROJECT-HUB.md (its decisions log records it) and docs/FAQ.md (it answers how to follow the rename)."
   }
 }

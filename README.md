@@ -10,7 +10,7 @@ Decoupled and self-contained: it depends on nothing beyond `git`, the `gh` CLI, 
 claude plugin install govkit --marketplace techsilon-oss/govkit   # once per machine
 ```
 
-Then, in Claude Code, from your project's root: **`/govkit-init`** to scaffold the guardrails, and **`/govkit-session status`** at the start of each session.
+Then, in Claude Code, from your project's root: **`/govkit-init`** to scaffold the guardrails, and **`/govkit-session status`** at the start of each session. Questions: **`/govkit-help`**.
 ---
 
 ## Where govkit sits — read this before changing anything
@@ -128,18 +128,22 @@ A release that renames something also moves the file, and tells you what else ch
 
 ## What it scaffolds
 
-**All guardrails are installed by default.** Excluding one takes `--skip <name>` and a recorded reason, so a gap is always a decision you can point at — never an oversight.
+**All modules are installed by default**, and `/govkit-init` shows each one's note before you say yes. Excluding one takes `--skip <name>` and a recorded reason, so a gap is always a decision you can point at — never an oversight.
 
-| Guardrail | Files | Purpose |
-|---|---|---|
-| `trackers` | `CLAUDE.md`, `docs/PROJECT-HUB.md`, `docs/PRIORITY-ROADMAP.md` | Branch strategy, per-merge approval, decisions log, session handoff |
-| `release-gate` | `scripts/release-gate.ts`, `release-gate.config.json` | Local CI-fallback gate. **Vendored from [release-gate-kit](https://github.com/techsilon-oss/release-gate-kit)** — fix bugs upstream, not here |
-| `pre-push-hook` | `.githooks/pre-push`, `.gitattributes` | Blocks direct pushes to the release branch |
-| `doc-sync` | `scripts/govkit-docsync.mjs`, `scripts/source-doc-map.json`, `.github/workflows/govkit-docsync.yml` | Per-PR: code changed without its mapped doc. Warn on PR to working branch, **gate** on PR to release |
-| `docs-sync-check` | `scripts/docs-sync-check.mjs` | Per-session: bootstrap-doc freshness + `git`/`gh` ground truth |
-| `versioning` | `scripts/release-version.mjs` | One version per release: `release:bump` in the release PR, `release:tag` after the merge, `release:status` reports an untagged release or one shipped without a bump |
-| `supabase-account` | `scripts/supabase.mjs`, `supabase/projects.json` | Binds Supabase CLI commands to this repo's account. Only in projects that use Supabase |
-| — | `govkit.json` | The manifest: what is installed, what was skipped and why |
+<!-- modules:start: generated from module.json by tools/build-module-table.mjs; do not edit by hand -->
+| Module | You get | Changes outside your code | Costs | Default |
+|---|---|---|---|---|
+| [`trackers`](docs/modules/trackers.md) | A CLAUDE.md block with the branch flow and merge rules, a project hub for status, decisions and session handoffs, and a priority roadmap. Every other guardrail hangs off these. | Nothing. | Nothing. | on (required) |
+| [`release-gate`](docs/modules/release-gate.md) | Your CI checks, run on your machine with a PASS/FAIL scorecard, for when GitHub Actions can't run (minutes used up, an outage). With --pr it posts the evidence to the PR. | With --pr only: one comment on the pull request. | Nothing to run; it needs tsx as a dev dependency (npm i -D tsx). | on (skippable) |
+| [`ci`](docs/modules/ci.md) | A check that your repo has a CI workflow running the same checks as the release gate. govkit does not write it: a CI workflow is specific to your stack, and a wrong one is worse than none. | Nothing from govkit. Your workflow uses GitHub Actions minutes. | Your CI's Actions minutes (free on public repos; 2,000 a month on the Free plan for private ones). | on (skippable) |
+| [`pre-push-hook`](docs/modules/pre-push-hook.md) | A git hook that refuses a push straight to the release branch, and prints the gh pr create command to use instead. On a private repo under GitHub's Free plan, it's the only enforcement there is. | git config core.hooksPath in each clone (set by npm run prepare). Nothing on GitHub. | Nothing. | on (skippable) |
+| [`doc-sync`](docs/modules/doc-sync.md) | On every PR, a check that code which changed came with its mapped doc. It warns on a PR to the working branch, and gates a PR to the release branch. You decide the pairs in scripts/source-doc-map.json. | A GitHub Actions workflow, which posts or updates one comment on each PR. | About 10 seconds of Actions minutes per PR. | on (skippable) |
+| [`docs-sync-check`](docs/modules/docs-sync-check.md) | At the start of a session, the facts from git and GitHub (branches, tags, CI, issues) next to what the trackers claim, and a warning when a tracker is older than the code. The plugin's session hook uses the same rule. | Nothing. It reads git and, if available, gh. | Nothing. | on (skippable) |
+| [`versioning`](docs/modules/versioning.md) | release:bump as the release PR's last commit, release:tag after the merge, and release:status to report a release with no tag or one shipped without a bump. | release:tag pushes a v<version> tag to GitHub, when you run it. | Nothing. | on (skippable) |
+| [`supabase-account`](docs/modules/supabase-account.md) | npm run supabase runs the Supabase CLI with this repo's own token and refuses to run unless that token can see this repo's projects. A machine with several Supabase accounts can't apply a migration to the wrong one. | Nothing beyond what your Supabase commands do. The token lives in your .env, which is not committed. | Nothing. | on (skippable) |
+<!-- modules:end -->
+
+Each module's guide (linked in the first column) has its setup, how to fix what the doctor reports, and how to undo it. Every module's choices are recorded in **`govkit.json`**: what's installed, and what was skipped and why.
 
 Plus the skills `/govkit-init`, `/govkit-session`, `/govkit-docsync` and `/govkit-doctor` (from the plugin, not copied per repo).
 
@@ -147,12 +151,7 @@ The `.mjs` runners are **dependency-free** — Node built-ins and `git` only, no
 
 ## Two checks, two different questions
 
-They are not redundant, and neither substitutes for the other:
-
-- **`govkit-docsync`** asks *"did code change without its doc?"* — a **diff** question, answered per PR.
-- **`docs-sync-check`** asks *"do the trackers still match the repo?"* — which involves **no diff at all**. A tracker rots while the code it describes sits untouched: "no `main` branch" after `main` exists, "nothing deployed" after launch, "zero issues" after a dozen are filed. Each was true when written. Nothing re-checks prose, so nothing catches it.
-
-That is why `/govkit-session status` runs `docs-sync-check` **first**, and stops if a bootstrap doc is stale. A session that starts from a stale hub produces work premised on a false picture. When a doc is stale, the check also lists the code commits and merged PRs since its date: that list is the reconciliation work.
+[`doc-sync`](docs/modules/doc-sync.md) asks *"did code change without its doc?"*, a diff question answered per PR. [`docs-sync-check`](docs/modules/docs-sync-check.md) asks *"do the trackers still match the repo?"*, which involves no diff at all. Neither replaces the other; each guide says why.
 
 ## The session hook
 
@@ -194,9 +193,9 @@ Every guardrail is **OK**, **SKIPPED** (declared off, with a reason — a decisi
 
 It exists because of a real failure: a project adopted govkit, govkit did not yet ship the hooks or the doc-sync runner, and the project ran for weeks **less protected than repos that had ignored the standard** and kept their own copies. Nothing errored, because adopting a standard feels like a completion. `/govkit-doctor` is the command that would have said so on day one.
 
-## The Local Release Gate (why this exists)
+## The Local Release Gate
 
-CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). When minutes run out — or Actions has an outage — the "CI passing" merge gate can't run. The release gate reproduces your CI checks **locally**, prints a PASS/FAIL scorecard, and (with `--pr`) posts the evidence to the PR, so you can keep shipping at the same quality bar. It's the substitute for CI when CI can't run — never a way around it. Deploys (host integration on `main`, CLI-based DB/function deploys) are independent of Actions, so releases still complete.
+When GitHub Actions can't run (minutes used up, an outage), the release gate runs your CI checks locally and posts the evidence to the PR: the substitute for CI, never a way around it. See [docs/modules/release-gate.md](docs/modules/release-gate.md).
 
 ## Language scope
 
@@ -205,9 +204,9 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 - The release gate's `checks` are **arbitrary shell commands** — put `cargo test`, `pytest`, `go build`, etc. in `release-gate.config.json`. The only Node tie is that the gate script runs via `tsx`, so a non-Node project just needs Node available to run it.
 - First-class non-Node scaffolding (e.g. a `make`/`just` target instead of npm scripts) is a future enhancement.
 
-## Can my repo add its own steps?
+## FAQ and help
 
-Yes, without forking the skill: put them in **`.govkit/session.md`**, under `## On start`, `## Before commit` or `## On close`, and `/govkit-session` runs them after its own steps. Because the file comes from the repo, **nothing in it is used until you trust that exact file on your machine**, and any edit means trusting it again. `Before commit` runs only when the agent commits through `/govkit-session`, so it's not a git hook. Format, example and trust model: [docs/EXTENDING.md](docs/EXTENDING.md).
+Short answers, each linking to its guide: [docs/FAQ.md](docs/FAQ.md). Inside Claude Code, **`/govkit-help`** answers from the docs of the version you have installed.
 
 ## Versioning
 

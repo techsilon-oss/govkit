@@ -15,12 +15,12 @@ jobs:
     name: Validate and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The upgrade tests build fixtures from past releases (git show v0.5.0:…), so they need tags.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
 

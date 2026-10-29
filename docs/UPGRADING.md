@@ -2,6 +2,16 @@
 
 Most releases need only `/govkit-init --upgrade` (see the README's [Upgrading](../README.md#upgrading)). A release that renames or removes something gets a section here with the exact steps. [CHANGELOG.md](../CHANGELOG.md) lists every release.
 
+## 0.9 → 0.10
+
+Nothing is renamed. One requirement can break a CI setup:
+
+- **The doc-sync workflow now runs `actions/checkout@v7` and `actions/setup-node@v7`, on Node 24. A self-hosted Actions runner must be v2.327.1 or later.** GitHub-hosted runners already are. Check before upgrading: the runner's version is in Settings → Actions → Runners, or in its `_diag` logs. Self-hosted runners update themselves unless registered with `--disableupdate`.
+
+Then, as usual:
+1. Update the plugin, commit or stash your work, and run `/govkit-init --upgrade`. It offers `scripts/govkit-doctor.mjs` (findings now link to their fix) and `.github/workflows/govkit-docsync.yml` (the new action versions; no failed comment on fork PRs). The workflow's check name is unchanged, so a branch rule requiring "Doc-sync (gate)" keeps working.
+2. Commit: `chore(govkit): upgrade to 0.10.0`.
+
 ## 0.7 → 0.8
 
 0.8.0 renames govkit's skills so they can't clash with a project's own skills of the same name, and moves the files and npm scripts that went with them. **The old names keep working until the first minor release on or after 2026-11-28 (extended in 0.9.0, which first planned to remove them).**

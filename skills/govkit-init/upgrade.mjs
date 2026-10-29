@@ -130,6 +130,10 @@ const readJson = (p) => {
 };
 
 export const pluginVersion = () => readJson(PLUGIN_JSON)?.version ?? "unknown";
+
+/** A govkit doc's URL pinned to a release; main when the version isn't plain X.Y.Z. */
+export const guideUrl = (path, version) =>
+  `https://github.com/techsilon-oss/govkit/blob/${/^\d+\.\d+\.\d+$/.test(String(version)) ? `v${version}` : "main"}/${path}`;
 const history = () => readJson(HISTORY) ?? {};
 
 /** Release labels in release order, as the history builder wrote them. */
@@ -858,7 +862,11 @@ function printReport(r) {
   }
   const outdated = r.files.filter((f) => f.status === "outdated" || f.status === "rename").map((f) => f.path);
   if (r.claudeBlock.status === "outdated") outdated.push(CLAUDE_MD);
-  if (outdated.length) console.log(`\n  Upgrade: /govkit-init --upgrade  (or: upgrade.mjs apply ${outdated.join(" ")})`);
+  if (outdated.length) {
+    console.log(`\n  Upgrade: /govkit-init --upgrade  (or: upgrade.mjs apply ${outdated.join(" ")})`);
+    // The guide for the installed plugin's version: what this check compares against.
+    console.log(`  How upgrading works: ${guideUrl("README.md#upgrading", r.pluginVersion)}`);
+  }
   console.log("");
 }
 

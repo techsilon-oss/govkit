@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "govkit",
-      "description": "Project governance starter kit: guardrails scaffolding (/govkit-init), /govkit-session, and /govkit-doctor conformance reporting.",
-      "version": "0.9.2",
+      "description": "Guardrails for any repo — branch flow, a CI-fallback release gate, doc-sync checks and trackers — set up once and kept current. Help: /govkit-help",
+      "version": "0.10.0",
       "source": "./",
       "author": {
         "name": "Techsilon LLC",
