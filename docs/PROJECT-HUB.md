@@ -9,7 +9,7 @@ last checked 2026-10-29
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** #14 part 1, 0.11.0: the tracker module (opt-in): labels, launch categories as a setting, a pinned decision register, the closing format; doctor notice for "not decided". Part 2 (0.12.0) is the daily report.
+- **Now:** #14 part 2, 0.12.0: the daily status report. govkit tracks its own work with the tracker (register #38; categories now/next/later/triage).
 - **Next, in order:** #14 part 2 (daily report, 0.12.0) → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
@@ -48,5 +48,6 @@ last checked 2026-10-29
 - #16 done: techsilon-oss/.github created (KIT-STANDARD.md, org SECURITY/CONTRIBUTING/issue templates, profile), its `main` protected; private vulnerability reporting enabled on all five repos; govkit 0.9.2 shipped (#33); checklists posted (govkit#34, qa-kit#2, release-gate-kit#3, gh-runner-kit#1).
 - 0.10.0 (#34) in review.
 - Shipped 0.10.0 (#36): module notes, guides, /govkit-help, version-pinned fix links (the doctor links to its own release, never below v0.10.0).
-- 0.11.0 (#14 part 1) in review.
+- Shipped 0.11.0 (#37): the tracker module, end-to-end tested on a private throwaway repo (since deleted); docs ↔ documentation alias found there and fixed.
+- 0.11.1: govkit's own tracker on: 11 labels created, register #38 pinned, open issues categorised (#14 now, #29 next, #25 and #15 later and typed idea); the register left out of the to-triage count.
 - Next: #14 part 2, the daily report.

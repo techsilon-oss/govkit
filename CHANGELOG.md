@@ -4,6 +4,16 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.11.1] - 2026-10-29
+
+### Fixed
+- The decision register issue no longer counts as "to triage": it isn't planned work, so `/govkit-session` leaves it out of the launch-category groups and the count. The CLAUDE.md block's "Work tracking" rule and the tracker guide say so.
+
+### Changed
+- govkit tracks its own work with the tracker module: launch categories `now` / `next` / `later` / `triage`, a pinned decision register (#38), and `docs` mapped to GitHub's `documentation` label.
+
+Changed in your repo: the CLAUDE.md govkit block (one sentence; an unedited block is offered the new one).
+
 ## [0.11.0] - 2026-10-29
 
 ### Added
@@ -196,6 +206,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.11.1]: https://github.com/techsilon-oss/govkit/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/techsilon-oss/govkit/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/techsilon-oss/govkit/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/techsilon-oss/govkit/compare/v0.9.1...v0.9.2
