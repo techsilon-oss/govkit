@@ -67,6 +67,19 @@ if (!existsSync(manifestPath)) fail('supabase/projects.json is missing — canno
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 const expected = Object.entries(manifest.projects).map(([env, p]) => ({ env, ...p }))
 
+// Scaffolded unedited, every ref is a placeholder. Say that plainly rather than
+// reporting "wrong account", which would send someone hunting a real problem.
+if (expected.some(p => String(p.ref).startsWith('REPLACE_ME'))) {
+  fail(
+    'supabase/projects.json still contains placeholder values',
+    `  It was scaffolded as an example and gates nothing until edited.
+
+  Fill in this project's account, organization and project refs. You can read
+  them from the URL of any project in the Supabase dashboard:
+  https://supabase.com/dashboard/project/<ref>`
+  )
+}
+
 // --- verify before running anything -----------------------------------------
 
 async function verify() {
