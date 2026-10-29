@@ -24,7 +24,10 @@ Give a current-state read. **Ground truth first, prose second — that order is 
    Watch specifically for prose that asserts repo state: which branches exist, what the default branch is, whether anything is deployed, how many issues there are, whether CI runs. **These are the claims that rot**, because they were true when written and nothing re-checks them. Every one is in step 1's output. Where they disagree, the repo is right and the doc is a bug — fix it in the same session rather than noting it.
 
 3. **`npm run release:status`** — the released version, whether it is tagged, and whether `<working-branch>` has unreleased work. An untagged release, or a release branch that moved past its tag without a bump, is drift: report it with the doc drift.
-4. `gh issue list --state open --limit 30` — open work.
+4. `gh issue list --state open --limit 30` — open work. **If the tracker module is on** (`govkit.json` → `guardrails.tracker.enabled: true`):
+   - read the decision register, `gh issue view <guardrails.tracker.issues.register>`: what only an owner can do, and the open decisions;
+   - group the open issues by launch category (`guardrails.tracker.issues.categories`), and count the ones with **none**: that's the "to triage" number, and it should be 0;
+   - confirm with the user which issue to work on. Never change an issue's priority.
 5. `git log --oneline -10` — what changed recently. **If the docs and git disagree, trust git, then fix the doc.**
 6. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.
 7. **Project steps, `On start`** (see [Project steps](#project-steps-govkitsessionmd)): the trust check, then `steps on-start`.
@@ -66,7 +69,13 @@ The govkit session hook enforces this: when the working branch gained code in th
 After a merge, before ending the session:
 
 1. **If a release merged, tag it:** `npm run release:tag`, then `npm run release:status` should be clean.
-2. **Close the issue** with a one-line, business-language summary: `gh issue close <n> --comment "..."`.
+2. **Close the issue** with a one-line, business-language summary: `gh issue close <n> --comment "..."`. **With the tracker module on**, use its format, which 0.12.0's daily report reads:
+   ```
+   Completed: <one or two plain sentences: what the user gains. No file names.>
+
+   Technical: <optional: migrations, tests, deploy notes>
+   ```
+   New work found during the session becomes an issue at once, with a type and exactly one launch category. An owner's question goes in the register as `D-###`, with `needs-decision` on its issue.
 3. **`docs/PRIORITY-ROADMAP.md`** — remove/mark the completed item; add a revision-history row (date + what changed).
 4. **`docs/PROJECT-HUB.md`** — extend the Session Handoff (or add an entry); update Current Status; add a `DEC-###` if an architectural decision was made.
 5. Ask: would `/govkit-session status` give an accurate picture to the next session? If not, fix the docs before closing.

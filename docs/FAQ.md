@@ -16,6 +16,15 @@ Yes, all but `trackers`: `/govkit-init --skip <module>`, with a reason, which is
 **Does it work for a non-Node project?**
 Mostly. The trackers and branch flow don't care about the language, and the release gate's checks are any shell commands. The scripts need Node to run. See [Language scope](../README.md#language-scope).
 
+**How do I turn on issue tracking?**
+Run `/govkit-init tracker`. It's opt-in: it shows what it will create on GitHub (labels, a pinned decision register) and asks before each step. Until you answer, the doctor shows "tracker — not decided", which is a notice, not a failure. See [the tracker guide](modules/tracker.md#set-up).
+
+**What is the decision register?**
+One pinned GitHub issue listing what only an owner can do or decide, in two tables. Agents add open questions as `D-###` instead of guessing the answer. See [the tracker guide](modules/tracker.md#what-you-get).
+
+**Can I use my own label names for the launch categories?**
+Yes: `guardrails.tracker.issues.categories` in `govkit.json`. A launched product often uses `now` / `next` / `later` / `triage`. See [the tracker guide](modules/tracker.md#what-you-get).
+
 ## Keeping it current
 
 **Why does the doctor say "outdated"?**

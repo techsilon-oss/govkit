@@ -1,0 +1,32 @@
+name: User story
+description: Something a user should be able to do
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: The story
+      value: "As a <role>, I want <goal>, so that <benefit>."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How we know it's done. One per line.
+      placeholder: "- …\n- …"
+    validations:
+      required: true
+  - type: dropdown
+    id: when
+    attributes:
+      label: When is it needed?
+      description: A suggestion. A maintainer turns it into the launch-category label when triaging. GitHub issue forms can't set a label from an answer.
+      options:
+        - Needed before the next milestone
+        - Can wait
+        - Not sure yet
+  - type: markdown
+    attributes:
+      value: |
+        Until it has a launch-category label, this issue counts as "to triage".

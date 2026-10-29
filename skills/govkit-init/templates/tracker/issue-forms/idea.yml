@@ -1,0 +1,16 @@
+name: Idea
+description: A concept that isn't validated yet
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What it is, and who it helps.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why now
+      description: What makes it worth looking at, and what we'd need to learn first.
