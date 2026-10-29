@@ -1,11 +1,15 @@
 {
   "name": "govkit",
-  "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the pre-push guard, the Local Release Gate (CI-fallback), doc-sync + ground-truth checks, PROJECT-HUB/ROADMAP and a generic /sdlc into any project. /govkit-doctor reports what a project is actually missing.",
+  "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the pre-push guard, the Local Release Gate (CI-fallback), doc-sync + ground-truth checks, PROJECT-HUB/ROADMAP and a generic /sdlc into any project. /govkit-doctor reports what a project is missing or outdated, and /govkit-init --upgrade brings it current.",
   "version": "0.6.0",
   "author": {
-    "name": "techsilon-oss"
+    "name": "Techsilon LLC",
+    "email": "oss@techsilon.com",
+    "url": "https://techsilon.com"
   },
-  "license": "CC0-1.0",
+  "homepage": "https://github.com/techsilon-oss/govkit#readme",
+  "repository": "https://github.com/techsilon-oss/govkit",
+  "license": "MIT",
   "keywords": [
     "governance",
     "sdlc",
