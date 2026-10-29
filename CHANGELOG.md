@@ -13,7 +13,7 @@ govkit meets the [kit standard](https://github.com/techsilon-oss/.github/blob/ma
 - **A guide per module**, `docs/modules/<module>.md`: what you get, outside changes, cost, set up, *fix a finding*, undo.
 - **`/govkit-help`:** answers from the docs that ship with your installed version, citing them. It only reads (`allowed-tools: Read Grep Glob`).
 - **`docs/FAQ.md`:** short answers that link to the guides. The README's and EXTENDING's FAQs moved there.
-- **Doctor findings link to their fix,** pinned to your `govkitVersion` (`blob/v<version>/…`), so the steps and anchors match what you run. `/govkit-init`'s next steps and `upgrade.mjs` link the same way.
+- **Doctor findings link to their fix,** in the guides of the release the doctor came from (`blob/v<version>/…`), so the links match its own findings: the plugin's copy uses the plugin's version, a repo's copy the version recorded for it in `govkit.json` `files`, and never below v0.10.0, the first release with guides. Not `govkitVersion`, which a repo that hasn't upgraded records as an old release. `/govkit-init`'s next steps and `upgrade.mjs` link the same way.
 
 ### Changed
 - **The doc-sync workflow** uses `actions/checkout@v7`, `actions/setup-node@v7` and `actions/github-script@v9`, which run on Node 24. **A self-hosted runner must be v2.327.1 or later.** Its check name ("Doc-sync (gate|warn)") is unchanged.

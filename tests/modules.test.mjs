@@ -4,7 +4,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { test } from "node:test";
 import { guideUrl, loadModules, noteText, NOTE_FIELDS, pluginVersion } from "../skills/govkit-init/modules.mjs";
@@ -61,26 +61,60 @@ test("guideUrl pins to v<version>, and falls back to main only when the version 
   for (const v of ["mixed", undefined, null, "0.10", "v0.10.0"]) assert.match(guideUrl("x.md", v), /blob\/main\/x\.md$/);
 });
 
-function doctorIn(govkitVersion) {
+/**
+ * Run the doctor in a repo with a missing guardrail and a reasonless skip. `copy`: "plugin" runs
+ * the plugin's copy (what /govkit-doctor runs); "repo" runs a copy at scripts/govkit-doctor.mjs,
+ * as a repo has it, with `files` recording the release that wrote it.
+ */
+function doctorIn({ govkitVersion, copy = "plugin", recorded } = {}) {
   const root = tmp("govkit-doctor-links-");
   git(root, "init", "-q");
-  writeFileSync(
-    join(root, "govkit.json"),
-    JSON.stringify({ govkitVersion, guardrails: { "pre-push-hook": { enabled: true, expects: [".githooks/pre-push"] }, versioning: { enabled: false } } }),
-  );
+  const manifest = { govkitVersion, guardrails: { "pre-push-hook": { enabled: true, expects: [".githooks/pre-push"] }, versioning: { enabled: false } } };
+  if (recorded !== undefined) manifest.files = { "scripts/govkit-doctor.mjs": { version: recorded, sha256: "x" } };
+  writeFileSync(join(root, "govkit.json"), JSON.stringify(manifest));
+  let script = join(GOVKIT, "skills/govkit-init/templates/scripts/govkit-doctor.mjs");
+  if (copy === "repo") {
+    mkdirSync(join(root, "scripts"));
+    writeFileSync(join(root, "scripts/govkit-doctor.mjs"), readFileSync(script));
+    script = join(root, "scripts/govkit-doctor.mjs");
+  }
   try {
-    return execFileSync("node", [join(GOVKIT, "skills/govkit-init/templates/scripts/govkit-doctor.mjs")], { cwd: root, encoding: "utf-8" });
+    return execFileSync("node", [script], { cwd: root, encoding: "utf-8" });
   } catch (e) {
     return String(e.stdout);
   }
 }
 
-test("doctor findings link to their fix, pinned to the repo's govkitVersion", () => {
-  const out = doctorIn("0.10.0");
-  assert.match(out, /fix: https:\/\/github\.com\/techsilon-oss\/govkit\/blob\/v0\.10\.0\/docs\/modules\/pre-push-hook\.md#fix-a-finding/);
-  assert.match(out, /versioning — skipped: no reason recorded\n\s+fix: https:\/\/github\.com\/techsilon-oss\/govkit\/blob\/v0\.10\.0\/docs\/modules\/versioning\.md#fix-a-finding/);
-  assert.doesNotMatch(out, /blob\/main\//);
-  assert.match(doctorIn("mixed"), /blob\/main\/docs\/modules\/pre-push-hook\.md#fix-a-finding/);
+const linkRefs = (out) => [...out.matchAll(/github\.com\/techsilon-oss\/govkit\/blob\/([^/]+)\//g)].map((m) => m[1]);
+const below = (ref, min = "0.10.0") => {
+  const [a, b] = [ref.replace(/^v/, ""), min].map((x) => x.split(".").map(Number));
+  return (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0;
+};
+
+test("the plugin's doctor links to its own release's guides, whatever version the repo records", () => {
+  const own = `v${pluginVersion()}`;
+  const out = doctorIn({ govkitVersion: "0.4.0" }); // every 0.5.0 install records 0.4.0
+  assert.match(out, new RegExp(`fix: https://github\\.com/techsilon-oss/govkit/blob/${own.replace(/\./g, "\\.")}/docs/modules/pre-push-hook\\.md#fix-a-finding`));
+  assert.match(out, /versioning — skipped: no reason recorded\n\s+fix: \S+\/docs\/modules\/versioning\.md#fix-a-finding/);
+  const refs = linkRefs(out);
+  assert.ok(refs.length >= 2);
+  for (const r of refs) {
+    assert.equal(r, own);
+    assert.ok(!below(r), `no link below v0.10.0: ${r}`);
+  }
+  // govkitVersion plays no part, newer or older than the plugin (newer catches a doctor that
+  // reads govkitVersion and happens to land on the floor, which equals the plugin today).
+  for (const v of ["mixed", "0.12.3", "0.9.9"]) assert.deepEqual(linkRefs(doctorIn({ govkitVersion: v })), refs, `govkitVersion ${v}`);
+});
+
+test("the repo's copy links to the release recorded for it, never below v0.10.0", () => {
+  assert.ok(linkRefs(doctorIn({ copy: "repo", recorded: "0.11.0" })).every((r) => r === "v0.11.0"));
+  assert.ok(linkRefs(doctorIn({ copy: "repo", recorded: "0.10.0–0.12.1" })).every((r) => r === "v0.12.1"), "a range: its newest");
+  for (const recorded of ["0.4.0", "0.9.2", undefined, "edited"]) {
+    const refs = linkRefs(doctorIn({ copy: "repo", govkitVersion: "0.4.0", recorded }));
+    assert.ok(refs.length >= 2, `links printed (${recorded})`);
+    for (const r of refs) assert.equal(r, "v0.10.0", `recorded ${recorded} → the first release with guides`);
+  }
 });
 
 test("the doctor's list of module guides matches module.json", () => {

@@ -32,6 +32,7 @@
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const MANIFEST = "govkit.json";
 
@@ -82,12 +83,32 @@ const scripts = pkg.scripts ?? {};
 const guardrails = Object.entries(manifest.guardrails ?? {});
 
 /**
- * Where a finding's fix is documented: govkit's guide, pinned to the version this repo runs, so
- * the steps and anchors match it. A govkitVersion that isn't plain X.Y.Z ("mixed", missing) gets
- * main. MODULE_GUIDES lists the modules with a guide (docs/modules/<id>.md); a test keeps it equal
- * to module.json's ids.
+ * Where a finding's fix is documented: the guides of the release THIS doctor came from, so its
+ * links match its own findings. Not the repo's govkitVersion: a repo that hasn't upgraded records
+ * an old one (every 0.5.0 install says 0.4.0), and the plugin's newest doctor runs against it.
+ *   - the plugin's copy (what /govkit-doctor runs) reads its own plugin.json;
+ *   - the repo's copy reads govkit.json files["scripts/govkit-doctor.mjs"].version (the newest
+ *     release in it, when record wrote a range);
+ *   - anything else, or anything below 0.10.0 (the first release with docs/modules/), is v0.10.0.
+ * MODULE_GUIDES lists the modules with a guide; a test keeps it equal to module.json's ids.
  */
-const GUIDE_REF = /^\d+\.\d+\.\d+$/.test(String(manifest.govkitVersion)) ? `v${manifest.govkitVersion}` : "main";
+const FIRST_GUIDES = "0.10.0";
+const semverOf = (s) => String(s ?? "").match(/\d+\.\d+\.\d+/g)?.at(-1) ?? null;
+const atLeast = (v, min) => {
+  const [a, b] = [v, min].map((x) => x.split(".").map(Number));
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+};
+function doctorRelease() {
+  try {
+    const own = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../../.claude-plugin/plugin.json"), "utf-8"));
+    if (own.name === "govkit" && semverOf(own.version)) return semverOf(own.version);
+  } catch {
+    // not running from the plugin: the repo's copy
+  }
+  return semverOf(manifest.files?.["scripts/govkit-doctor.mjs"]?.version);
+}
+const DOCTOR_RELEASE = doctorRelease();
+const GUIDE_REF = `v${DOCTOR_RELEASE && atLeast(DOCTOR_RELEASE, FIRST_GUIDES) >= 0 ? DOCTOR_RELEASE : FIRST_GUIDES}`;
 const guide = (path) => `https://github.com/techsilon-oss/govkit/blob/${GUIDE_REF}/${path}`;
 const MODULE_GUIDES = ["trackers", "release-gate", "ci", "pre-push-hook", "doc-sync", "docs-sync-check", "versioning", "supabase-account"];
 const fixLink = (name) => (MODULE_GUIDES.includes(name) ? `        fix: ${guide(`docs/modules/${name}.md#fix-a-finding`)}` : null);
