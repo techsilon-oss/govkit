@@ -26,7 +26,7 @@ Give a current-state read. **Ground truth first, prose second — that order is 
 3. **`npm run release:status`** — the released version, whether it is tagged, and whether `<working-branch>` has unreleased work. An untagged release, or a release branch that moved past its tag without a bump, is drift: report it with the doc drift.
 4. `gh issue list --state open --limit 30` — open work. **If the tracker module is on** (`govkit.json` → `guardrails.tracker.enabled: true`):
    - read the decision register, `gh issue view <guardrails.tracker.issues.register>`: what only an owner can do, and the open decisions;
-   - group the open issues by launch category (`guardrails.tracker.issues.categories`), and count the ones with **none**: that's the "to triage" number, and it should be 0;
+   - group the open issues by launch category (`guardrails.tracker.issues.categories`), and count the ones with **none**: that's the "to triage" number, and it should be 0. The register issue itself isn't planned work: leave it out of the groups and the count;
    - confirm with the user which issue to work on. Never change an issue's priority.
 5. `git log --oneline -10` — what changed recently. **If the docs and git disagree, trust git, then fix the doc.**
 6. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.

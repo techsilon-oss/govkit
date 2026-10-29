@@ -1,6 +1,6 @@
 {
   "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
-  "govkitVersion": "0.11.0",
+  "govkitVersion": "0.11.1",
   "project": {
     "name": "govkit",
     "deployTarget": "none (users install the plugin from GitHub)",
@@ -17,27 +17,27 @@
   "files": {
     "$comment": "Written by /govkit-init and /govkit-init --upgrade, never by hand: for each file govkit owns, the release that wrote it and the sha256 of what it wrote (LF line endings). A file whose hash no longer matches was edited locally, and the upgrade will not replace it without an explicit yes.",
     "scripts/docs-sync-check.mjs": {
-      "version": "0.11.0",
+      "version": "0.11.1",
       "sha256": "974bc695f1cd6f83c701d464d1ccc526743fedb47803adf13887a6017aa8aefd"
     },
     "scripts/govkit-doctor.mjs": {
-      "version": "0.11.0",
+      "version": "0.11.1",
       "sha256": "40bd36660f00664c8bf8b8af086ad70d2824d37aa30f0e6d572623173f79f071"
     },
     ".githooks/pre-push": {
-      "version": "0.11.0",
+      "version": "0.11.1",
       "sha256": "cff9f96c7973b453b68557f8591a7524a9ef6d4ed0c4c43b59eda5999f22cbb6"
     },
     ".githooks/install-hooks.sh": {
-      "version": "0.11.0",
+      "version": "0.11.1",
       "sha256": "805082669618d992e8e6cdb23fac7864a34a78d0239f16cc0ce70a3f6ea62f86"
     },
     "scripts/govkit-docsync.mjs": {
-      "version": "0.11.0",
+      "version": "0.11.1",
       "sha256": "2d200d4b8a8ce0a4750ce68141c384a6c5023f94ae083bbcabdad33dda277d0d"
     },
     ".github/workflows/govkit-docsync.yml": {
-      "version": "0.11.0",
+      "version": "0.11.1",
       "sha256": "d7ca88b25121cb55e96ba25ba1ae526efd607b3db20c5a0ae182ae5a46adac8a"
     }
   },
@@ -162,6 +162,24 @@
       ],
       "sessionHook": true,
       "$comment": "sessionHook: the plugin's Claude Code hook reminds a session to update the trackers before it ends, when the working branch gained code and no tracker changed; false turns it off for this repo. watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."
+    },
+
+    "tracker": {
+      "enabled": true,
+      "issues": {
+        "register": 38,
+        "launchEvent": null,
+        "categories": [
+          "now",
+          "next",
+          "later",
+          "triage"
+        ],
+        "areaLabels": [],
+        "labelAliases": {
+          "docs": "documentation"
+        }
+      }
     }
   },
   "branches": {

@@ -1,7 +1,7 @@
 {
   "name": "govkit",
   "description": "Guardrails for any repo — branch flow, a CI-fallback release gate, doc-sync checks and trackers — set up once and kept current. Help: /govkit-help",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "author": {
     "name": "Techsilon LLC",
     "email": "oss@techsilon.com",

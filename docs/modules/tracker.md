@@ -9,7 +9,7 @@ Your user stories, bugs and ideas kept as GitHub issues, run the same way every 
   - **launch category**: exactly one per open issue (see below);
   - **area**: optional, your own;
   - **status and flow**: `in-progress`, `blocked`, `needs-decision`, `fix-shipped`, `business`.
-- **Launch categories, your names:** before launch, `pre-launch` / `post-launch` / `idea` / `triage`; after it, `now` / `next` / `later` / `triage`, or any names you choose (`guardrails.tracker.issues.categories`). An open issue without one counts as **to triage**, and that number should be 0: work with no category is invisible work.
+- **Launch categories, your names:** before launch, `pre-launch` / `post-launch` / `idea` / `triage`; after it, `now` / `next` / `later` / `triage`, or any names you choose (`guardrails.tracker.issues.categories`). An open issue without one counts as **to triage**, and that number should be 0: work with no category is invisible work. The decision register itself is left out: it isn't planned work.
 - **Themed milestones:** outcomes a non-engineer can read ("Launch Readiness", "Search & Discovery"), never "Phase 1". One-off bugs go in "Maintenance & Bugs".
 - **The decision register:** one pinned issue holding everything only an owner can do or decide, in two tables ("Things only an owner can do", "Open decisions") plus a "Decided" history. Agents add `D-###` rows and never invent an owner's answer.
 - **A closing format:** `Completed: <what the user gains>` and optionally `Technical: <notes>`. `/govkit-session close` writes it, and the daily report (0.12.0) quotes the `Completed:` line.
