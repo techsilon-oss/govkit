@@ -56,7 +56,7 @@ The gate's checks live in `release-gate.config.json` — edit them to match this
 When `govkit.json` → `guardrails.tracker.enabled` is `true`, work is tracked in GitHub Issues:
 
 - **Issues and milestones are the source of truth** for what to work on and its status. Docs keep the why. If a doc and the issues disagree, the issues are right; fix the doc.
-- **Every open issue has exactly one launch-category label**, one of `guardrails.tracker.issues.categories`, assigned when it's created. An issue without one counts as "to triage".
+- **Every open issue has exactly one launch-category label**, one of `guardrails.tracker.issues.categories`, assigned when it's created. An issue without one counts as "to triage". Where the repo names a type label differently (`guardrails.tracker.issues.labelAliases`, e.g. `docs` → `documentation`), use the repo's name.
 - **Milestones are themed outcomes** ("Launch Readiness", "Search & Discovery"), never "Phase 1". One-off bugs go in "Maintenance & Bugs".
 - **The decision register** (issue `guardrails.tracker.issues.register`) holds everything only an owner can do or decide. Record an open question there as `D-###` and label its issue `needs-decision`. **Never invent an owner's answer:** write the assumption down, build under it, and say so.
 - **Close an issue with a summary comment:** `Completed: <what the user gains, in plain words>` and, optionally, `Technical: <migrations, tests, deploy notes>`.

@@ -5,7 +5,7 @@ The short version is this module's note in [`module.json`](../../module.json). T
 ## What you get
 Your user stories, bugs and ideas kept as GitHub issues, run the same way every time:
 - **Labels:**
-  - **type**: `bug`, `enhancement`, `idea`, `docs`, `refactor`;
+  - **type**: `bug`, `enhancement`, `idea`, `docs`, `refactor`. If your repo already has one under a GitHub default name (`documentation` for `docs`), that label is used, no duplicate is created, and the mapping is recorded in `guardrails.tracker.issues.labelAliases`, which the rules and the report follow;
   - **launch category**: exactly one per open issue (see below);
   - **area**: optional, your own;
   - **status and flow**: `in-progress`, `blocked`, `needs-decision`, `fix-shipped`, `business`.

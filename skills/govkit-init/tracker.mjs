@@ -7,7 +7,8 @@
  * (labels, the decision register issue, the pin) and makes it with `gh` only after a yes.
  *
  * Usage (from the repo root):
- *   node tracker.mjs labels [--json]          # the labels this repo is missing (reads gh label list)
+ *   node tracker.mjs labels [--json]          # missing labels, and type labels the repo has under a default name
+ *   node tracker.mjs record-aliases           # record those names (labelAliases) in govkit.json
  *   node tracker.mjs pins [--json]            # pinned issues: how many, and whether one is free
  *   node tracker.mjs enable --categories a,b,c,d [--launch-event "…"] [--areas x,y]
  *   node tracker.mjs decline --reason "…"
@@ -55,11 +56,34 @@ export function desiredLabels({ categories = DEFAULT_CATEGORIES, areaLabels = []
   return out;
 }
 
+/**
+ * Type labels that GitHub's default label set names differently. A repo that has the default
+ * name keeps it: no duplicate is created, and the mapping is recorded in govkit.json
+ * (guardrails.tracker.issues.labelAliases) so the rules and the report use the repo's name.
+ * bug and enhancement already match GitHub's defaults.
+ */
+export const TYPE_ALIASES = { docs: ["documentation"] };
+
+/**
+ * What the repo lacks, and which tracker labels it already has under another name.
+ * Names compare case-insensitively; an alias keeps the repo's exact spelling. A tracker label
+ * present under its own name wins over an alias.
+ */
+export function resolveLabels(desired, existingNames) {
+  const byLower = new Map(existingNames.map((n) => [n.toLowerCase(), n]));
+  const missing = [];
+  const aliases = {};
+  for (const l of desired) {
+    if (byLower.has(l.name.toLowerCase())) continue;
+    const alias = (TYPE_ALIASES[l.name] ?? []).map((a) => byLower.get(a.toLowerCase())).find(Boolean);
+    if (alias) aliases[l.name] = alias;
+    else missing.push(l);
+  }
+  return { missing, aliases };
+}
+
 /** Only the labels the repo lacks. Existing labels are never touched, whatever their color. */
-export const missingLabels = (desired, existingNames) => {
-  const have = new Set(existingNames.map((n) => n.toLowerCase()));
-  return desired.filter((l) => !have.has(l.name.toLowerCase()));
-};
+export const missingLabels = (desired, existingNames) => resolveLabels(desired, existingNames).missing;
 
 export const pinCapacity = (pinned) => ({ pinned, limit: PIN_LIMIT, free: Math.max(0, PIN_LIMIT - pinned) });
 
@@ -128,6 +152,16 @@ export function decline(root, reason) {
   return updateTracker(root, (t) => ({ ...t, enabled: false, skippedReason: String(reason).trim() }));
 }
 
+/** Record the type labels this repo has under another name (resolveLabels' `aliases`). */
+export function recordAliases(root, aliases) {
+  return updateTracker(root, (t) => {
+    const issues = { ...(t.issues ?? {}) };
+    if (Object.keys(aliases).length) issues.labelAliases = aliases;
+    else delete issues.labelAliases;
+    return { ...t, issues };
+  });
+}
+
 export function recordRegister(root, value) {
   const n = Number(value);
   if (!/^\d+$/.test(String(value)) || !Number.isInteger(n) || n < 1) throw new Error(`"${value}" is not an issue number`);
@@ -157,15 +191,22 @@ if (process.argv[1] && resolve(process.argv[1]) === SELF) {
   const json = rest.includes("--json");
   const root = process.cwd();
   try {
-    if (cmd === "labels") {
+    if (cmd === "labels" || cmd === "record-aliases") {
       const t = JSON.parse(readText(join(root, "govkit.json"))).guardrails?.tracker ?? {};
       const existing = JSON.parse(gh(["label", "list", "--limit", "1000", "--json", "name"])).map((l) => l.name);
-      const missing = missingLabels(desiredLabels(t.issues ?? {}), existing);
-      if (json) console.log(JSON.stringify(missing, null, 2));
-      else if (!missing.length) console.log("Every tracker label already exists. Nothing to create.");
+      const { missing, aliases } = resolveLabels(desiredLabels(t.issues ?? {}), existing);
+      if (cmd === "record-aliases") {
+        const r = recordAliases(root, aliases);
+        const pairs = Object.entries(aliases).map(([a, b]) => `${a} → ${b}`).join(", ");
+        console.log(`tracker: label aliases ${pairs || "(none)"}${r.reformatted ? " (govkit.json was reformatted)" : ""}`);
+      } else if (json) console.log(JSON.stringify({ missing, aliases }, null, 2));
       else {
-        console.log(`Missing labels (${missing.length}); existing labels are left as they are:`);
-        for (const l of missing) console.log(`  ${l.name.padEnd(16)} #${l.color}  ${l.description}`);
+        for (const [a, b] of Object.entries(aliases)) console.log(`Uses the repo's "${b}" for "${a}" (a GitHub default name): no duplicate is created.`);
+        if (!missing.length) console.log("Every tracker label already exists. Nothing to create.");
+        else {
+          console.log(`Missing labels (${missing.length}); existing labels are left as they are:`);
+          for (const l of missing) console.log(`  ${l.name.padEnd(16)} #${l.color}  ${l.description}`);
+        }
       }
     } else if (cmd === "pins") {
       const c = pinCapacity(pinnedCount());
@@ -181,7 +222,7 @@ if (process.argv[1] && resolve(process.argv[1]) === SELF) {
       const r = recordRegister(root, rest[0]);
       console.log(`tracker: decision register is #${r.tracker.issues.register}${r.reformatted ? " (govkit.json was reformatted)" : ""}`);
     } else {
-      console.error("usage: tracker.mjs labels [--json] | pins [--json] | enable --categories a,b,c,d [--launch-event …] [--areas x,y] | decline --reason … | record-register <n>");
+      console.error("usage: tracker.mjs labels [--json] | record-aliases | pins [--json] | enable --categories a,b,c,d [--launch-event …] [--areas x,y] | decline --reason … | record-register <n>");
       process.exit(2);
     }
   } catch (e) {

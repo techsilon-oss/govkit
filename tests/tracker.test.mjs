@@ -15,7 +15,10 @@ import {
   enable,
   missingLabels,
   pinCapacity,
+  recordAliases,
   recordRegister,
+  resolveLabels,
+  TYPE_ALIASES,
   withTracker,
 } from "../skills/govkit-init/tracker.mjs";
 import { GOVKIT, fill, git, tempDirs } from "./fixtures.mjs";
@@ -50,6 +53,31 @@ test("only missing labels are listed; existing ones are never touched, whatever 
   assert.ok(!missing.includes("bug") && !missing.includes("enhancement") && !missing.includes("triage"));
   assert.ok(missing.includes("pre-launch"));
   assert.ok(!missing.includes("something-else"));
+});
+
+test("a type label under a GitHub default name counts as present, and is recorded as an alias", () => {
+  // GitHub's default label set, as a new repo gets it.
+  const defaults = ["bug", "documentation", "duplicate", "enhancement", "good first issue", "help wanted", "invalid", "question", "wontfix"];
+  const { missing, aliases } = resolveLabels(desiredLabels(), defaults);
+  assert.ok(!names(missing).includes("docs"), "no duplicate docs label");
+  assert.deepEqual(aliases, { docs: "documentation" });
+  // The repo's exact spelling is kept.
+  assert.deepEqual(resolveLabels(desiredLabels(), ["Documentation"]).aliases, { docs: "Documentation" });
+  // A repo that already has "docs" uses it: no alias, even if it also has "documentation".
+  assert.deepEqual(resolveLabels(desiredLabels(), ["docs", "documentation"]).aliases, {});
+  // Without either, docs is created.
+  assert.ok(names(resolveLabels(desiredLabels(), []).missing).includes("docs"));
+  assert.ok(Object.values(TYPE_ALIASES).every(Array.isArray));
+});
+
+test("record-aliases writes the mapping into govkit.json in place, and clears it when empty", () => {
+  const root = repo();
+  enable(root, {});
+  recordAliases(root, { docs: "documentation" });
+  assert.deepEqual(manifest(root).guardrails.tracker.issues.labelAliases, { docs: "documentation" });
+  assert.equal(manifest(root).guardrails.tracker.issues.categories.length, 4, "the rest of the entry kept");
+  recordAliases(root, {});
+  assert.equal(manifest(root).guardrails.tracker.issues.labelAliases, undefined);
 });
 
 test("GitHub's three pinned issues: free slots, and none once full", () => {
@@ -188,7 +216,7 @@ test("only the read-only tracker commands are pre-approved; GitHub writes and go
   const allowed = /^allowed-tools:(.*)$/m.exec(readFileSync(join(GOVKIT, "skills/govkit-init/SKILL.md"), "utf-8"))[1];
   assert.match(allowed, /tracker\.mjs" labels\*/);
   assert.match(allowed, /tracker\.mjs" pins\*/);
-  for (const write of ["record-register", "enable", "decline", "gh label", "gh issue", "gh api"]) {
+  for (const write of ["record-register", "record-aliases", "enable", "decline", "gh label", "gh issue", "gh api"]) {
     assert.ok(!allowed.includes(write), `pre-approved: ${write}`);
   }
 });

@@ -8,7 +8,7 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 ### Added
 - **The tracker module** (#14, part 1): work tracked in GitHub Issues, **opt-in**. `/govkit-init tracker` (or the question in `/govkit-init`) shows its note and, on yes, sets up:
-  - the labels you're missing (existing ones are never touched);
+  - the labels you're missing (existing ones are never touched). A type label your repo already has under a GitHub default name (`documentation` for `docs`) is used instead of creating a duplicate, and the mapping is recorded in `guardrails.tracker.issues.labelAliases` for the rules and the report;
   - **launch categories with your names** (`guardrails.tracker.issues.categories`): `pre-launch`/`post-launch`/`idea`/`triage` by default, `now`/`next`/`later`/`triage` suggested once the product has launched;
   - one pinned **decision register** issue, whose number is recorded in `govkit.json`;
   - optional issue forms.

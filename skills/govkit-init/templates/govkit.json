@@ -107,7 +107,7 @@
         "categories": ["pre-launch", "post-launch", "idea", "triage"],
         "areaLabels": []
       },
-      "$comment": "enabled: null means not decided yet: the doctor shows a notice, never a failure. /govkit-init (or /govkit-init tracker) asks, and records true, or false with a skippedReason. categories are the launch-category label names (exactly one per open issue); a launched product might use now/next/later/triage. register is the decision register's issue number, written by tracker.mjs record-register."
+      "$comment": "enabled: null means not decided yet: the doctor shows a notice, never a failure. /govkit-init (or /govkit-init tracker) asks, and records true, or false with a skippedReason. categories are the launch-category label names (exactly one per open issue); a launched product might use now/next/later/triage. register is the decision register's issue number, written by tracker.mjs record-register. labelAliases (written by tracker.mjs record-aliases) maps a tracker type label to the name the repo already uses for it, e.g. {\"docs\": \"documentation\"}."
     }
   },
 
