@@ -79,17 +79,62 @@ const DATE_PATTERNS = [
   /last_updated:\s*"?(\d{4}-\d{2}-\d{2})/i,
 ];
 
-const git = (args, fallback = "", timeout) => {
+const git = (args, fallback = "") => {
   try {
     return execFileSync("git", args, {
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "ignore"],
-      timeout,
     }).trim();
   } catch {
     return fallback;
   }
 };
+
+const LS_REMOTE_TIMEOUT_MS = 8000;
+
+/**
+ * What origin holds right now (one ls-remote, no fetch): `{ heads: Map<name, sha> }`, or
+ * `{ error }` saying why not. It is git's only network call here, so it gets the session hook's
+ * 8 s bound: a hung remote must not hang the session's first command. Unlike `git()`, it keeps
+ * the reason: "timed out" and "refused" send someone to different fixes, so one must not be
+ * reported as the other.
+ */
+function lsRemoteHeads() {
+  try {
+    const out = execFileSync("git", ["ls-remote", "--heads", "origin"], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: LS_REMOTE_TIMEOUT_MS,
+      // Fail instead of waiting on a credential prompt nobody will answer.
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+    });
+    return {
+      heads: new Map(
+        out
+          .split("\n")
+          .map((l) => l.split(/\s+refs\/heads\//))
+          .filter(([sha, name]) => sha && name)
+          .map(([sha, name]) => [name, sha]),
+      ),
+    };
+  } catch (e) {
+    if (e.code === "ETIMEDOUT" || e.signal === "SIGTERM") {
+      return { error: `timed out after ${LS_REMOTE_TIMEOUT_MS / 1000} s` };
+    }
+    // Over ssh, git follows the specific cause ("ERROR: Repository not found.", "ssh: Could not
+    // resolve hostname …") with boilerplate that is the same for every failure. Skip it.
+    const boilerplate =
+      /could not read from remote repository|^please make sure you have|^and the repository exists/i;
+    const lines = String(e.stderr ?? "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const reason = lines.find((l) => !boilerplate.test(l)) ?? lines[0] ?? e.message;
+    // Shorten from the middle: a long URL or path sits in the middle, the cause at the end.
+    const r = reason.replace(/^(fatal|error):\s*/i, "");
+    return { error: `failed: ${r.length > 100 ? `${r.slice(0, 40)}…${r.slice(-59)}` : r}` };
+  }
+}
 
 const gh = (args) => {
   try {
@@ -132,18 +177,9 @@ function groundTruth() {
   ]);
   facts.push([`${RELEASE} exists locally`, localRelease ? "yes" : "NO"]);
 
-  // What origin holds right now (one ls-remote, no fetch), keyed by branch name. It is git's only
-  // network call here, so it gets the session hook's 8 s bound: a hung remote must not hang the
-  // session's first command.
   const hasOrigin = git(["remote", "get-url", "origin"]) !== "";
-  const lsRemote = hasOrigin ? git(["ls-remote", "--heads", "origin"], null, 8000) : "";
-  const remoteHeads = new Map(
-    (lsRemote ?? "")
-      .split("\n")
-      .map((l) => l.split(/\s+refs\/heads\//))
-      .filter(([sha, name]) => sha && name)
-      .map(([sha, name]) => [name, sha]),
-  );
+  const remote = hasOrigin ? lsRemoteHeads() : { heads: new Map() };
+  const remoteHeads = remote.heads ?? new Map();
 
   // Compare against origin's release branch, not the local one. A local release branch is only
   // as current as its last pull, and is often far behind: one consumer read "89 ahead, 17 behind"
@@ -179,8 +215,8 @@ function groundTruth() {
     dirty ? `${dirty.split("\n").length} file(s) uncommitted` : "clean",
   ]);
 
-  if (lsRemote === null) {
-    facts.push(["remote branches", "unknown (origin did not answer within 8 s)"]);
+  if (remote.error) {
+    facts.push(["remote branches", `unknown (git ls-remote ${remote.error})`]);
   } else if (remoteHeads.size) {
     facts.push(["remote branches", [...remoteHeads.keys()].join(", ")]);
   }

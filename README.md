@@ -180,7 +180,7 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
   cp ~/.claude/plugins/cache/govkit-marketplace/govkit/0.5.1/skills/govkit-init/templates/scripts/docs-sync-check.mjs scripts/
   ```
   (With `CLAUDE_CONFIG_DIR` set, the cache is under that directory instead of `~/.claude`.) If you edited your copy, diff before overwriting. Then run `node scripts/docs-sync-check.mjs`: the branch row should read `<branch> vs origin/main`.
-- **0.5.2** — the Supabase wrapper again stops with a plain message when `supabase/projects.json` still holds the scaffolded placeholders (the shell-injection fix in #7 dropped that guard, so an unedited scaffold reported a wrong account). `docs-sync-check` gives up on `git ls-remote` after 8 s instead of hanging on an unreachable remote.
+- **0.5.2** — the Supabase wrapper again stops with a plain message when `supabase/projects.json` still holds the scaffolded placeholders (the shell-injection fix in #7 dropped that guard, so an unedited scaffold reported a wrong account). `docs-sync-check` gives up on `git ls-remote` after 8 s instead of hanging on an unreachable remote, and when it can't read origin it says why (timed out, or the error git gave).
   **Repos that already ran `/govkit-init` need these copied by hand** (#19 tracks a real upgrade). Changed files: `scripts/supabase.mjs` (only if your repo has it) and `scripts/docs-sync-check.mjs`. After updating the plugin:
   ```bash
   C=~/.claude/plugins/cache/govkit-marketplace/govkit/0.5.2/skills/govkit-init/templates/scripts
