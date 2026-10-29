@@ -174,6 +174,7 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 - **0.3.0** — `supabase-account`: Supabase CLI commands bound to the repo's own account, so a machine with several accounts can't run a migration against the wrong company's database.
 - **0.4.0** — `versioning`: one version per release, a `v<version>` tag on the release branch for each, and `release:status` to report drift. The UI's build identifier should be the commit SHA, never a commit count: hosts that build from a shallow clone count only what the clone holds.
 - **0.5.0** — the session hook: tracker freshness at session start, and a once-per-change session-close reminder when the working branch moved and no tracker did. `docs-sync-check` lists the commits and merged PRs since the oldest stale date. Re-vendor `scripts/docs-sync-check.mjs` to get the list.
+- **0.5.1** — `docs-sync-check` measures the branch against `origin/<release>` instead of the local release branch, which is only as current as its last pull, and says when local `main` or the tracking ref has fallen behind. Re-vendor `scripts/docs-sync-check.mjs`.
 - **Planned** — doc frontmatter convention and stamping; a lessons log; first-class non-Node scaffolding (`make`/`just` instead of npm scripts).
 
 ### Note on 0.2.0
