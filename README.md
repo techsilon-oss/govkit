@@ -102,6 +102,19 @@ It is **non-destructive**:
 
 It prints a created/appended/merged/skipped summary, and **re-running is safe** (idempotent — it detects the markers/keys and skips). Review the summary, then `npm i -D tsx` and edit `release-gate.config.json`.
 
+## Upgrading
+
+A plugin update reaches the skills and the session hook straight away. It does **not** reach the files `/govkit-init` copied into each repo (the scripts, the hooks, the doc-sync workflow), and re-running init skips files that exist. To bring those up to date, from the project root, on a clean working tree:
+
+```bash
+# in Claude Code, after updating the plugin:
+/govkit-init --upgrade
+```
+
+It hashes each owned file against every govkit release and reports it as **current**, **outdated** (identical to an older release; safe to replace) or **edited** (matches no release). For each one it shows the diff and replaces it only on your yes, defaulting to no for edited files and the `CLAUDE.md` govkit block. When you decline, it saves that diff to `.git/govkit/upgrade-<name>.diff` so you can take only the lines you want. Then review `git diff` and commit the upgrade as one change.
+
+`/govkit-doctor` reports outdated files too. Both run from the plugin, so they know about releases newer than the repo's own scripts. Works on repos initialised by any release from 0.2.0 on, with no manual steps first. A 0.1.0 repo has no `govkit.json`: run `/govkit-init` first.
+
 ## What it scaffolds
 
 **All guardrails are installed by default.** Excluding one takes `--skip <name>` and a recorded reason, so a gap is always a decision you can point at — never an oversight.
@@ -188,6 +201,7 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
   [ -f scripts/supabase.mjs ] && cp $C/supabase.mjs scripts/
   ```
   (With `CLAUDE_CONFIG_DIR` set, the cache is under that directory instead of `~/.claude`.) If you edited your copies, diff before overwriting.
+- **0.6.0** — **`/govkit-init --upgrade`** (see [Upgrading](#upgrading)): files govkit owns are hashed against every release, reported current / outdated / edited, and replaced one at a time on an explicit yes, on a clean tree only. `govkit.json` gains `files` (version and hash of what govkit wrote) and `project` (the values rendered into `CLAUDE.md`). `/govkit-doctor` reports outdated files. **No more copying by hand:** this is also how 0.5.1's and 0.5.2's fixes reach repos that ran init before them. No owned file changed in this release.
 - **Planned** — doc frontmatter convention and stamping; a lessons log; first-class non-Node scaffolding (`make`/`just` instead of npm scripts).
 
 ### Note on 0.2.0
@@ -195,6 +209,13 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 0.1.0 deferred the hooks and doc-sync to a "full tier" that did not exist. The effect was that projects adopting govkit as their **only** source of guardrails ended up less protected than projects that ignored it — the opposite of the intent.
 
 That is why guardrails are now **on by default**, why skipping one requires a recorded reason, and why `/govkit-doctor` exists. **Upgrading from 0.1.0:** re-run `/govkit-init` in an existing project — it is non-destructive and installs only what is absent — then `node scripts/govkit-doctor.mjs` to confirm.
+
+## Releasing govkit itself
+
+1. Bump `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
+2. `node tools/build-template-history.mjs`, which adds this release's template hashes, so `--upgrade` can recognise files it wrote.
+3. `node --test "tests/*.test.mjs"` (step 2 is enforced here: a test fails if the index lacks the current version).
+4. Commit both as the PR's last commit. After the merge, tag `v<version>` on the merge commit.
 
 ## License
 

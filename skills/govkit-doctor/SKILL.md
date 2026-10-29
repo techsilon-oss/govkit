@@ -2,7 +2,7 @@
 name: govkit-doctor
 description: Report which govkit guardrails a project actually has, versus which it declares. Also `/govkit-doctor config` to show the current guardrail configuration. Use when adopting govkit into an existing repo, after upgrading govkit, or when a repo "has the standard" but keeps drifting.
 argument-hint: "[config] [--ci]"
-allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(git config *) Bash(gh repo view *) Read Glob
+allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(node *upgrade.mjs check*) Bash(git config *) Bash(gh repo view *) Read Glob
 ---
 
 # `/govkit-doctor` — is this project actually conformant?
@@ -36,6 +36,16 @@ node scripts/govkit-doctor.mjs config   # show the current configuration
 **A guardrail is never silently absent.** It is either a decision or a finding. That distinction is the entire point: an unexplained gap is indistinguishable from an oversight, and gets treated as one.
 
 It also flags **strays** — guardrails present on disk but absent from the manifest. Those are usually hand-installed copies that `govkit-init` will not maintain, which is how a fork starts.
+
+## Are the installed files current?
+
+Present is not current. A plugin update never reaches the files init copied into the repo, so a repo can show every guardrail ✅ while running scripts several fixes behind. After the script above, also run the plugin's checker — it ships with the plugin, so it knows releases the repo's own copy of the doctor does not:
+
+```bash
+node "<this skill's base directory>/../govkit-init/upgrade.mjs" check
+```
+
+Report each owned file that is **outdated** (with the releases it matches) or **edited** (matches no release), and a `govkitVersion` the files contradict. Then point at **`/govkit-init --upgrade`**. This is read-only; never apply from the doctor.
 
 ## When no manifest exists
 
@@ -81,13 +91,15 @@ git push --dry-run origin "$NEW:refs/heads/main"    # expect: blocked
 >
 > **Do not check out a branch based on the release branch to test it either.** If that branch predates the hook, checking it out removes `.githooks/` from the working tree and the hook is genuinely gone. Both of these produced convincing false readings in practice.
 
-## Vendored versions, not file hashes
+## Versions for the vendored gate, hashes for govkit's own files
 
-`release-gate` is vendored from `techsilon-oss/release-gate-kit`, and the manifest records the upstream **version**. The doctor compares that version, deliberately **not** the file bytes.
+`release-gate` is vendored from `techsilon-oss/release-gate-kit`, and the manifest records the upstream **version**. It is compared by that version, not by bytes: govkit does not own the file, and its release history lives in another repo.
 
-Every project runs its own formatter. A byte comparison reports drift on every repo that uses Prettier, gets ignored within a week, and then reports nothing useful when the file genuinely diverges.
+The files govkit **does** own are compared by hash, against every release govkit has shipped. A version number cannot do that job: it says what a file *should* be, not what it *is*, and a hand-copied fix or a local edit leaves the number unchanged.
+
+The cost is formatters. A Prettier rewrite matches no release, so the file reads as **edited** — which is the honest answer, since it is not govkit's bytes any more, but it makes every upgrade default to "no". Line endings and pre-push's branch line are normalised before hashing, so neither counts. For the rest, `/govkit-init --upgrade` offers to add the owned files to `.prettierignore`.
 
 ## Related
 
-- [`/govkit-init`](../govkit-init/SKILL.md) — installs guardrails; `--skip <name>` records an opt-out
+- [`/govkit-init`](../govkit-init/SKILL.md) — installs guardrails; `--skip <name>` records an opt-out; `--upgrade` updates the files govkit owns
 - [`/sdlc`](../sdlc/SKILL.md) — `status` runs the ground-truth check before reporting
