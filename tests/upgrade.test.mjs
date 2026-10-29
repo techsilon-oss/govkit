@@ -201,9 +201,11 @@ test("save-diff writes nothing when the file already matches", () => {
 
 test("the CLAUDE.md block renders from values read back from an old block", () => {
   const { root } = makeRepo("v0.5.0"); // 0.5.0's govkit.json has no `project`
-  // Since 0.8.0 the block differs only by the skill rename: the project name, working branch and
-  // deploy target read back from the old block render identically, so they are not in the diff.
-  assert.equal(check(root).claudeBlock.status, "differs");
+  // Unedited, it matches 0.5.0's block rendered with the values read back from it: outdated,
+  // not edited. The diff to 0.8.0 is the skill rename only; the rendered values are not in it.
+  const block = check(root).claudeBlock;
+  assert.equal(block.status, "outdated");
+  assert.ok(block.versions.includes("0.5.0"));
   const changed = diff("CLAUDE.md", root).split("\n").filter((l) => /^[-+][^-+]/.test(l));
   assert.ok(changed.length > 0);
   for (const l of changed) assert.match(l, /\/sdlc|\/govkit-session/, `unexpected change: ${l}`);

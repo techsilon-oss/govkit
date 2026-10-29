@@ -118,7 +118,7 @@ A plugin update reaches the skills and the session hook straight away. It does *
 /govkit-init --upgrade
 ```
 
-It hashes each owned file against every govkit release and reports it as **current**, **outdated** (identical to an older release; safe to replace) or **edited** (matches no release). For each one it shows the diff and replaces it only on your yes, defaulting to no for edited files and the `CLAUDE.md` govkit block. When you decline, it saves that diff to `.git/govkit/upgrade-<name>.diff` so you can take only the lines you want. Then review `git diff` and commit the upgrade as one change.
+It hashes each owned file against every govkit release and reports it as **current**, **outdated** (identical to an older release; safe to replace) or **edited** (matches no release). For each one it shows the diff and replaces it only on your yes, defaulting to no for edited files and for a `CLAUDE.md` govkit block you changed (an unedited block from an older release is offered like any outdated file). When you decline, it saves that diff to `.git/govkit/upgrade-<name>.diff` so you can take only the lines you want. Then review `git diff` and commit the upgrade as one change.
 
 A release that renames something also moves the file, and tells you what else changes. **Upgrading to 0.8.0 renames `/sdlc` and `/sdlc-docs`: follow [docs/UPGRADING.md](docs/UPGRADING.md).**
 

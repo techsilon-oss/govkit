@@ -294,6 +294,37 @@ test("oldNames.ignore suppresses a path, or a single line", () => {
   assert.doesNotMatch(out, /Old names/);
 });
 
+// ------------------------------------------------------------------ the CLAUDE.md block
+
+test("an unedited block scaffolded from 0.5.0's template is outdated, and upgrades to the new names", () => {
+  const { root } = makeRepo("v0.5.0");
+  const r = check(root);
+  assert.equal(r.claudeBlock.status, "outdated");
+  assert.ok(r.claudeBlock.versions.includes("0.5.0"), r.claudeBlock.matches);
+  apply(["CLAUDE.md"], root);
+  const after = read(root, "CLAUDE.md");
+  assert.doesNotMatch(after, /\/sdlc\b/);
+  assert.match(after, /\/govkit-session status/);
+  assert.match(after, /^# Acme\n\nOur own notes\./, "text outside the block untouched");
+  assert.match(after, /^# Acme — Engineering Guardrails$/m, "the repo's values rendered back in");
+  assert.equal(check(root).claudeBlock.status, "same");
+});
+
+test("a 0.5.0 block with a local edit matches no release: it stays edited, never offered as outdated", () => {
+  const { root } = makeRepo("v0.5.0");
+  writeFileSync(join(root, "CLAUDE.md"), read(root, "CLAUDE.md").replace("all new code lands here first", "new code lands here"));
+  commit(root);
+  assert.equal(check(root).claudeBlock.status, "differs");
+});
+
+test("the history index holds every release's block template, the current one included", () => {
+  const hist = JSON.parse(readFileSync(join(GOVKIT, "skills/govkit-init/template-history.json"), "utf-8"));
+  const current = readFileSync(join(TEMPLATES, "CLAUDE.md"), "utf-8").replace(/\r\n/g, "\n");
+  const blocks = hist["CLAUDE.md#block"];
+  assert.ok(blocks.some((b) => b.template === current && b.versions.includes(hist.$releases.at(-1))));
+  assert.ok(blocks.some((b) => b.versions.includes("0.5.0")));
+});
+
 // ------------------------------------------------------------------ the aliases
 
 test("the /sdlc and /sdlc-docs aliases exist for one version and name their new skill", () => {

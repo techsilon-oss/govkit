@@ -16,7 +16,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { OWNED, TEMPLATES, pluginVersion, sha256 } from "../skills/govkit-init/upgrade.mjs";
+import { BLOCK_HISTORY, OWNED, TEMPLATES, pluginVersion, sha256 } from "../skills/govkit-init/upgrade.mjs";
 
 const UNTAGGED = [
   ["0.1.0", "af967cf"],
@@ -58,6 +58,20 @@ const add = (version, path, text) => {
   else index[path].push({ sha256: hash, versions: [version] });
 };
 
+/**
+ * The CLAUDE.md block is rendered per repo (project name, working branch, deploy target), so a
+ * hash of the template cannot match a repo's block. The template TEXT of each release is kept
+ * instead, and upgrade.mjs renders each one with the repo's values: a match means unedited.
+ */
+const addBlock = (version, text) => {
+  if (text === null) return;
+  const template = text.replace(/\r\n/g, "\n");
+  index[BLOCK_HISTORY] ??= [];
+  const hit = index[BLOCK_HISTORY].find((h) => h.template === template);
+  if (hit) hit.versions.push(version);
+  else index[BLOCK_HISTORY].push({ template, versions: [version] });
+};
+
 for (const [version, ref] of releases) {
   index.$releases.push(version);
   for (const entry of OWNED) {
@@ -69,12 +83,15 @@ for (const [version, ref] of releases) {
     const oldText = old ? git(["show", `${ref}:skills/govkit-init/templates/${old.template}`]) : null;
     if (oldText !== null) add(version, old.path, oldText);
   }
+  addBlock(version, git(["show", `${ref}:skills/govkit-init/templates/CLAUDE.md`]));
 }
 
 // The working tree is the release being built.
 index.$releases.push(current);
 for (const entry of OWNED) add(current, entry.path, readFileSync(join(TEMPLATES, entry.template), "utf-8"));
+addBlock(current, readFileSync(join(TEMPLATES, "CLAUDE.md"), "utf-8"));
 
 writeFileSync("skills/govkit-init/template-history.json", `${JSON.stringify(index, null, 2)}\n`);
 console.log(`template-history.json: ${index.$releases.length} releases, current ${current}`);
 for (const entry of OWNED) console.log(`  ${entry.path.padEnd(34)} ${index[entry.path]?.length ?? 0} distinct version(s)`);
+console.log(`  ${"CLAUDE.md block".padEnd(34)} ${index[BLOCK_HISTORY]?.length ?? 0} distinct template(s)`);

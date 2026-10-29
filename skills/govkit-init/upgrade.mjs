@@ -106,6 +106,8 @@ const OLD_BOOTSTRAP = ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md", "CLAUD
 const NEW_BOOTSTRAP = ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md"];
 const sameList = (a, b) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
 const BLOCK = /<!-- govkit:start -->[\s\S]*?<!-- govkit:end -->/;
+/** template-history.json key holding each release's CLAUDE.md block template, as text. */
+export const BLOCK_HISTORY = "CLAUDE.md#block";
 const PROTECTED = /^PROTECTED_BRANCHES=.*$/m;
 
 // ------------------------------------------------------------------ hashing
@@ -230,12 +232,30 @@ export function blockValues(block, manifest) {
   };
 }
 
-export function renderBlock(block, manifest) {
-  const values = blockValues(block, manifest);
-  return readFileSync(join(TEMPLATES, "CLAUDE.md"), "utf-8")
+/** A block template (any release's) rendered with this repo's values. */
+const renderTemplate = (template, values) =>
+  template
     .replace(/\r\n/g, "\n")
     .replace(/\{\{(PROJECT_NAME|DEFAULT_BRANCH|DEPLOY_TARGET)\}\}/g, (_, k) => values[k])
     .trim();
+
+export function renderBlock(block, manifest) {
+  return renderTemplate(readFileSync(join(TEMPLATES, "CLAUDE.md"), "utf-8"), blockValues(block, manifest));
+}
+
+/**
+ * Where the repo's block stands. The block is the user's to edit, so it is never replaced without
+ * a yes; but an UNEDITED block from an older release is just old, and must be offered like any
+ * outdated file, or a renamed skill's old name lives on in it. Each release's template is rendered
+ * with this repo's values: a match is unedited.
+ */
+function blockStatus(block, manifest, hist, order) {
+  if (block === null) return { status: "absent" };
+  const have = block.trim();
+  if (have === renderBlock(block, manifest)) return { status: "same" };
+  const values = blockValues(block, manifest);
+  const hit = (hist[BLOCK_HISTORY] ?? []).find((h) => renderTemplate(h.template, values) === have);
+  return hit ? { status: "outdated", versions: hit.versions, matches: range(hit.versions, order) } : { status: "differs" };
 }
 
 // ------------------------------------------------------------------ check
@@ -320,11 +340,9 @@ export function check(root = process.cwd()) {
       ? { status: "n/a" }
       : { status: gateHave && gateHave === gateShip ? "current" : "outdated", have: gateHave ?? null, ship: gateShip };
 
-  // The CLAUDE.md block is edited by design ("Edit freely"), so it is only ever compared.
+  // The CLAUDE.md block: same, outdated (unedited, from an older release), or differs (edited).
   const block = readText(join(root, CLAUDE_MD))?.replace(/\r\n/g, "\n").match(BLOCK)?.[0] ?? null;
-  const claudeBlock = block === null
-    ? { status: "absent" }
-    : { status: block.trim() === renderBlock(block, manifest) ? "same" : "differs" };
+  const claudeBlock = blockStatus(block, manifest, hist, order);
 
   // The version every unedited owned file agrees on. Empty when files came from different
   // releases (hand-copied fixes), which is itself worth saying.
@@ -803,8 +821,11 @@ function printReport(r) {
   if (r.releaseGate.status === "outdated") {
     console.log(`  ⬆️  ${RELEASE_GATE.padEnd(34)} vendored ${r.releaseGate.have ?? "?"}, plugin ships ${r.releaseGate.ship}`);
   }
+  if (r.claudeBlock.status === "outdated") {
+    console.log(`  ⬆️  ${"CLAUDE.md (govkit block)".padEnd(34)} outdated — matches ${r.claudeBlock.matches} (unedited)`);
+  }
   if (r.claudeBlock.status === "differs") {
-    console.log(`  ✏️  ${"CLAUDE.md (govkit block)".padEnd(34)} differs from the template (edited by design; diff only)`);
+    console.log(`  ✏️  ${"CLAUDE.md (govkit block)".padEnd(34)} edited locally (matches no release; diff, default no)`);
   }
   if (r.packageJson?.status === "migrate") {
     console.log(`
@@ -836,6 +857,7 @@ function printReport(r) {
     );
   }
   const outdated = r.files.filter((f) => f.status === "outdated" || f.status === "rename").map((f) => f.path);
+  if (r.claudeBlock.status === "outdated") outdated.push(CLAUDE_MD);
   if (outdated.length) console.log(`\n  Upgrade: /govkit-init --upgrade  (or: upgrade.mjs apply ${outdated.join(" ")})`);
   console.log("");
 }

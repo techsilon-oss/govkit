@@ -18,6 +18,7 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 - **`package.json`, the one file govkit edits that it does not own:** only scripts whose value runs `scripts/sdlc-docs.mjs` change, shown as a diff, line by line (the file's layout survives), on a clean tree. A file that can't be edited that way stops the upgrade instead of being reformatted.
 - **The doctor lists old names** (`/sdlc`, `/sdlc-docs`, `sdlc-docs:*`, `scripts/sdlc-docs.mjs`, `sdlc-docs.yml`) in `CLAUDE.md`, `docs/`, `.github/` and git hooks, with file and line. A repo with its own `.claude/skills/sdlc/` isn't told about `/sdlc`. `govkit.json` `oldNames.ignore` keeps a reference on purpose. Warnings only, until 0.9.0.
 - `--upgrade` offers the new `bootstrapDocs` when a repo still has exactly the old default; a list the user changed is left alone.
+- **An unedited `CLAUDE.md` govkit block is recognised as outdated:** each release's block template is rendered with the repo's values and compared, so a block nobody touched is offered the new one (default yes) instead of keeping `/sdlc` after 0.9.0 removes it. Only a block matching no release counts as edited (default no).
 
 ### Fixed
 - Scaffolded trackers declare a date: `last checked <scaffold date>` in `PROJECT-HUB.md` and `PRIORITY-ROADMAP.md`, so `docs-sync-check --ci` passes on day one. `CLAUDE.md` leaves the default `bootstrapDocs` (it holds rules, not status). (#26)

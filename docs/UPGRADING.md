@@ -28,7 +28,7 @@ Most releases need only `/govkit-init --upgrade` (see the README's [Upgrading](.
    - If your repo has **its own** `/sdlc` or `/sdlc-docs` skill (`.claude/skills/sdlc/`), mentions of that name are yours and are not listed.
    - To keep a reference on purpose, add it to `govkit.json`: `"oldNames": { "ignore": ["docs/history/**", "CLAUDE.md:42"] }`.
 5. **Add a `last checked YYYY-MM-DD` line** near the top of `docs/PROJECT-HUB.md` and `docs/PRIORITY-ROADMAP.md`, if they don't have one. The trackers are yours, so the upgrade doesn't touch them. New repos get the line from init. Without it, `docs-sync-check` reports "declares no date".
-6. **The `CLAUDE.md` govkit block** now says `/govkit-session`. The upgrade shows the diff and defaults to no, because the block is yours to edit; take the new lines, or change `/sdlc` by hand.
+6. **The `CLAUDE.md` govkit block** now says `/govkit-session`. If you never edited your block, it matches an older release's and the upgrade offers the new one, default yes. If you edited it, it shows the diff and defaults to no, because the block is yours: take the new lines (the diff is saved), or change `/sdlc` by hand.
 7. Review `git diff` and commit: `chore(govkit): upgrade to 0.8.0`.
 
 ### What 0.9.0 will do
