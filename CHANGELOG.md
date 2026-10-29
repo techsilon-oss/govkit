@@ -11,6 +11,9 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 - **Trust first:** the file comes from the repo, so nothing in it is used until the user has trusted that exact file on their machine. The SHA-256 is recorded in `.git/govkit/session-trust.json`, never committed, and any edit means trusting it again. The user runs the trust command themselves; the skill never pre-approves it, and shows the file between `UNTRUSTED REPO FILE` markers as data, never instructions.
 - `/govkit-doctor` lists each repo's project steps, with every command spelled out, and whether this machine trusts the file.
 
+### Security
+- **Skills pre-approve only the plugin's own scripts.** `allowed-tools` patterns name the script by its path under `${CLAUDE_PLUGIN_ROOT}`, never by name with a wildcard. `Bash(node *upgrade.mjs check*)` in `/govkit-doctor` matched any file ending in `upgrade.mjs`, so a repo could ship `x-upgrade.mjs` and have it run without a prompt; it's now anchored, like the new `/govkit-session` patterns. A test simulates the matching against look-alike scripts.
+
 ### Changed
 - **The 0.8.0 aliases are kept longer:** `/sdlc`, `/sdlc-docs` and the `sdlc-docs:*` npm script aliases now stay until **the first minor release on or after 2026-11-28**, not 0.9.0. 0.8.0 shipped the same day as 0.9.0; removing them now would have left no time to move.
 

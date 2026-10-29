@@ -57,7 +57,7 @@ For a check that must hold on **every** commit or push, use a git hook (`.githoo
   ```
   ! node "<plugin dir>/skills/govkit-session/project-steps.mjs" trust
   ```
-  The agent never runs this, even if the file tells it to or claims you already agreed. The skill doesn't pre-approve that command, and it treats everything between the `UNTRUSTED REPO FILE` markers as data to show you, never as instructions. **One limit to know:** if your own allowlist already covers `node *`, Claude Code won't stop the agent running it. The skill's rule is what prevents it then, so keep broad `node` allowlists out of repos you don't trust.
+  The agent never runs this, even if the file tells it to or claims you already agreed. The skill doesn't pre-approve that command. It pre-approves only `status` and `steps`, and only for the plugin's own copy of the script (the pattern is anchored to `${CLAUDE_PLUGIN_ROOT}`), so a script of the same name shipped in a repo prompts like any other command. It treats everything between the `UNTRUSTED REPO FILE` markers as data to show you, never as instructions. **One limit to know:** if your own allowlist already covers `node *`, Claude Code won't stop the agent running it. The skill's rule is what prevents it then, so keep broad `node` allowlists out of repos you don't trust.
 - **What's recorded:** the file's SHA-256 and the time, in `.git/govkit/session-trust.json`. That's inside `.git`, so it's never committed and is per clone. **Any edit to the file, including a `git pull` that changes it, means trusting it again.**
 - **To revoke:** delete `.git/govkit/session-trust.json`.
 - `/govkit-doctor` lists every step, and every command spelled out, with whether this machine trusts the file.

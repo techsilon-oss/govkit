@@ -2,7 +2,7 @@
 name: govkit-doctor
 description: Report which govkit guardrails a project actually has, versus which it declares. Also `/govkit-doctor config` to show the current guardrail configuration. Use when adopting govkit into an existing repo, after upgrading govkit, or when a repo "has the standard" but keeps drifting.
 argument-hint: "[config] [--ci]"
-allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(node *upgrade.mjs check*) Bash(git config *) Bash(gh repo view *) Read Glob
+allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check*) Bash(git config *) Bash(gh repo view *) Read Glob
 ---
 
 # `/govkit-doctor` — is this project actually conformant?
@@ -42,7 +42,7 @@ It also flags **strays** — guardrails present on disk but absent from the mani
 Present is not current. A plugin update never reaches the files init copied into the repo, so a repo can show every guardrail ✅ while running scripts several fixes behind. After the script above, also run the plugin's checker — it ships with the plugin, so it knows releases the repo's own copy of the doctor does not:
 
 ```bash
-node "<this skill's base directory>/../govkit-init/upgrade.mjs" check
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check
 ```
 
 Report each owned file that is **outdated** (with the releases it matches), **edited** (matches no release) or **rename pending**, and a `govkitVersion` the files contradict. Then point at **`/govkit-init --upgrade`**. This is read-only; never apply from the doctor.

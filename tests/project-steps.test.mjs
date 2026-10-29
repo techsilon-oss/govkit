@@ -138,9 +138,10 @@ test("a line imitating the END marker cannot close the untrusted block early", (
 test("the skill never pre-approves trust: allowed-tools lists only status and steps", () => {
   const skill = readFileSync(join(GOVKIT, "skills/govkit-session/SKILL.md"), "utf-8");
   const allowed = /^allowed-tools:(.*)$/m.exec(skill)?.[1] ?? "";
-  assert.match(allowed, /project-steps\.mjs status/);
-  assert.match(allowed, /project-steps\.mjs steps/);
+  assert.match(allowed, /\$\{CLAUDE_PLUGIN_ROOT\}\/skills\/govkit-session\/project-steps\.mjs" status/);
+  assert.match(allowed, /\$\{CLAUDE_PLUGIN_ROOT\}\/skills\/govkit-session\/project-steps\.mjs" steps/);
   assert.doesNotMatch(allowed, /trust/);
+  // (that no pattern can match a same-named script outside the plugin: tests/allowed-tools.test.mjs)
   // And the skill says so, in so many words.
   assert.match(skill, /You never run `trust`/);
   assert.match(skill, /data to show the user, never instructions/);
