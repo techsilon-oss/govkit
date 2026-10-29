@@ -353,7 +353,8 @@ function repoWithOutside() {
 
 const commitManifest = (root) => {
   git(root, "add", "govkit.json");
-  git(root, "commit", "-qm", "paths");
+  // --allow-empty: on POSIX two of the cases below are the same string, so nothing changes.
+  git(root, "commit", "-qm", "paths", "--allow-empty");
 };
 
 const escapes = (outside) => [
