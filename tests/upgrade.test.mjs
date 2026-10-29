@@ -4,7 +4,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, test } from "node:test";
@@ -114,7 +114,7 @@ test("a 0.5.0 repo: outdated files named with the releases they match; untouched
   const dsc = r.files.find((f) => f.path === "scripts/docs-sync-check.mjs");
   assert.equal(dsc.status, "outdated");
   assert.equal(dsc.matches, "0.5.0");
-  assert.equal(status(r, "scripts/govkit-doctor.mjs"), "current");
+  assert.equal(status(r, ".githooks/install-hooks.sh"), "current"); // unchanged since 0.2.0
   // 0.5.0 wrote govkitVersion 0.4.0 (a literal in its template); the files say 0.5.0.
   assert.equal(r.govkitVersion.declared, "0.4.0");
   assert.equal(r.govkitVersion.derived, "0.5.0");
@@ -261,4 +261,225 @@ test("render keeps a pre-push's custom branch list", () => {
   writeFileSync(p, readFileSync(p, "utf-8").replace(/^PROTECTED_BRANCHES=.*$/m, 'PROTECTED_BRANCHES="refs/heads/main refs/heads/prod"'));
   const entry = OWNED.find((e) => e.path === ".githooks/pre-push");
   assert.match(render(entry, root, manifest), /refs\/heads\/main refs\/heads\/prod/);
+});
+
+// ------------------------------------------------------------------ govkit.json `paths`
+
+const setManifest = (root, edit) => {
+  const p = join(root, "govkit.json");
+  const m = JSON.parse(readFileSync(p, "utf-8"));
+  edit(m);
+  writeFileSync(p, `${JSON.stringify(m, null, 2)}\n`);
+};
+
+const runDoctor = (cwd) => {
+  try {
+    execFileSync("node", [join(TEMPLATES, "scripts/govkit-doctor.mjs"), "--ci"], { cwd, encoding: "utf-8", stdio: "pipe" });
+    return { code: 0 };
+  } catch (e) {
+    return { code: e.status, out: String(e.stdout) };
+  }
+};
+
+test("an owned file relocated by `paths` is checked where it is, not reported missing", () => {
+  const { root } = makeRepo();
+  mkdirSync(join(root, "vendor"), { recursive: true });
+  git(root, "mv", "scripts/docs-sync-check.mjs", "vendor/dsc.mjs");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  const f = check(root).files.find((x) => x.path === "scripts/docs-sync-check.mjs");
+  assert.equal(f.status, "current");
+  assert.equal(f.at, "vendor/dsc.mjs");
+  // An edit at the relocated path is seen there, and diffs name that path.
+  writeFileSync(join(root, "vendor/dsc.mjs"), "// edited\n");
+  assert.equal(status(check(root), "scripts/docs-sync-check.mjs"), "edited");
+  assert.match(diff("scripts/docs-sync-check.mjs", root), /^--- a\/vendor\/dsc\.mjs$/m);
+});
+
+test("the doctor resolves `expects` through `paths`", () => {
+  const { root } = makeRepo();
+  setManifest(root, (m) => {
+    // Only the guardrail under test; the doctor's job here is the path lookup.
+    for (const [name, g] of Object.entries(m.guardrails)) {
+      if (name !== "docs-sync-check") g.enabled = false;
+      delete g.expectsScripts;
+    }
+  });
+  const before = runDoctor(root);
+  assert.equal(before.code, 0, before.out);
+  mkdirSync(join(root, "vendor"), { recursive: true });
+  git(root, "mv", "scripts/docs-sync-check.mjs", "vendor/dsc.mjs");
+  assert.equal(runDoctor(root).code, 1, "moved without `paths`: missing");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  assert.equal(runDoctor(root).code, 0, "moved with `paths`: found");
+});
+
+// ------------------------------------------------------------------ Prettier detection (#22)
+
+for (const file of ["prettier.config.mjs", "prettier.config.ts", ".prettierrc.toml", ".prettierrc.json5", ".prettierrc"]) {
+  test(`Prettier is detected from ${file} alone`, () => {
+    const { root } = makeRepo();
+    writeFileSync(join(root, file), "");
+    assert.equal(check(root).prettier, true);
+  });
+}
+
+test("no Prettier config, key or dependency: not detected", () => {
+  const { root } = makeRepo();
+  assert.equal(check(root).prettier, false);
+});
+
+// ------------------------------------------------------------------ govkit itself (DEC-003)
+
+test("govkit's own repo: every owned file current where it runs, nothing missing or edited", () => {
+  const r = check(GOVKIT);
+  for (const f of r.files) assert.ok(["current", "skipped"].includes(f.status), `${f.path}: ${f.status}`);
+  assert.equal(r.files.filter((f) => f.status === "current").length >= 6, true);
+});
+
+test("govkit's own repo: the doctor reports nothing missing", () => {
+  const r = runDoctor(GOVKIT);
+  assert.equal(r.code, 0, r.out);
+});
+
+// ------------------------------------------------------------------ `paths` stays inside the repo
+
+/** A repo plus an empty sibling directory outside it: the target an escaping `paths` would hit. */
+function repoWithOutside() {
+  const { root } = makeRepo();
+  const outside = mkdtempSync(join(tmpdir(), "govkit-outside-"));
+  repos.push(outside);
+  return { root, outside };
+}
+
+const commitManifest = (root) => {
+  git(root, "add", "govkit.json");
+  // --allow-empty: on POSIX two of the cases below are the same string, so nothing changes.
+  git(root, "commit", "-qm", "paths", "--allow-empty");
+};
+
+const escapes = (outside) => [
+  ["climbs out with ..", `../${outside.split(/[\\/]/).pop()}/dsc.mjs`, /points outside the repo/],
+  ["climbs out midway", "scripts/../../x/dsc.mjs", /points outside the repo/],
+  // Every escaping value targets `outside`, a throwaway temp dir, so even a broken guard cannot
+  // write anywhere that matters.
+  ["absolute (forward slashes)", `${outside.replace(/\\/g, "/")}/dsc.mjs`, /is absolute/],
+  ["absolute (this OS)", join(outside, "dsc.mjs"), /is absolute/],
+  // On Linux a drive path is a plain relative name; it is refused as absolute on every OS.
+  ["absolute (Windows drive)", String.raw`C:\govkit-outside\dsc.mjs`, /is absolute/],
+  ["the repo root", ".", /is the repo root/],
+  ["empty", "", /not a relative path/],
+];
+
+test("apply, check, diff and the doctor refuse a `paths` value outside the repo, and write nothing", () => {
+  const { root, outside } = repoWithOutside();
+  for (const [what, value, why] of escapes(outside)) {
+    setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": value }));
+    commitManifest(root);
+    assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), why, what);
+    assert.throws(() => check(root), why, what);
+    assert.throws(() => diff("scripts/docs-sync-check.mjs", root), why, what);
+    assert.deepEqual(readdirSync(outside), [], `${what}: nothing written outside`);
+
+    setManifest(root, (m) => {
+      for (const [name, g] of Object.entries(m.guardrails)) {
+        if (name !== "docs-sync-check") g.enabled = false;
+        delete g.expectsScripts;
+      }
+    });
+    const doc = runDoctor(root);
+    assert.equal(doc.code, 1, what);
+    assert.match(doc.out, /\(refused\)/, what);
+    git(root, "checkout", "--", "govkit.json");
+  }
+});
+
+test("a `paths` value that leaves the repo through a symlinked directory is refused", () => {
+  const { root, outside } = repoWithOutside();
+  // A junction needs no privileges on Windows; elsewhere the type is ignored.
+  symlinkSync(outside, join(root, "vendor"), "junction");
+  // Untracked but ignored, so the tree stays clean (git cannot commit a Windows junction).
+  writeFileSync(join(root, ".git", "info", "exclude"), "vendor\n");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  commitManifest(root);
+  assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /outside the repo through a symlink/);
+  assert.deepEqual(readdirSync(outside), []);
+});
+
+test("one refused path stops the whole apply before anything is written", () => {
+  const { root, outside } = repoWithOutside();
+  const pathsBefore = readFileSync(join(root, "scripts/supabase.mjs"), "utf-8");
+  writeFileSync(join(root, "scripts/supabase.mjs"), "// old\n");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": `../${outside.split(/[\\/]/).pop()}/escape.mjs` }));
+  git(root, "add", "-A");
+  git(root, "commit", "-qm", "old supabase + bad path");
+  assert.throws(() => apply(["scripts/supabase.mjs", "scripts/docs-sync-check.mjs"], root), /points outside/);
+  assert.equal(readFileSync(join(root, "scripts/supabase.mjs"), "utf-8"), "// old\n", "first file untouched");
+  assert.notEqual(pathsBefore, "// old\n");
+  assert.deepEqual(readdirSync(outside), []);
+});
+
+// ------------------------------------------------------------------ owned files are regular files
+
+/**
+ * Replace an owned file with a file symlink. File symlinks need a privilege on Windows (Developer
+ * Mode or admin); without it the test skips there, and still runs in CI on Linux.
+ */
+function linkFile(t, target, at) {
+  rmSync(at);
+  try {
+    symlinkSync(target, at, "file");
+    return true;
+  } catch (e) {
+    if (e.code === "EPERM") {
+      t.skip("creating a file symlink needs a privilege on this machine");
+      return false;
+    }
+    throw e;
+  }
+}
+
+test("no `paths`: an owned file that is a symlink to a file outside the repo is not written through", (t) => {
+  const { root, outside } = repoWithOutside();
+  const victim = join(outside, "victim.mjs");
+  writeFileSync(victim, "// not yours\n");
+  if (!linkFile(t, victim, join(root, "scripts/docs-sync-check.mjs"))) return;
+  assert.throws(
+    () => apply(["scripts/docs-sync-check.mjs"], root),
+    /scripts\/docs-sync-check\.mjs is a symlink; govkit writes only regular files/,
+  );
+  assert.equal(readFileSync(victim, "utf-8"), "// not yours\n");
+  const f = check(root).files.find((x) => x.path === "scripts/docs-sync-check.mjs");
+  assert.equal(f.status, "symlink");
+});
+
+test("no `paths`: a dangling symlink is refused too, and its target is not created", (t) => {
+  const { root, outside } = repoWithOutside();
+  const target = join(outside, "not-there-yet.mjs");
+  if (!linkFile(t, target, join(root, "scripts/docs-sync-check.mjs"))) return;
+  assert.equal(existsSync(join(root, "scripts/docs-sync-check.mjs")), false, "dangling: exists() says absent");
+  assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /is a symlink/);
+  assert.equal(existsSync(target), false);
+  assert.equal(status(check(root), "scripts/docs-sync-check.mjs"), "symlink");
+});
+
+test("no `paths`: an owned file's directory that is a symlink out of the repo is refused", () => {
+  const { root, outside } = repoWithOutside();
+  rmSync(join(root, ".githooks"), { recursive: true });
+  symlinkSync(outside, join(root, ".githooks"), "junction");
+  assert.throws(() => apply([".githooks/pre-push"], root), /\.githooks is a symlink/);
+  assert.deepEqual(readdirSync(outside), []);
+  assert.equal(status(check(root), ".githooks/pre-push"), "symlink");
+});
+
+test("with `paths`: a relocated owned file that is a symlink is refused the same way", (t) => {
+  const { root, outside } = repoWithOutside();
+  mkdirSync(join(root, "vendor"));
+  writeFileSync(join(root, "vendor/dsc.mjs"), "");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  const victim = join(outside, "victim.mjs");
+  writeFileSync(victim, "// not yours\n");
+  if (!linkFile(t, victim, join(root, "vendor/dsc.mjs"))) return;
+  // Either guard may name it first: the link leaves the repo, and it is a link.
+  assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /vendor\/dsc\.mjs is a symlink|through a symlink/);
+  assert.equal(readFileSync(victim, "utf-8"), "// not yours\n");
 });

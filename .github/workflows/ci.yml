@@ -29,9 +29,19 @@ jobs:
           find . -name '*.mjs' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
 
       - name: Tests
-        run: node --test "tests/*.test.mjs"
+        run: npm test
 
+      - name: govkit's own guardrails are all installed
+        run: npm run govkit:doctor -- --ci
+
+      # PRs only: the tag for main's version is created after the merge, so on the push to main
+      # it cannot exist yet. A forgotten tag fails the next PR instead.
+      - name: Release check
+        run: npm run release:check -- ${{ github.event_name == 'pull_request' && '--pr' || '' }}
+
+      # Pinned: this is a required check, and must not break because Claude Code released.
+      # Raise the pin deliberately, in its own PR.
       - name: Validate the plugin and the marketplace manifests
         run: |
-          npx -y @anthropic-ai/claude-code plugin validate .
-          npx -y @anthropic-ai/claude-code plugin validate .claude-plugin/marketplace.json
+          npx -y @anthropic-ai/claude-code@2.1.312 plugin validate .
+          npx -y @anthropic-ai/claude-code@2.1.312 plugin validate .claude-plugin/marketplace.json

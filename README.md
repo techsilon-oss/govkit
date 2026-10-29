@@ -122,6 +122,8 @@ It hashes each owned file against every govkit release and reports it as **curre
 
 `/govkit-doctor` reports outdated files too. Both run from the plugin, so they know about releases newer than the repo's own scripts. Works on repos initialised by any release from 0.2.0 on, with no manual steps first. A 0.1.0 repo has no `govkit.json`: run `/govkit-init` first.
 
+**Running govkit's files from somewhere else?** Map each owned path to where the file is, in `govkit.json` `paths` (for example `"scripts/docs-sync-check.mjs": "tools/docs-sync-check.mjs"`). The doctor, `--upgrade` and the doc-sync workflow all look there. A value must stay inside the repo: absolute paths, `..` that climbs out, and symlinks that leave are refused. Whether or not you use `paths`, `--upgrade` writes only regular files: an owned file that is a symlink, or sits in a symlinked directory, is refused. govkit itself uses this to run its guardrails straight from its templates.
+
 ## What it scaffolds
 
 **All guardrails are installed by default.** Excluding one takes `--skip <name>` and a recorded reason, so a gap is always a decision you can point at — never an oversight.
@@ -218,10 +220,11 @@ That is why guardrails are now **on by default**, why skipping one requires a re
 
 ## Releasing govkit itself
 
-1. Bump `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`, and add the `CHANGELOG.md` entry. If an owned template changed, the entry names the file.
+1. Bump `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`, and add the `CHANGELOG.md` entry. If an owned template changed, the entry names the file (the doc-sync gate enforces this).
 2. `node tools/build-template-history.mjs`, which adds this release's template hashes, so `--upgrade` can recognise files it wrote.
-3. `node --test "tests/*.test.mjs"` (step 2 is enforced here: a test fails if the index lacks the current version).
-4. Commit all of it as the PR's last commit. After the merge, tag `v<version>` on the merge commit and publish a GitHub Release with the changelog entry.
+3. `node skills/govkit-init/upgrade.mjs record`, which records the version in govkit's own `govkit.json` (govkit runs its own guardrails).
+4. `npm test` and `npm run release:check -- --pr`. Both enforce steps 1–3.
+5. Commit all of it as the PR's last commit. After the merge, tag `v<version>` on the merge commit and publish a GitHub Release with the changelog entry.
 
 ## License
 

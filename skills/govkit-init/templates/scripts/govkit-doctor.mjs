@@ -29,9 +29,31 @@
  *   node scripts/govkit-doctor.mjs config    # print the manifest as a readable table
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 const MANIFEST = "govkit.json";
+
+/**
+ * Why a govkit.json `paths` value may not be used, or null if it may. Values are confined to the
+ * repo: an absolute path, one that climbs out with "..", or one that leaves through a symlinked
+ * directory is refused (the upgrade, which writes there, refuses the same values).
+ */
+function confined(value) {
+  if (typeof value !== "string" || value.trim() === "") return "is not a relative path";
+  if (isAbsolute(value) || /^[a-zA-Z]:/.test(value) || value.startsWith("\\")) return "is absolute";
+  const root = process.cwd();
+  const inside = (base, target) => {
+    const rel = relative(base, target);
+    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  };
+  if (relative(root, resolve(root, value)) === "") return "is the repo root, not a file";
+  if (!inside(root, resolve(root, value))) return "points outside the repo";
+  let dir = resolve(root, value);
+  while (!existsSync(dir) && dirname(dir) !== dir) dir = dirname(dir);
+  if (!inside(realpathSync(root), realpathSync(dir))) return "points outside the repo through a symlink";
+  return null;
+}
 
 const read = (p) => {
   try {
@@ -104,7 +126,17 @@ for (const [name, g] of guardrails) {
     continue;
   }
 
-  const absentFiles = (g.expects ?? []).filter((f) => !existsSync(f));
+  // `paths` relocates an owned file (a repo that runs govkit's files from elsewhere); look there.
+  // A value outside the repo is refused and reported, never followed (see confined()).
+  const absentFiles = (g.expects ?? [])
+    .map((f) => {
+      const p = manifest.paths?.[f];
+      if (p === undefined) return existsSync(f) ? null : f;
+      const why = confined(p);
+      if (why) return `${f}: govkit.json paths value ${JSON.stringify(p)} ${why} (refused)`;
+      return existsSync(p) ? null : `${f} (at ${p})`;
+    })
+    .filter(Boolean);
   const absentScripts = (g.expectsScripts ?? []).filter((s) => !scripts[s]);
 
   if (absentFiles.length === 0 && absentScripts.length === 0) {

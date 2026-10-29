@@ -36,9 +36,19 @@
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -97,6 +107,68 @@ const range = (versions, order) => {
   return sorted.length > 1 ? `${sorted[0]}–${sorted.at(-1)}` : (sorted[0] ?? "?");
 };
 
+/**
+ * The first symlink on the way from the repo root to `rel` (a directory or the file itself),
+ * dangling or not, or null. Owned files and the directories they sit in must be real: a repo that
+ * committed scripts/docs-sync-check.mjs, or scripts/ itself, as a link to somewhere outside would
+ * otherwise have an upgrade write through it. lstat, not exists: a dangling link reads as absent.
+ */
+export function symlinkOnPath(root, rel) {
+  let cur = root;
+  for (const part of rel.split(/[\\/]/).filter(Boolean)) {
+    cur = join(cur, part);
+    let st;
+    try {
+      st = lstatSync(cur);
+    } catch {
+      return null; // nothing further exists, so nothing further can be a link
+    }
+    if (st.isSymbolicLink()) return relative(root, cur).replace(/\\/g, "/");
+  }
+  return null;
+}
+
+/** The nearest existing ancestor of p, resolved through symlinks. */
+function realAncestor(p) {
+  let dir = p;
+  while (!existsSync(dir)) {
+    const up = dirname(dir);
+    if (up === dir) return dir;
+    dir = up;
+  }
+  return realpathSync(dir);
+}
+
+/**
+ * Where an owned file actually is in this repo. govkit.json `paths` maps an owned path to another
+ * location, for a repo that runs the files from elsewhere: govkit itself runs its templates in
+ * place. Every reader resolves through here, so an override is never reported missing.
+ *
+ * A `paths` value is confined to the repo. apply writes where this points, so a govkit.json that
+ * mapped an owned file to "../../.bashrc", an absolute path, or through a symlinked directory that
+ * leaves the repo would make an upgrade write outside it. Any such value is refused, by name.
+ */
+export function located(manifest, path, root) {
+  const value = manifest?.paths?.[path];
+  if (value === undefined) return path;
+  const refuse = (why) => {
+    throw new Error(`govkit.json paths["${path}"] = ${JSON.stringify(value)} ${why}; refusing to use it`);
+  };
+  if (typeof value !== "string" || value.trim() === "") refuse("is not a relative path");
+  if (isAbsolute(value) || /^[a-zA-Z]:/.test(value) || value.startsWith("\\")) refuse("is absolute");
+  const inside = (base, target) => {
+    const rel = relative(base, target);
+    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  };
+  if (relative(resolve(root), resolve(root, value)) === "") refuse("is the repo root, not a file");
+  if (!inside(resolve(root), resolve(root, value))) refuse("points outside the repo");
+  // Through symlinks too: the nearest existing directory on the way is where the write really lands.
+  const realRoot = realpathSync(root);
+  const real = realAncestor(resolve(root, value));
+  if (!inside(realRoot, real)) refuse("points outside the repo through a symlink");
+  return value;
+}
+
 // ------------------------------------------------------------------ rendering
 
 /**
@@ -106,7 +178,7 @@ const range = (versions, order) => {
 export function render(entry, root, manifest) {
   let text = readFileSync(join(TEMPLATES, entry.template), "utf-8").replace(/\r\n/g, "\n");
   if (entry.path === ".githooks/pre-push") {
-    const existing = readText(join(root, entry.path))?.match(PROTECTED)?.[0];
+    const existing = readText(join(root, located(manifest, entry.path, root)))?.match(PROTECTED)?.[0];
     const release = manifest?.branches?.release ?? "main";
     text = text.replace(PROTECTED, existing ?? `PROTECTED_BRANCHES="refs/heads/${release}"`);
   }
@@ -154,9 +226,15 @@ export function check(root = process.cwd()) {
       files.push({ path: entry.path, status: "skipped" });
       continue;
     }
-    const text = readText(join(root, entry.path));
+    const at = located(manifest, entry.path, root);
+    const link = symlinkOnPath(root, at);
+    if (link) {
+      files.push({ path: entry.path, at, status: "symlink", link });
+      continue;
+    }
+    const text = readText(join(root, at));
     if (text === null) {
-      files.push({ path: entry.path, status: "missing" });
+      files.push({ path: entry.path, at, status: "missing" });
       continue;
     }
     const hash = sha256(text);
@@ -167,6 +245,7 @@ export function check(root = process.cwd()) {
     else status = "edited";
     files.push({
       path: entry.path,
+      at,
       status,
       versions,
       matches: versions.length ? range(versions, order) : null,
@@ -203,8 +282,15 @@ export function check(root = process.cwd()) {
   }
 
   const pkg = readJson(join(root, "package.json")) ?? {};
+  // Every config file Prettier itself looks for, plus the package.json key and dependency.
+  const prettierFiles = [
+    ...["", ".json", ".json5", ".yaml", ".yml", ".toml", ".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"].map(
+      (e) => `.prettierrc${e}`,
+    ),
+    ...[".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"].map((e) => `prettier.config${e}`),
+  ];
   const prettier =
-    ["", ".json", ".js", ".cjs", ".mjs", ".yaml", ".yml"].some((e) => existsSync(join(root, `.prettierrc${e}`))) ||
+    prettierFiles.some((f) => existsSync(join(root, f))) ||
     Boolean(pkg.prettier || pkg.devDependencies?.prettier || pkg.dependencies?.prettier);
 
   return {
@@ -330,7 +416,7 @@ export function record(root = process.cwd()) {
       if (f.status !== "current" && f.status !== "outdated") continue;
       m.files[f.path] = {
         version: f.status === "current" ? report.pluginVersion : f.matches,
-        sha256: sha256(readFileSync(join(root, f.path), "utf-8")),
+        sha256: sha256(readFileSync(join(root, located(m, f.path, root)), "utf-8")),
       };
     }
     // "mixed" is a finding for the report, not a version: leave the declared value alone then.
@@ -342,8 +428,21 @@ export function record(root = process.cwd()) {
 
 /** Replace the named paths with the current template. Only those; nothing else is written. */
 export function apply(paths, root = process.cwd()) {
-  assertClean(root);
   const manifest = readJson(join(root, "govkit.json"));
+  // Safety first, then cleanliness; nothing is written until both pass. Every target is confined
+  // to the repo, so a refused path cannot leave half an upgrade, and none may be or pass through a
+  // symlink, whether or not `paths` is set: govkit writes only regular files.
+  for (const p of paths) {
+    const target = OWNED.some((e) => e.path === p) ? located(manifest, p, root) : p;
+    const link = symlinkOnPath(root, target);
+    if (link) {
+      throw new Error(
+        `${link} is a symlink; govkit writes only regular files inside the repo, so it will not write ${p} through it. ` +
+          "Replace the link with the file itself, then re-run.",
+      );
+    }
+  }
+  assertClean(root);
   let reformatted = false;
   for (const path of paths) {
     if (path === CLAUDE_MD) {
@@ -362,14 +461,15 @@ export function apply(paths, root = process.cwd()) {
     }
     const entry = OWNED.find((e) => e.path === path);
     if (!entry) throw new Error(`${path} is not a file govkit owns; refusing to write it`);
-    const target = join(root, path);
+    const where = located(manifest, path, root);
+    const target = join(root, where);
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, render(entry, root, manifest));
     if (entry.exec) {
       chmodSync(target, 0o755);
       // The working-tree bit is not what a clone gets: record it in the index too.
       try {
-        execFileSync("git", ["update-index", "--chmod=+x", path], { cwd: root, stdio: "ignore" });
+        execFileSync("git", ["update-index", "--chmod=+x", where], { cwd: root, stdio: "ignore" });
       } catch {
         // not yet tracked: `git add` picks up the mode from the file on POSIX; the skill reminds on Windows
       }
@@ -392,6 +492,7 @@ export function diff(path, root = process.cwd()) {
   const manifest = readJson(join(root, "govkit.json"));
   let have;
   let want;
+  let label = path; // the path git apply will patch
   if (path === CLAUDE_MD) {
     have = readText(join(root, CLAUDE_MD)) ?? "";
     want = withBlockReplaced(root, manifest);
@@ -401,7 +502,8 @@ export function diff(path, root = process.cwd()) {
   } else {
     const entry = OWNED.find((e) => e.path === path);
     if (!entry) throw new Error(`${path} is not a file govkit owns`);
-    have = readText(join(root, path)) ?? "";
+    label = located(manifest, path, root);
+    have = readText(join(root, label)) ?? "";
     want = render(entry, root, manifest);
   }
   const dir = mkdtempSync(join(tmpdir(), "govkit-diff-"));
@@ -419,9 +521,9 @@ export function diff(path, root = process.cwd()) {
       // exit 1: they differ, which is the answer. Name both sides as the repo path.
       if (e.status === 1) {
         return String(e.stdout)
-          .replace(/^diff --git a\/repo b\/template$/m, `diff --git a/${path} b/${path}`)
-          .replace(/^--- a\/repo$/m, `--- a/${path}`)
-          .replace(/^\+\+\+ b\/template$/m, `+++ b/${path}`);
+          .replace(/^diff --git a\/repo b\/template$/m, `diff --git a/${label} b/${label}`)
+          .replace(/^--- a\/repo$/m, `--- a/${label}`)
+          .replace(/^\+\+\+ b\/template$/m, `+++ b/${label}`);
       }
       throw e;
     }
@@ -453,13 +555,15 @@ function printReport(r) {
     console.log("  ❌ No govkit.json. Run /govkit-init first.\n");
     return;
   }
-  const icon = { current: "✅", outdated: "⬆️ ", edited: "✏️ ", missing: "❌", skipped: "⏭️ " };
+  const icon = { current: "✅", outdated: "⬆️ ", edited: "✏️ ", missing: "❌", skipped: "⏭️ ", symlink: "⛔" };
   for (const f of r.files) {
     let note = f.status;
     if (f.status === "outdated") note = `outdated — matches ${f.matches}`;
+    if (f.status === "symlink") note = `${f.link} is a symlink; not read or written (replace it with the file)`;
     if (f.status === "edited") {
       note = f.editedSinceRecorded ? "edited since govkit wrote it" : "edited locally (matches no release)";
     }
+    if (f.at && f.at !== f.path) note += ` (at ${f.at})`;
     console.log(`  ${icon[f.status]} ${f.path.padEnd(34)} ${note}`);
   }
   if (r.releaseGate.status === "outdated") {

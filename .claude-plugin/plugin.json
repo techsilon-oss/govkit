@@ -1,7 +1,7 @@
 {
   "name": "govkit",
   "description": "Project governance starter kit: /govkit-init scaffolds branch flow, the pre-push guard, the Local Release Gate (CI-fallback), doc-sync + ground-truth checks, PROJECT-HUB/ROADMAP and a generic /sdlc into any project. /govkit-doctor reports what a project is missing or outdated, and /govkit-init --upgrade brings it current.",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "author": {
     "name": "Techsilon LLC",
     "email": "oss@techsilon.com",

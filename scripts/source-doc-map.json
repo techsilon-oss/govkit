@@ -1,0 +1,24 @@
+{
+  "$comment": "govkit's own doc-sync registry, read by skills/govkit-init/templates/scripts/sdlc-docs.mjs. A changed owned template must be named in the CHANGELOG, because --upgrade users read it to see what will change in their repo; a changed hook must keep the README's 'What govkit does on your machine' true.",
+  "mappings": [
+    {
+      "source": [
+        "skills/govkit-init/templates/scripts/**",
+        "skills/govkit-init/templates/githooks/**",
+        "skills/govkit-init/templates/.github/**"
+      ],
+      "docs": ["CHANGELOG.md"],
+      "severity": "gate"
+    },
+    {
+      "source": ["hooks/**"],
+      "docs": ["README.md"],
+      "severity": "gate"
+    },
+    {
+      "source": ["skills/govkit-init/upgrade.mjs"],
+      "docs": ["README.md"],
+      "severity": "warn"
+    }
+  ]
+}
