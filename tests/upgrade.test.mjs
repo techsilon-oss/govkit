@@ -114,7 +114,7 @@ test("a 0.5.0 repo: outdated files named with the releases they match; untouched
   const dsc = r.files.find((f) => f.path === "scripts/docs-sync-check.mjs");
   assert.equal(dsc.status, "outdated");
   assert.equal(dsc.matches, "0.5.0");
-  assert.equal(status(r, "scripts/govkit-doctor.mjs"), "current");
+  assert.equal(status(r, ".githooks/install-hooks.sh"), "current"); // unchanged since 0.2.0
   // 0.5.0 wrote govkitVersion 0.4.0 (a literal in its template); the files say 0.5.0.
   assert.equal(r.govkitVersion.declared, "0.4.0");
   assert.equal(r.govkitVersion.derived, "0.5.0");
@@ -261,4 +261,82 @@ test("render keeps a pre-push's custom branch list", () => {
   writeFileSync(p, readFileSync(p, "utf-8").replace(/^PROTECTED_BRANCHES=.*$/m, 'PROTECTED_BRANCHES="refs/heads/main refs/heads/prod"'));
   const entry = OWNED.find((e) => e.path === ".githooks/pre-push");
   assert.match(render(entry, root, manifest), /refs\/heads\/main refs\/heads\/prod/);
+});
+
+// ------------------------------------------------------------------ govkit.json `paths`
+
+const setManifest = (root, edit) => {
+  const p = join(root, "govkit.json");
+  const m = JSON.parse(readFileSync(p, "utf-8"));
+  edit(m);
+  writeFileSync(p, `${JSON.stringify(m, null, 2)}\n`);
+};
+
+const runDoctor = (cwd) => {
+  try {
+    execFileSync("node", [join(TEMPLATES, "scripts/govkit-doctor.mjs"), "--ci"], { cwd, encoding: "utf-8", stdio: "pipe" });
+    return { code: 0 };
+  } catch (e) {
+    return { code: e.status, out: String(e.stdout) };
+  }
+};
+
+test("an owned file relocated by `paths` is checked where it is, not reported missing", () => {
+  const { root } = makeRepo();
+  mkdirSync(join(root, "vendor"), { recursive: true });
+  git(root, "mv", "scripts/docs-sync-check.mjs", "vendor/dsc.mjs");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  const f = check(root).files.find((x) => x.path === "scripts/docs-sync-check.mjs");
+  assert.equal(f.status, "current");
+  assert.equal(f.at, "vendor/dsc.mjs");
+  // An edit at the relocated path is seen there, and diffs name that path.
+  writeFileSync(join(root, "vendor/dsc.mjs"), "// edited\n");
+  assert.equal(status(check(root), "scripts/docs-sync-check.mjs"), "edited");
+  assert.match(diff("scripts/docs-sync-check.mjs", root), /^--- a\/vendor\/dsc\.mjs$/m);
+});
+
+test("the doctor resolves `expects` through `paths`", () => {
+  const { root } = makeRepo();
+  setManifest(root, (m) => {
+    // Only the guardrail under test; the doctor's job here is the path lookup.
+    for (const [name, g] of Object.entries(m.guardrails)) {
+      if (name !== "docs-sync-check") g.enabled = false;
+      delete g.expectsScripts;
+    }
+  });
+  const before = runDoctor(root);
+  assert.equal(before.code, 0, before.out);
+  mkdirSync(join(root, "vendor"), { recursive: true });
+  git(root, "mv", "scripts/docs-sync-check.mjs", "vendor/dsc.mjs");
+  assert.equal(runDoctor(root).code, 1, "moved without `paths`: missing");
+  setManifest(root, (m) => (m.paths = { "scripts/docs-sync-check.mjs": "vendor/dsc.mjs" }));
+  assert.equal(runDoctor(root).code, 0, "moved with `paths`: found");
+});
+
+// ------------------------------------------------------------------ Prettier detection (#22)
+
+for (const file of ["prettier.config.mjs", "prettier.config.ts", ".prettierrc.toml", ".prettierrc.json5", ".prettierrc"]) {
+  test(`Prettier is detected from ${file} alone`, () => {
+    const { root } = makeRepo();
+    writeFileSync(join(root, file), "");
+    assert.equal(check(root).prettier, true);
+  });
+}
+
+test("no Prettier config, key or dependency: not detected", () => {
+  const { root } = makeRepo();
+  assert.equal(check(root).prettier, false);
+});
+
+// ------------------------------------------------------------------ govkit itself (DEC-003)
+
+test("govkit's own repo: every owned file current where it runs, nothing missing or edited", () => {
+  const r = check(GOVKIT);
+  for (const f of r.files) assert.ok(["current", "skipped"].includes(f.status), `${f.path}: ${f.status}`);
+  assert.equal(r.files.filter((f) => f.status === "current").length >= 6, true);
+});
+
+test("govkit's own repo: the doctor reports nothing missing", () => {
+  const r = runDoctor(GOVKIT);
+  assert.equal(r.code, 0, r.out);
 });

@@ -104,7 +104,8 @@ for (const [name, g] of guardrails) {
     continue;
   }
 
-  const absentFiles = (g.expects ?? []).filter((f) => !existsSync(f));
+  // `paths` relocates an owned file (a repo that runs govkit's files from elsewhere); look there.
+  const absentFiles = (g.expects ?? []).filter((f) => !existsSync(manifest.paths?.[f] ?? f));
   const absentScripts = (g.expectsScripts ?? []).filter((s) => !scripts[s]);
 
   if (absentFiles.length === 0 && absentScripts.length === 0) {

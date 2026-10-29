@@ -1,0 +1,172 @@
+{
+  "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
+  "govkitVersion": "0.7.0",
+  "project": {
+    "name": "govkit",
+    "deployTarget": "none (users install the plugin from GitHub)",
+    "$comment": "The values /govkit-init rendered into the CLAUDE.md block. /govkit-init --upgrade renders the current block with them, so its diff shows template changes rather than your project's name."
+  },
+  "paths": {
+    "scripts/docs-sync-check.mjs": "skills/govkit-init/templates/scripts/docs-sync-check.mjs",
+    "scripts/sdlc-docs.mjs": "skills/govkit-init/templates/scripts/sdlc-docs.mjs",
+    "scripts/govkit-doctor.mjs": "skills/govkit-init/templates/scripts/govkit-doctor.mjs",
+    ".githooks/pre-push": "skills/govkit-init/templates/githooks/pre-push",
+    ".githooks/install-hooks.sh": "skills/govkit-init/templates/githooks/install-hooks.sh",
+    "$comment": "govkit runs its own guardrail files in place, from the templates it ships, instead of keeping a second copy (DEC-003 in docs/PROJECT-HUB.md). Each owned path maps to where the file actually is; the doctor, upgrade.mjs and the sdlc-docs workflow resolve through this map."
+  },
+  "files": {
+    "$comment": "Written by /govkit-init and /govkit-init --upgrade, never by hand: for each file govkit owns, the release that wrote it and the sha256 of what it wrote (LF line endings). A file whose hash no longer matches was edited locally, and the upgrade will not replace it without an explicit yes.",
+    "scripts/docs-sync-check.mjs": {
+      "version": "0.7.0",
+      "sha256": "16934c3e3fd19ff182977ba1c6a768398dfe37fc4bb94a6ee8e394313d2e6dcc"
+    },
+    "scripts/sdlc-docs.mjs": {
+      "version": "0.7.0",
+      "sha256": "2d9e243d2c7961e46f3ecf8722f4ba086a377e4841e3109b95701440c1b4d322"
+    },
+    ".github/workflows/sdlc-docs.yml": {
+      "version": "0.7.0",
+      "sha256": "1b6b21b6d209c0e085ea443b86bbe5d1e9471849164b340f71d4319fe372a8bf"
+    },
+    "scripts/govkit-doctor.mjs": {
+      "version": "0.7.0",
+      "sha256": "92ce984ec51af55b424637f0eaf81082fe307b53559593eb41ab09909f4bfaba"
+    },
+    ".githooks/pre-push": {
+      "version": "0.7.0",
+      "sha256": "6422e283cdc24a6dcc253a74d49b527407daa24bc85d9735f8b6ee9ef0acc2c4"
+    },
+    ".githooks/install-hooks.sh": {
+      "version": "0.7.0",
+      "sha256": "805082669618d992e8e6cdb23fac7864a34a78d0239f16cc0ce70a3f6ea62f86"
+    }
+  },
+  "upstreams": {
+    "$comment": "Where this project's guardrails come from. Dependencies run ONE WAY: release-gate-kit <- govkit <- house layer <- this project. Nothing upstream references a consumer. Fix a guardrail in the repo that owns it, never in the local copy — a local patch forks it silently and the fix never reaches the other projects.",
+    "release-gate-kit": {
+      "url": "https://github.com/techsilon-oss/release-gate-kit",
+      "owns": "The local CI-fallback release gate, standalone. Usable with zero governance buy-in — which is why it is its own repo.",
+      "vendoredHere": "scripts/release-gate.ts"
+    },
+    "govkit": {
+      "url": "https://github.com/techsilon-oss/govkit",
+      "owns": "The transferable guardrail spine: /govkit-init, /sdlc, /govkit-doctor, the pre-push hook, the doc-sync runners, the tracker convention."
+    },
+    "house-layer": {
+      "url": "(private, if your org has one)",
+      "owns": "Org-specific delta: stack runbooks, the user CLAUDE.md profile, adoption cheatsheets. Consumes govkit; never competes with it."
+    }
+  },
+  "guardrails": {
+    "trackers": {
+      "enabled": true,
+      "description": "CLAUDE.md + docs/PROJECT-HUB.md. No PRIORITY-ROADMAP: GitHub issues are govkit's roadmap.",
+      "expects": [
+        "CLAUDE.md",
+        "docs/PROJECT-HUB.md"
+      ]
+    },
+    "release-gate": {
+      "enabled": false,
+      "description": "Local CI-fallback gate for when Actions minutes run out",
+      "expects": [
+        "scripts/release-gate.ts",
+        "release-gate.config.json"
+      ],
+      "expectsScripts": [
+        "release-gate"
+      ],
+      "vendoredFrom": "techsilon-oss/release-gate-kit",
+      "vendoredVersion": "0.1.0",
+      "$comment": "The gate is NOT owned by govkit — release-gate-kit is canonical. govkit vendors a copy so init works offline, and records the upstream version here. The doctor compares this version, NOT the file bytes: every project runs its own formatter, so a byte comparison would report drift on every repo that uses Prettier and be ignored within a week.",
+      "skippedReason": "Public repo: no minute cap. During an Actions outage, wait or run the tests locally."
+    },
+    "ci": {
+      "enabled": true,
+      "description": "govkit's CI (.github/workflows/ci.yml): syntax check, tests, plugin validate, release check, doctor",
+      "expects": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    "pre-push-hook": {
+      "enabled": true,
+      "description": "Blocks direct pushes to the release branch. On a private repo under a free plan this is the ONLY enforcement — GitHub saves a protection rule there but does not enforce it.",
+      "expects": [
+        ".githooks/pre-push",
+        ".gitattributes"
+      ],
+      "expectsScripts": [
+        "prepare"
+      ]
+    },
+    "doc-sync": {
+      "enabled": true,
+      "description": "Per-PR watchdog: code changed without its mapped doc",
+      "expects": [
+        "scripts/sdlc-docs.mjs",
+        "scripts/source-doc-map.json",
+        ".github/workflows/sdlc-docs.yml"
+      ],
+      "expectsScripts": [
+        "sdlc-docs:audit",
+        "sdlc-docs:gate"
+      ]
+    },
+    "supabase-account": {
+      "enabled": false,
+      "description": "Binds Supabase CLI commands to THIS repo's account. Only meaningful in a project that uses Supabase — skip it elsewhere with a recorded reason.",
+      "expects": [
+        "scripts/supabase.mjs",
+        "supabase/projects.json"
+      ],
+      "expectsScripts": [
+        "supabase",
+        "supabase:whoami"
+      ],
+      "$comment": "`supabase login` stores ONE access token per machine. On a machine with several Supabase accounts, whichever was logged into last wins and nothing says which — the failure mode is not an error message, it is a migration applied to the wrong company's database. The wrapper takes a per-repo token from the gitignored .env (the CLI honours it over the global login) and refuses to run unless that token can see the project refs in supabase/projects.json. projects.json is committed deliberately: refs are not secrets, they appear in every API URL the browser sends, and having them in the repo is what lets the wrapper know which account it SHOULD be.",
+      "skippedReason": "govkit does not use Supabase."
+    },
+    "versioning": {
+      "enabled": false,
+      "description": "One version per release, a v<version> tag on the release branch for each, drift reported",
+      "expects": [
+        "scripts/release-version.mjs"
+      ],
+      "expectsScripts": [
+        "release:status",
+        "release:bump",
+        "release:tag"
+      ],
+      "$comment": "The version names a RELEASE: bumped once, as the last commit of each working->release PR, and tagged on the release branch after the merge. A per-build identifier in the UI is the commit SHA, never `git rev-list --count` - hosts that build from a shallow clone (Vercel does) count the commits inside the clone, so the number differs per branch and means nothing. How the SHA reaches the UI is stack-specific and belongs in the project or the house layer's stack runbook.",
+      "skippedReason": "The version lives in .claude-plugin/plugin.json and marketplace.json, and every PR goes straight to main, so release-version.mjs (package.json, dev -> main) does not fit. tools/check-release.mjs checks the same rules in CI (DEC-004)."
+    },
+    "docs-sync-check": {
+      "enabled": true,
+      "description": "Per-session: bootstrap-doc freshness + git/gh ground truth",
+      "expects": [
+        "scripts/docs-sync-check.mjs"
+      ],
+      "expectsScripts": [
+        "docs:sync-check"
+      ],
+      "bootstrapDocs": [
+        "docs/PROJECT-HUB.md",
+        "CLAUDE.md"
+      ],
+      "watchedPaths": [
+        "skills/",
+        "hooks/",
+        "tools/",
+        ".claude-plugin/",
+        ".github/"
+      ],
+      "sessionHook": true,
+      "$comment": "sessionHook: the plugin's Claude Code hook reminds a session to update the trackers before it ends, when the working branch gained code and no tracker changed; false turns it off for this repo. watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."
+    }
+  },
+  "branches": {
+    "working": "main",
+    "release": "main",
+    "$comment": "The pre-push hook protects `release`. Merge strategy follows branch shape: a long-lived working->release pair takes MERGE COMMITS, never squash — squashing writes a new SHA with no ancestry link, so the release branch stops containing the working branch and every later PR replays already-merged commits."
+  }
+}

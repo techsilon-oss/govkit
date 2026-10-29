@@ -35,8 +35,10 @@ jobs:
           BASE="${{ github.base_ref }}"
           MODE=$([ "$BASE" = "main" ] && echo gate || echo warn)
           git fetch --no-tags --depth=100 origin "$BASE"
+          # The runner is scripts/sdlc-docs.mjs unless govkit.json `paths` puts it elsewhere.
+          RUNNER=$(node -e 'let p; try { p = require("./govkit.json").paths?.["scripts/sdlc-docs.mjs"] } catch {} process.stdout.write(p || "scripts/sdlc-docs.mjs")')
           set +e
-          node scripts/sdlc-docs.mjs audit --$MODE --base "origin/$BASE" | tee /tmp/sdlc-docs.txt
+          node "$RUNNER" audit --$MODE --base "origin/$BASE" | tee /tmp/sdlc-docs.txt
           echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
 

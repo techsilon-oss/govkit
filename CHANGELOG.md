@@ -4,6 +4,20 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.7.0] - 2026-10-29
+
+### Added
+- **`govkit.json` `paths`** (optional): map an owned path to where the file actually is, for a repo that runs govkit's files from somewhere else. The doctor, `/govkit-init --upgrade` and the doc-sync workflow all look there; without it nothing changes.
+- **govkit runs its own guardrails**, in place from its templates (#11): `govkit.json`, `CLAUDE.md`, `docs/PROJECT-HUB.md`, the pre-push hook, the doc-sync gate (a changed owned template must be named in this file), and `tools/check-release.mjs` in CI in place of the `versioning` guardrail.
+
+### Fixed
+- `/govkit-init --upgrade` now finds Prettier configured through `prettier.config.*`, `.prettierrc.toml`, `.prettierrc.json5` or `.prettierrc.{ts,cts,mts}`, so it offers the `.prettierignore` entries there too. (#22)
+
+### Changed
+- CI pins Claude Code for `plugin validate`, and runs the doctor and the release check. `main` requires a PR and a green CI check.
+
+Changed in your repo: `scripts/govkit-doctor.mjs` (resolves `paths`) and `.github/workflows/sdlc-docs.yml` (reads the runner's path from `paths`). Both work as before without `paths`.
+
 ## [0.6.1] - 2026-10-29
 
 ### Changed
@@ -84,6 +98,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.7.0]: https://github.com/techsilon-oss/govkit/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/techsilon-oss/govkit/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/techsilon-oss/govkit/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/techsilon-oss/govkit/compare/v0.5.1...v0.5.2

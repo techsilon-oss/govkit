@@ -97,6 +97,13 @@ const range = (versions, order) => {
   return sorted.length > 1 ? `${sorted[0]}–${sorted.at(-1)}` : (sorted[0] ?? "?");
 };
 
+/**
+ * Where an owned file actually is in this repo. govkit.json `paths` maps an owned path to another
+ * location, for a repo that runs the files from elsewhere: govkit itself runs its templates in
+ * place. Every reader resolves through here, so an override is never reported missing.
+ */
+export const located = (manifest, path) => manifest?.paths?.[path] ?? path;
+
 // ------------------------------------------------------------------ rendering
 
 /**
@@ -106,7 +113,7 @@ const range = (versions, order) => {
 export function render(entry, root, manifest) {
   let text = readFileSync(join(TEMPLATES, entry.template), "utf-8").replace(/\r\n/g, "\n");
   if (entry.path === ".githooks/pre-push") {
-    const existing = readText(join(root, entry.path))?.match(PROTECTED)?.[0];
+    const existing = readText(join(root, located(manifest, entry.path)))?.match(PROTECTED)?.[0];
     const release = manifest?.branches?.release ?? "main";
     text = text.replace(PROTECTED, existing ?? `PROTECTED_BRANCHES="refs/heads/${release}"`);
   }
@@ -154,9 +161,10 @@ export function check(root = process.cwd()) {
       files.push({ path: entry.path, status: "skipped" });
       continue;
     }
-    const text = readText(join(root, entry.path));
+    const at = located(manifest, entry.path);
+    const text = readText(join(root, at));
     if (text === null) {
-      files.push({ path: entry.path, status: "missing" });
+      files.push({ path: entry.path, at, status: "missing" });
       continue;
     }
     const hash = sha256(text);
@@ -167,6 +175,7 @@ export function check(root = process.cwd()) {
     else status = "edited";
     files.push({
       path: entry.path,
+      at,
       status,
       versions,
       matches: versions.length ? range(versions, order) : null,
@@ -203,8 +212,15 @@ export function check(root = process.cwd()) {
   }
 
   const pkg = readJson(join(root, "package.json")) ?? {};
+  // Every config file Prettier itself looks for, plus the package.json key and dependency.
+  const prettierFiles = [
+    ...["", ".json", ".json5", ".yaml", ".yml", ".toml", ".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"].map(
+      (e) => `.prettierrc${e}`,
+    ),
+    ...[".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"].map((e) => `prettier.config${e}`),
+  ];
   const prettier =
-    ["", ".json", ".js", ".cjs", ".mjs", ".yaml", ".yml"].some((e) => existsSync(join(root, `.prettierrc${e}`))) ||
+    prettierFiles.some((f) => existsSync(join(root, f))) ||
     Boolean(pkg.prettier || pkg.devDependencies?.prettier || pkg.dependencies?.prettier);
 
   return {
@@ -330,7 +346,7 @@ export function record(root = process.cwd()) {
       if (f.status !== "current" && f.status !== "outdated") continue;
       m.files[f.path] = {
         version: f.status === "current" ? report.pluginVersion : f.matches,
-        sha256: sha256(readFileSync(join(root, f.path), "utf-8")),
+        sha256: sha256(readFileSync(join(root, located(m, f.path)), "utf-8")),
       };
     }
     // "mixed" is a finding for the report, not a version: leave the declared value alone then.
@@ -362,14 +378,15 @@ export function apply(paths, root = process.cwd()) {
     }
     const entry = OWNED.find((e) => e.path === path);
     if (!entry) throw new Error(`${path} is not a file govkit owns; refusing to write it`);
-    const target = join(root, path);
+    const where = located(manifest, path);
+    const target = join(root, where);
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, render(entry, root, manifest));
     if (entry.exec) {
       chmodSync(target, 0o755);
       // The working-tree bit is not what a clone gets: record it in the index too.
       try {
-        execFileSync("git", ["update-index", "--chmod=+x", path], { cwd: root, stdio: "ignore" });
+        execFileSync("git", ["update-index", "--chmod=+x", where], { cwd: root, stdio: "ignore" });
       } catch {
         // not yet tracked: `git add` picks up the mode from the file on POSIX; the skill reminds on Windows
       }
@@ -392,6 +409,7 @@ export function diff(path, root = process.cwd()) {
   const manifest = readJson(join(root, "govkit.json"));
   let have;
   let want;
+  let label = path; // the path git apply will patch
   if (path === CLAUDE_MD) {
     have = readText(join(root, CLAUDE_MD)) ?? "";
     want = withBlockReplaced(root, manifest);
@@ -401,7 +419,8 @@ export function diff(path, root = process.cwd()) {
   } else {
     const entry = OWNED.find((e) => e.path === path);
     if (!entry) throw new Error(`${path} is not a file govkit owns`);
-    have = readText(join(root, path)) ?? "";
+    label = located(manifest, path);
+    have = readText(join(root, label)) ?? "";
     want = render(entry, root, manifest);
   }
   const dir = mkdtempSync(join(tmpdir(), "govkit-diff-"));
@@ -419,9 +438,9 @@ export function diff(path, root = process.cwd()) {
       // exit 1: they differ, which is the answer. Name both sides as the repo path.
       if (e.status === 1) {
         return String(e.stdout)
-          .replace(/^diff --git a\/repo b\/template$/m, `diff --git a/${path} b/${path}`)
-          .replace(/^--- a\/repo$/m, `--- a/${path}`)
-          .replace(/^\+\+\+ b\/template$/m, `+++ b/${path}`);
+          .replace(/^diff --git a\/repo b\/template$/m, `diff --git a/${label} b/${label}`)
+          .replace(/^--- a\/repo$/m, `--- a/${label}`)
+          .replace(/^\+\+\+ b\/template$/m, `+++ b/${label}`);
       }
       throw e;
     }
@@ -460,6 +479,7 @@ function printReport(r) {
     if (f.status === "edited") {
       note = f.editedSinceRecorded ? "edited since govkit wrote it" : "edited locally (matches no release)";
     }
+    if (f.at && f.at !== f.path) note += ` (at ${f.at})`;
     console.log(`  ${icon[f.status]} ${f.path.padEnd(34)} ${note}`);
   }
   if (r.releaseGate.status === "outdated") {
