@@ -45,6 +45,16 @@ function manifestConfig() {
 }
 const CFG = manifestConfig();
 
+/** The release branch, as govkit.json names it. Same lookup as release-version.mjs. */
+function releaseBranch() {
+  try {
+    return JSON.parse(readFileSync("govkit.json", "utf-8"))?.branches?.release ?? "main";
+  } catch {
+    return "main";
+  }
+}
+const RELEASE = releaseBranch();
+
 /** Docs that bootstrap a session's context. */
 const BOOTSTRAP_DOCS = (CFG.bootstrapDocs ?? [
   "docs/PROJECT-HUB.md",
@@ -112,13 +122,50 @@ function groundTruth() {
   const branch = git(["rev-parse", "--abbrev-ref", "HEAD"], "unknown");
   facts.push(["current branch", branch]);
 
-  const mainExists = git(["rev-parse", "--verify", "--quiet", "refs/heads/main"]) !== "";
-  facts.push(["main exists locally", mainExists ? "yes" : "NO"]);
+  const localRelease = git(["rev-parse", "--verify", "--quiet", `refs/heads/${RELEASE}`]);
+  const trackedRelease = git([
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    `refs/remotes/origin/${RELEASE}`,
+  ]);
+  facts.push([`${RELEASE} exists locally`, localRelease ? "yes" : "NO"]);
 
-  if (mainExists) {
-    const ahead = git(["rev-list", "--count", "main..HEAD"], "?");
-    const behind = git(["rev-list", "--count", "HEAD..main"], "?");
-    facts.push([`${branch} vs main`, `${ahead} ahead, ${behind} behind`]);
+  // What origin holds right now (one ls-remote, no fetch), keyed by branch name.
+  const remoteHeads = new Map(
+    git(["ls-remote", "--heads", "origin"])
+      .split("\n")
+      .map((l) => l.split(/\s+refs\/heads\//))
+      .filter(([sha, name]) => sha && name)
+      .map(([sha, name]) => [name, sha]),
+  );
+
+  // Compare against origin's release branch, not the local one. A local release branch is only
+  // as current as its last pull, and is often far behind: one consumer read "89 ahead, 17 behind"
+  // when the truth was 9 and 23. The local ref is the fallback for a repo with no remote.
+  const base = trackedRelease ? `origin/${RELEASE}` : localRelease ? RELEASE : null;
+  if (base) {
+    const ahead = git(["rev-list", "--count", `${base}..HEAD`], "?");
+    const behind = git(["rev-list", "--count", `HEAD..${base}`], "?");
+    facts.push([`${branch} vs ${base}`, `${ahead} ahead, ${behind} behind`]);
+  }
+
+  // The remote-tracking ref is itself only as fresh as the last fetch. Say so when origin has moved.
+  const liveRelease = remoteHeads.get(RELEASE);
+  if (trackedRelease && liveRelease && liveRelease !== trackedRelease) {
+    facts.push([
+      `origin/${RELEASE}`,
+      "STALE: origin has moved since the last fetch; run `git fetch` and re-run",
+    ]);
+  }
+
+  if (localRelease && trackedRelease && localRelease !== trackedRelease) {
+    const behind = git(["rev-list", "--count", `${RELEASE}..origin/${RELEASE}`], "?");
+    const ahead = git(["rev-list", "--count", `origin/${RELEASE}..${RELEASE}`], "?");
+    facts.push([
+      `local ${RELEASE}`,
+      `${behind} behind, ${ahead} ahead of origin/${RELEASE}`,
+    ]);
   }
 
   const dirty = git(["status", "--porcelain"]);
@@ -127,14 +174,7 @@ function groundTruth() {
     dirty ? `${dirty.split("\n").length} file(s) uncommitted` : "clean",
   ]);
 
-  const remotes = git(["ls-remote", "--heads", "origin"]);
-  if (remotes) {
-    const names = remotes
-      .split("\n")
-      .map((l) => l.split("refs/heads/")[1])
-      .filter(Boolean);
-    facts.push(["remote branches", names.join(", ")]);
-  }
+  if (remoteHeads.size) facts.push(["remote branches", [...remoteHeads.keys()].join(", ")]);
 
   const defaultBranch = gh([
     "repo",
