@@ -54,7 +54,7 @@ For each template in this skill's `templates/` directory, substitute the `{{TOKE
 | `templates/.github/workflows/sdlc-docs.yml` | `./.github/workflows/sdlc-docs.yml` | Create if absent; else skip. |
 | `templates/scripts/supabase.mjs` | `./scripts/supabase.mjs` | **Only if the project uses Supabase** (a `supabase/` directory, or a `SUPABASE_` variable in `.env.example`). Create if absent; else skip. Verbatim. |
 | `templates/supabase/projects.example.json` | `./supabase/projects.json` | Same condition. Create if absent. **Tell the user it is a placeholder and every Supabase command fails until it is filled in.** |
-| `templates/govkit.json` | `./govkit.json` | Create if absent. Record `govkitVersion`, the branch names from Step 2, and each guardrail's enabled/skipped state. |
+| `templates/govkit.json` | `./govkit.json` | Create if absent. Record `govkitVersion`, the branch names from Step 2, and each guardrail's enabled/skipped state. Substitute `{{GOVKIT_VERSION}}` with `version` from this plugin's `.claude-plugin/plugin.json` (two levels above this skill's base directory), never a remembered value: a literal in the template recorded 0.4.0 for every 0.5.x init. |
 
 Notes:
 - Create parent directories (`docs/`, `scripts/`, `.githooks/`, `.github/workflows/`) as needed.
