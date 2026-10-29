@@ -9,7 +9,7 @@ last checked 2026-10-29
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** 0.9.0: a repo's own steps in `/govkit-session` (#13), used only once trusted (DEC-006). The 0.8.0 aliases stay until the first minor release on or after 2026-11-28 (#29).
+- **Now:** 0.9.1 (#31, security): skills pre-approve only the plugin's own scripts, no npm/pnpm, `git config --get` only. 0.9.0 (#13, project steps behind a trust step) is released.
 - **Next, in order:** #16 → #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
@@ -41,4 +41,6 @@ last checked 2026-10-29
 - 0.8.0 (#12 + #26 + #27) in review: rename with aliases, `--upgrade` renames, the package.json exception, old-name scan, `bootstrapDocs` offer.
 - Shipped 0.8.0 (#28): the rename, with `--upgrade` carrying it; an unedited CLAUDE.md block counts as outdated.
 - 0.9.0 (#13) in review: project steps behind a trust step. The aliases were kept longer, because 0.8.0 had shipped the same day (#29 moved to on or after 2026-11-28).
-- Next: merge and tag 0.9.0, then #16.
+- Shipped 0.9.0 (#30), with the review fix: pre-approvals anchored to `${CLAUDE_PLUGIN_ROOT}`, tested in a live `dontAsk` session. v0.8.0's release notes now give the new alias date.
+- 0.9.1 (#31) in review: the remaining pre-approvals of repo code removed.
+- Next: merge and tag 0.9.1, then #16.
