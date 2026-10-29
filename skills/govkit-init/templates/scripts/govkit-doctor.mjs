@@ -81,6 +81,17 @@ const pkg = read("package.json") ?? {};
 const scripts = pkg.scripts ?? {};
 const guardrails = Object.entries(manifest.guardrails ?? {});
 
+/**
+ * Where a finding's fix is documented: govkit's guide, pinned to the version this repo runs, so
+ * the steps and anchors match it. A govkitVersion that isn't plain X.Y.Z ("mixed", missing) gets
+ * main. MODULE_GUIDES lists the modules with a guide (docs/modules/<id>.md); a test keeps it equal
+ * to module.json's ids.
+ */
+const GUIDE_REF = /^\d+\.\d+\.\d+$/.test(String(manifest.govkitVersion)) ? `v${manifest.govkitVersion}` : "main";
+const guide = (path) => `https://github.com/techsilon-oss/govkit/blob/${GUIDE_REF}/${path}`;
+const MODULE_GUIDES = ["trackers", "release-gate", "ci", "pre-push-hook", "doc-sync", "docs-sync-check", "versioning", "supabase-account"];
+const fixLink = (name) => (MODULE_GUIDES.includes(name) ? `        fix: ${guide(`docs/modules/${name}.md#fix-a-finding`)}` : null);
+
 // ------------------------------------------------------------------ config view
 
 if (process.argv.includes("config")) {
@@ -153,11 +164,14 @@ for (const name of ok) console.log(`  ✅ ${name}`);
 
 for (const [name, reason] of skipped) {
   console.log(`  ⏭️  ${name} — skipped: ${reason}`);
+  // A skip with no reason reads as an oversight; the guide's Undo/Fix sections say what to record.
+  if (reason === "no reason recorded" && fixLink(name)) console.log(fixLink(name));
 }
 
 for (const [name, items] of missing) {
   console.log(`  ❌ ${name} — declared on, but not installed:`);
   for (const i of items) console.log(`        missing ${i}`);
+  if (fixLink(name)) console.log(fixLink(name));
 }
 
 console.log(
@@ -234,6 +248,7 @@ if (existsSync(SESSION_FILE)) {
     // no record, or .git is elsewhere (worktree): reported as not trusted
   }
   console.log(`  🧩 Project steps for /govkit-session, from ${SESSION_FILE}: ${trusted}`);
+  if (!trusted.startsWith("trusted")) console.log(`        how trust works: ${guide("docs/EXTENDING.md#trust-why-the-file-must-be-approved-first")}`);
   for (const p of SESSION_POINTS) {
     const { text: t, commands } = points[p];
     console.log(`        ${p.padEnd(14)} ${t + commands.length} step(s), ${commands.length} command(s)`);
@@ -302,6 +317,7 @@ for (const file of scanned) {
 if (oldNames.length) {
   console.log(`  ⚠️  Old names, renamed in govkit 0.8.0 (they keep working until the first minor release on or after 2026-11-28):`);
   for (const o of oldNames) console.log(`        ${o.file}:${o.line}  ${o.what}`);
+  console.log(`        fix: ${guide("docs/UPGRADING.md#07--08")}`);
   console.log(
     `\n  /govkit-init --upgrade moves the files and scripts; fix the rest by hand. To keep a\n` +
       `  reference on purpose, add "path" or "path:line" to oldNames.ignore in ${MANIFEST}.\n`,

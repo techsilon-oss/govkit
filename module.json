@@ -1,0 +1,103 @@
+{
+  "$comment": "The module notes, kept once (techsilon-oss KIT-STANDARD.md). /govkit-init shows them before the user says yes (skills/govkit-init/modules.mjs), the README module table is generated from them (tools/build-module-table.mjs), and every readMore guide carries the details. Module ids are the guardrail keys in govkit.json. default: \"on\" = installed unless skipped with a reason; \"opt-in\" = asked, off unless chosen.",
+  "schemaVersion": 1,
+  "modules": [
+    {
+      "id": "trackers",
+      "title": "Project trackers",
+      "default": "on",
+      "skippable": false,
+      "files": ["CLAUDE.md", "docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md"],
+      "youGet": "A CLAUDE.md block with the branch flow and merge rules, a project hub for status, decisions and session handoffs, and a priority roadmap. Every other guardrail hangs off these.",
+      "changesOutsideRepo": "Nothing.",
+      "costs": "Nothing.",
+      "undo": "Delete the govkit block in CLAUDE.md (between the govkit:start/end markers) and the two docs. govkit.json then has no trackers, which the doctor reports.",
+      "readMore": "docs/modules/trackers.md"
+    },
+    {
+      "id": "release-gate",
+      "title": "Local release gate (CI fallback)",
+      "default": "on",
+      "skippable": true,
+      "files": ["scripts/release-gate.ts", "release-gate.config.json"],
+      "youGet": "Your CI checks, run on your machine with a PASS/FAIL scorecard, for when GitHub Actions can't run (minutes used up, an outage). With --pr it posts the evidence to the PR.",
+      "changesOutsideRepo": "With --pr only: one comment on the pull request.",
+      "costs": "Nothing to run; it needs tsx as a dev dependency (npm i -D tsx).",
+      "undo": "Set enabled:false with a reason in govkit.json, and delete scripts/release-gate.ts and release-gate.config.json.",
+      "readMore": "docs/modules/release-gate.md"
+    },
+    {
+      "id": "ci",
+      "title": "Your CI workflow",
+      "default": "on",
+      "skippable": true,
+      "files": [".github/workflows/ci.yml"],
+      "youGet": "A check that your repo has a CI workflow running the same checks as the release gate. govkit does not write it: a CI workflow is specific to your stack, and a wrong one is worse than none.",
+      "changesOutsideRepo": "Nothing from govkit. Your workflow uses GitHub Actions minutes.",
+      "costs": "Your CI's Actions minutes (free on public repos; 2,000 a month on the Free plan for private ones).",
+      "undo": "Set enabled:false with a reason in govkit.json.",
+      "readMore": "docs/modules/ci.md"
+    },
+    {
+      "id": "pre-push-hook",
+      "title": "Block direct pushes to the release branch",
+      "default": "on",
+      "skippable": true,
+      "files": [".githooks/pre-push", ".githooks/install-hooks.sh", ".gitattributes"],
+      "youGet": "A git hook that refuses a push straight to the release branch, and prints the gh pr create command to use instead. On a private repo under GitHub's Free plan, it's the only enforcement there is.",
+      "changesOutsideRepo": "git config core.hooksPath in each clone (set by npm run prepare). Nothing on GitHub.",
+      "costs": "Nothing.",
+      "undo": "Set enabled:false with a reason in govkit.json, delete .githooks/, and run git config --unset core.hooksPath.",
+      "readMore": "docs/modules/pre-push-hook.md"
+    },
+    {
+      "id": "doc-sync",
+      "title": "Doc-sync check on pull requests",
+      "default": "on",
+      "skippable": true,
+      "files": ["scripts/govkit-docsync.mjs", "scripts/source-doc-map.json", ".github/workflows/govkit-docsync.yml"],
+      "youGet": "On every PR, a check that code which changed came with its mapped doc. It warns on a PR to the working branch, and gates a PR to the release branch. You decide the pairs in scripts/source-doc-map.json.",
+      "changesOutsideRepo": "A GitHub Actions workflow, which posts or updates one comment on each PR.",
+      "costs": "About 10 seconds of Actions minutes per PR.",
+      "undo": "Set enabled:false with a reason in govkit.json, and delete the three files.",
+      "readMore": "docs/modules/doc-sync.md"
+    },
+    {
+      "id": "docs-sync-check",
+      "title": "Tracker freshness and ground truth",
+      "default": "on",
+      "skippable": true,
+      "files": ["scripts/docs-sync-check.mjs"],
+      "youGet": "At the start of a session, the facts from git and GitHub (branches, tags, CI, issues) next to what the trackers claim, and a warning when a tracker is older than the code. The plugin's session hook uses the same rule.",
+      "changesOutsideRepo": "Nothing. It reads git and, if available, gh.",
+      "costs": "Nothing.",
+      "undo": "Set enabled:false with a reason in govkit.json, and delete scripts/docs-sync-check.mjs. To silence only the session hook, set sessionHook:false.",
+      "readMore": "docs/modules/docs-sync-check.md"
+    },
+    {
+      "id": "versioning",
+      "title": "One version per release, tagged",
+      "default": "on",
+      "skippable": true,
+      "files": ["scripts/release-version.mjs"],
+      "youGet": "release:bump as the release PR's last commit, release:tag after the merge, and release:status to report a release with no tag or one shipped without a bump.",
+      "changesOutsideRepo": "release:tag pushes a v<version> tag to GitHub, when you run it.",
+      "costs": "Nothing.",
+      "undo": "Set enabled:false with a reason in govkit.json, delete scripts/release-version.mjs and its npm scripts. Existing tags stay.",
+      "readMore": "docs/modules/versioning.md"
+    },
+    {
+      "id": "supabase-account",
+      "title": "Supabase commands bound to this repo's account",
+      "default": "on",
+      "condition": "Only offered when the repo uses Supabase (a supabase/ directory, or a SUPABASE_ variable in .env.example).",
+      "skippable": true,
+      "files": ["scripts/supabase.mjs", "supabase/projects.json"],
+      "youGet": "npm run supabase runs the Supabase CLI with this repo's own token and refuses to run unless that token can see this repo's projects. A machine with several Supabase accounts can't apply a migration to the wrong one.",
+      "changesOutsideRepo": "Nothing beyond what your Supabase commands do. The token lives in your .env, which is not committed.",
+      "costs": "Nothing.",
+      "undo": "Set enabled:false with a reason in govkit.json, delete scripts/supabase.mjs and supabase/projects.json, and use the Supabase CLI directly.",
+      "readMore": "docs/modules/supabase-account.md"
+    }
+  ]
+}

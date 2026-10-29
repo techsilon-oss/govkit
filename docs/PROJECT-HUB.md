@@ -9,8 +9,8 @@ last checked 2026-10-29
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** govkit's kit-standard checklist (#34): module notes, `/govkit-help`, `docs/FAQ.md`, doctor findings linking to fixes, and the doc-sync workflow template fixes.
-- **Next, in order:** #34 → #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas. The other kits track their own checklists (qa-kit#2, release-gate-kit#3, gh-runner-kit#1).
+- **Now:** 0.10.0 (#34): govkit meets the kit standard: module notes in `module.json`, guides per module, `/govkit-help`, `docs/FAQ.md`, version-pinned fix links, the doc-sync workflow on Node 24 actions.
+- **Next, in order:** #14 (the tracker module, an opt-in `module.json` entry) → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
 
@@ -46,4 +46,5 @@ last checked 2026-10-29
 - Shipped 0.9.1 (#32): no pre-approved command runs repo code or writes config.
 - #16: created `techsilon-oss/.github` (KIT-STANDARD.md, org SECURITY/CONTRIBUTING/issue templates) in PR .github#1; govkit 0.9.2 links it. Four kit checklist issues drafted for review.
 - #16 done: techsilon-oss/.github created (KIT-STANDARD.md, org SECURITY/CONTRIBUTING/issue templates, profile), its `main` protected; private vulnerability reporting enabled on all five repos; govkit 0.9.2 shipped (#33); checklists posted (govkit#34, qa-kit#2, release-gate-kit#3, gh-runner-kit#1).
-- Next: #34.
+- 0.10.0 (#34) in review.
+- Next: #14, in the `module.json` format.

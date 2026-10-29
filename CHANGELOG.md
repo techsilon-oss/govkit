@@ -4,6 +4,24 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.10.0] - 2026-10-29
+
+govkit meets the [kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md) (#34). **Self-hosted runners: see [UPGRADING](docs/UPGRADING.md#09--010).**
+
+### Added
+- **Module notes, kept once in `module.json`:** for each module, what you get, what it changes outside your code, the cost, how to undo it, and a guide. `/govkit-init` shows them before you say yes, and the README's module table is generated from them.
+- **A guide per module**, `docs/modules/<module>.md`: what you get, outside changes, cost, set up, *fix a finding*, undo.
+- **`/govkit-help`:** answers from the docs that ship with your installed version, citing them. It only reads (`allowed-tools: Read Grep Glob`).
+- **`docs/FAQ.md`:** short answers that link to the guides. The README's and EXTENDING's FAQs moved there.
+- **Doctor findings link to their fix,** pinned to your `govkitVersion` (`blob/v<version>/…`), so the steps and anchors match what you run. `/govkit-init`'s next steps and `upgrade.mjs` link the same way.
+
+### Changed
+- **The doc-sync workflow** uses `actions/checkout@v7`, `actions/setup-node@v7` and `actions/github-script@v9`, which run on Node 24. **A self-hosted runner must be v2.327.1 or later.** Its check name ("Doc-sync (gate|warn)") is unchanged.
+- **On a PR from a fork**, the workflow no longer tries to comment (the fork's token can't write, which used to fail the run). The findings always go to the job summary, and the gate still applies.
+- **The plugin description** is one line, ending "Help: /govkit-help".
+
+Changed in your repo: `scripts/govkit-doctor.mjs` (links to fixes) and `.github/workflows/govkit-docsync.yml` (action versions, fork PRs, job summary).
+
 ## [0.9.2] - 2026-10-29
 
 ### Changed
@@ -162,6 +180,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.10.0]: https://github.com/techsilon-oss/govkit/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/techsilon-oss/govkit/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/techsilon-oss/govkit/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/techsilon-oss/govkit/compare/v0.8.0...v0.9.0

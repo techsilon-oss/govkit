@@ -2,6 +2,7 @@
 name: govkit-init
 description: Scaffold the core project guardrails (branch flow, Local Release Gate CI-fallback, PROJECT-HUB + PRIORITY-ROADMAP, generic CLAUDE.md) into the current project. Use when starting a new project, or to add govkit guardrails to an existing one. Non-destructive — creates missing files, appends/merges into existing ones, never overwrites. `/govkit-init --upgrade` brings the files govkit owns up to the installed version, replacing each only on an explicit yes.
 argument-hint: "[--skip <guardrail>]... | --upgrade"
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes*)
 ---
 
 # govkit-init — scaffold project guardrails
@@ -30,6 +31,12 @@ Ask the user these four, showing defaults so "accept all" is one reply:
 2. **Default working branch** — default: `dev`. → `{{DEFAULT_BRANCH}}`
 3. **Package manager** — default: `npm`. (Only `npm` is wired in the minimal tier; note others as future.)
 4. **Deploy target** — `vercel` | `netlify` | `none`, default `vercel`. → `{{DEPLOY_TARGET}}` (substitute the platform name; for `none`, substitute `your host`).
+
+## Step 2b — Show what each module does, before the user says yes
+
+Run `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes` and show its output: for each module, what you get, what it changes outside the code, what it costs, how to undo it, and a link to its guide. The notes come from `module.json`, the one place they're kept, so show them as printed rather than paraphrasing.
+
+Then ask **once**: "Install all of these, or skip some?" A skip needs a reason, which is recorded (Step 3b). `trackers` can't be skipped. A module marked **opt-in** is off unless the user chooses it: ask about each one separately, default no. `supabase-account` is only offered where its `When:` condition holds.
 
 ## Step 3 — Scaffold (non-destructive)
 
@@ -75,17 +82,17 @@ Skippable names: `release-gate`, `ci`, `pre-push-hook`, `doc-sync`, `docs-sync-c
 
 ## Step 4 — Summary
 
-Print a table: each target file → **created** / **appended** / **merged** / **skipped (reason)**. Then list next steps:
+Print a table: each target file → **created** / **appended** / **merged** / **skipped (reason)**. Then list next steps, **each with its guide's link**, pinned to the installed version: `https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/<module>.md` (`<version>` from this plugin's `.claude-plugin/plugin.json`). The links below show which guide each step belongs to:
 
 1. `npm i -D tsx`
-2. Edit `release-gate.config.json` so its `checks` match this project's real CI jobs.
-3. **If Supabase was scaffolded, edit `supabase/projects.json`.** It ships with `REPLACE_ME` placeholders and every `npm run supabase` command refuses to run until they are real. Then add a per-repo token: sign in as the account that owns the projects, generate one at `https://supabase.com/dashboard/account/tokens`, and put `SUPABASE_ACCESS_TOKEN=sbp_...` in the gitignored `.env`. Verify with `npm run supabase:whoami`.
-4. **Edit `scripts/source-doc-map.json`.** Shipped as an example, it maps nothing real and therefore **gates nothing.** An unedited registry is a guardrail in appearance only.
+2. Edit `release-gate.config.json` so its `checks` match this project's real CI jobs. (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/release-gate.md#set-up)
+3. **If Supabase was scaffolded, edit `supabase/projects.json`.** It ships with `REPLACE_ME` placeholders and every `npm run supabase` command refuses to run until they are real. Then add a per-repo token: sign in as the account that owns the projects, generate one at `https://supabase.com/dashboard/account/tokens`, and put `SUPABASE_ACCESS_TOKEN=sbp_...` in the gitignored `.env`. Verify with `npm run supabase:whoami`. (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/supabase-account.md#set-up)
+4. **Edit `scripts/source-doc-map.json`.** Shipped as an example, it maps nothing real and therefore **gates nothing.** An unedited registry is a guardrail in appearance only. (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/doc-sync.md#set-up)
 5. Try them: `npm run release-gate`, `npm run docs:sync-check`, `node scripts/govkit-doctor.mjs`
-6. **Baseline the version.** If the release branch has no `v*` tag yet, run `npm run release:tag` once to tag what is in production now; from then on `npm run release:status` reports drift. If the UI shows a build identifier, make it the commit SHA, not a commit count (see the `versioning` guardrail in `govkit.json`).
-7. Fill in `docs/PROJECT-HUB.md` (status + first decisions) and `docs/PRIORITY-ROADMAP.md`.
+6. **Baseline the version.** If the release branch has no `v*` tag yet, run `npm run release:tag` once to tag what is in production now; from then on `npm run release:status` reports drift. If the UI shows a build identifier, make it the commit SHA, not a commit count (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/versioning.md#set-up)
+7. Fill in `docs/PROJECT-HUB.md` (status + first decisions) and `docs/PRIORITY-ROADMAP.md`. (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/trackers.md#set-up)
 8. If `gh` was unauthed, run `gh auth login` so `/govkit-session` and `--pr` work.
-9. **Verify the hook actually blocks** — presence is not proof:
+9. **Verify the hook actually blocks** — presence is not proof (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/pre-push-hook.md#set-up):
    ```bash
    git config core.hooksPath                          # expect: .githooks
    NEW=$(git commit-tree "$(git rev-parse main^{tree})" -p main -m probe)
