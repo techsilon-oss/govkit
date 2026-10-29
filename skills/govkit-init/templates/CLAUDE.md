@@ -51,6 +51,17 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, **resets on the 1st**)
 
 The gate's checks live in `release-gate.config.json` — edit them to match this project's CI jobs.
 
+## Work tracking (when the tracker module is on)
+
+When `govkit.json` → `guardrails.tracker.enabled` is `true`, work is tracked in GitHub Issues:
+
+- **Issues and milestones are the source of truth** for what to work on and its status. Docs keep the why. If a doc and the issues disagree, the issues are right; fix the doc.
+- **Every open issue has exactly one launch-category label**, one of `guardrails.tracker.issues.categories`, assigned when it's created. An issue without one counts as "to triage".
+- **Milestones are themed outcomes** ("Launch Readiness", "Search & Discovery"), never "Phase 1". One-off bugs go in "Maintenance & Bugs".
+- **The decision register** (issue `guardrails.tracker.issues.register`) holds everything only an owner can do or decide. Record an open question there as `D-###` and label its issue `needs-decision`. **Never invent an owner's answer:** write the assumption down, build under it, and say so.
+- **Close an issue with a summary comment:** `Completed: <what the user gains, in plain words>` and, optionally, `Technical: <migrations, tests, deploy notes>`.
+- Never change an issue's priority; that's the owners' call.
+
 ## Project Context
 
 - Architecture decisions, current status, and session handoffs live in [`docs/PROJECT-HUB.md`](docs/PROJECT-HUB.md).

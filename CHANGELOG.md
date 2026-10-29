@@ -4,6 +4,22 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.11.0] - 2026-10-29
+
+### Added
+- **The tracker module** (#14, part 1): work tracked in GitHub Issues, **opt-in**. `/govkit-init tracker` (or the question in `/govkit-init`) shows its note and, on yes, sets up:
+  - the labels you're missing (existing ones are never touched);
+  - **launch categories with your names** (`guardrails.tracker.issues.categories`): `pre-launch`/`post-launch`/`idea`/`triage` by default, `now`/`next`/`later`/`triage` suggested once the product has launched;
+  - one pinned **decision register** issue, whose number is recorded in `govkit.json`;
+  - optional issue forms.
+
+  Every GitHub change is shown and asked first. **Pins:** GitHub allows 3 per repo; when all are used, govkit says so and never unpins yours.
+- **`/govkit-session`** reads the register and groups open issues by launch category at the start; at close it uses the `Completed:` / `Technical:` closing format. The rules are in the CLAUDE.md govkit block ("Work tracking"), worded for when the tracker is on.
+- **`/govkit-doctor`:** "tracker — not decided" is a **notice**: `--ci` stays green in every repo that hasn't chosen yet. "Tracker on, but no register recorded" **fails** `--ci`.
+- Guide: [docs/modules/tracker.md](docs/modules/tracker.md). The daily status report follows in 0.12.0.
+
+Changed in your repo: `scripts/govkit-doctor.mjs` (the tracker), and the CLAUDE.md govkit block ("Work tracking"; an unedited block is offered the new one).
+
 ## [0.10.0] - 2026-10-29
 
 govkit meets the [kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md) (#34). **Self-hosted runners: see [UPGRADING](docs/UPGRADING.md#09--010).**
@@ -180,6 +196,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.11.0]: https://github.com/techsilon-oss/govkit/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/techsilon-oss/govkit/compare/v0.9.2...v0.10.0
 [0.9.2]: https://github.com/techsilon-oss/govkit/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/techsilon-oss/govkit/compare/v0.9.0...v0.9.1

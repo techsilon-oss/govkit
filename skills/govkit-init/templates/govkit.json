@@ -96,6 +96,18 @@
       "watchedPaths": ["src/", "scripts/", "package.json", ".github/"],
       "sessionHook": true,
       "$comment": "sessionHook: the plugin's Claude Code hook reminds a session to update the trackers before it ends, when the working branch gained code and no tracker changed; false turns it off for this repo. watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."
+    },
+
+    "tracker": {
+      "enabled": null,
+      "description": "Work tracked in GitHub Issues: labels, themed milestones, a pinned decision register, a closing format. Opt-in.",
+      "issues": {
+        "register": null,
+        "launchEvent": null,
+        "categories": ["pre-launch", "post-launch", "idea", "triage"],
+        "areaLabels": []
+      },
+      "$comment": "enabled: null means not decided yet: the doctor shows a notice, never a failure. /govkit-init (or /govkit-init tracker) asks, and records true, or false with a skippedReason. categories are the launch-category label names (exactly one per open issue); a launched product might use now/next/later/triage. register is the decision register's issue number, written by tracker.mjs record-register."
     }
   },
 

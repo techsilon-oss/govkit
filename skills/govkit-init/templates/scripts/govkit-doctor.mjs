@@ -110,7 +110,7 @@ function doctorRelease() {
 const DOCTOR_RELEASE = doctorRelease();
 const GUIDE_REF = `v${DOCTOR_RELEASE && atLeast(DOCTOR_RELEASE, FIRST_GUIDES) >= 0 ? DOCTOR_RELEASE : FIRST_GUIDES}`;
 const guide = (path) => `https://github.com/techsilon-oss/govkit/blob/${GUIDE_REF}/${path}`;
-const MODULE_GUIDES = ["trackers", "release-gate", "ci", "pre-push-hook", "doc-sync", "docs-sync-check", "versioning", "supabase-account"];
+const MODULE_GUIDES = ["trackers", "release-gate", "ci", "pre-push-hook", "doc-sync", "docs-sync-check", "versioning", "supabase-account", "tracker"];
 const fixLink = (name) => (MODULE_GUIDES.includes(name) ? `        fix: ${guide(`docs/modules/${name}.md#fix-a-finding`)}` : null);
 
 // ------------------------------------------------------------------ config view
@@ -152,8 +152,13 @@ if (process.argv.includes("config")) {
 const ok = [];
 const skipped = [];
 const missing = [];
+// Opt-in modules not decided yet: a notice, never a failure, so --ci stays green in every repo that
+// upgraded before choosing (enabled: null, or no entry at all).
+const OPT_IN = ["tracker"];
+const undecided = OPT_IN.filter((n) => !manifest.guardrails?.[n] || manifest.guardrails[n].enabled === null);
 
 for (const [name, g] of guardrails) {
+  if (OPT_IN.includes(name) && g.enabled === null) continue; // listed in `undecided`
   if (!g.enabled) {
     skipped.push([name, g.skippedReason ?? "no reason recorded"]);
     continue;
@@ -171,6 +176,10 @@ for (const [name, g] of guardrails) {
     })
     .filter(Boolean);
   const absentScripts = (g.expectsScripts ?? []).filter((s) => !scripts[s]);
+  // The tracker, once on, needs its decision register: the session and the report read it.
+  if (name === "tracker" && !Number.isInteger(g.issues?.register)) {
+    absentFiles.push("the decision register's issue number (guardrails.tracker.issues.register)");
+  }
 
   if (absentFiles.length === 0 && absentScripts.length === 0) {
     ok.push(name);
@@ -195,8 +204,14 @@ for (const [name, items] of missing) {
   if (fixLink(name)) console.log(fixLink(name));
 }
 
+for (const name of undecided) {
+  console.log(`  ℹ️  ${name} — not decided (opt-in): run /govkit-init ${name} to turn it on or record "no"`);
+  if (fixLink(name)) console.log(fixLink(name));
+}
+
 console.log(
-  `\n  ${ok.length} ok · ${skipped.length} skipped by decision · ${missing.length} missing\n`,
+  `\n  ${ok.length} ok · ${skipped.length} skipped by decision · ${missing.length} missing` +
+    `${undecided.length ? ` · ${undecided.length} not decided` : ""}\n`,
 );
 
 if (missing.length > 0) {

@@ -202,13 +202,14 @@ test("save-diff writes nothing when the file already matches", () => {
 test("the CLAUDE.md block renders from values read back from an old block", () => {
   const { root } = makeRepo("v0.5.0"); // 0.5.0's govkit.json has no `project`
   // Unedited, it matches 0.5.0's block rendered with the values read back from it: outdated,
-  // not edited. The diff to 0.8.0 is the skill rename only; the rendered values are not in it.
+  // not edited. The diff to today's block holds template changes only (the skill rename, the
+  // tracker's "Work tracking" section); the values read back from the block are not in it.
   const block = check(root).claudeBlock;
   assert.equal(block.status, "outdated");
   assert.ok(block.versions.includes("0.5.0"));
-  const changed = diff("CLAUDE.md", root).split("\n").filter((l) => /^[-+][^-+]/.test(l));
-  assert.ok(changed.length > 0);
-  for (const l of changed) assert.match(l, /\/sdlc|\/govkit-session/, `unexpected change: ${l}`);
+  const lines = diff("CLAUDE.md", root).split("\n");
+  const changed = lines.filter((l) => /^[-+](?![-+]{2} )/.test(l));
+  assert.ok(lines.some((l) => /^-.*\/sdlc\b/.test(l)) && lines.some((l) => /^\+.*\/govkit-session/.test(l)), "the rename is in it");
   assert.ok(!changed.some((l) => /Acme|Vercel/.test(l)), "rendered values must not show as changes");
 });
 

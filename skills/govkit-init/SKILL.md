@@ -1,8 +1,8 @@
 ---
 name: govkit-init
 description: Scaffold the core project guardrails (branch flow, Local Release Gate CI-fallback, PROJECT-HUB + PRIORITY-ROADMAP, generic CLAUDE.md) into the current project. Use when starting a new project, or to add govkit guardrails to an existing one. Non-destructive — creates missing files, appends/merges into existing ones, never overwrites. `/govkit-init --upgrade` brings the files govkit owns up to the installed version, replacing each only on an explicit yes.
-argument-hint: "[--skip <guardrail>]... | --upgrade"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes*)
+argument-hint: "[--skip <guardrail>]... | --upgrade | tracker"
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes*) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" labels*) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" pins*)
 ---
 
 # govkit-init — scaffold project guardrails
@@ -36,7 +36,7 @@ Ask the user these four, showing defaults so "accept all" is one reply:
 
 Run `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes` and show its output: for each module, what you get, what it changes outside the code, what it costs, how to undo it, and a link to its guide. The notes come from `module.json`, the one place they're kept, so show them as printed rather than paraphrasing.
 
-Then ask **once**: "Install all of these, or skip some?" A skip needs a reason, which is recorded (Step 3b). `trackers` can't be skipped. A module marked **opt-in** is off unless the user chooses it: ask about each one separately, default no. `supabase-account` is only offered where its `When:` condition holds.
+Then ask **once**: "Install all of these, or skip some?" A skip needs a reason, which is recorded (Step 3b). `trackers` can't be skipped. A module marked **opt-in** is off unless the user chooses it: ask about each one separately, default no. For `tracker`, follow [The tracker module](#the-tracker-module-govkit-init-tracker), and record the answer either way. `supabase-account` is only offered where its `When:` condition holds.
 
 ## Step 3 — Scaffold (non-destructive)
 
@@ -143,6 +143,28 @@ Every command below is `node "<this skill's base directory>/upgrade.mjs" …`, r
 7. **Prettier.** If `check --json` reports `"prettier": true`, offer to add the owned paths to `.prettierignore`. Otherwise the formatter rewrites them, every one reads as `edited`, and future upgrades default to no.
 8. **After a release that renamed something, run `/govkit-doctor`.** It lists remaining references to old names (CI steps running `npm run sdlc-docs:*`, `/sdlc` in docs) with file and line. Then point at [docs/UPGRADING.md](../../docs/UPGRADING.md) for anything the upgrade can't do (the trackers' `last checked` line).
 9. Tell the user to review `git diff` and commit it as one change (`chore(govkit): upgrade to <version>`). Do not commit for them. On Windows, if an applied hook was untracked, remind them to `git update-index --chmod=+x .githooks/<name>` after `git add`.
+
+## The tracker module (`/govkit-init tracker`)
+
+Opt-in: GitHub Issues as the source of truth, with labels, themed milestones and a pinned decision register. It runs from Step 2b on a new repo, or alone as `/govkit-init tracker` on an existing one; the doctor says "tracker — not decided" until it has an answer. Every command below runs from the repo root. **This flow writes to GitHub, so show each change and ask before making it.** Only `labels` and `pins` (both read-only) are pre-approved.
+
+1. **Show the note:** `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes tracker`. Ask: turn it on? On **no**, ask for the reason and run `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" decline --reason "<reason>"`. Done.
+2. **Launch categories.** Ask: **"Is your product launched yet?"**
+   - **No:** suggest `pre-launch`, `post-launch`, `idea`, `triage`, and ask what the launch is called ("public launch", "v1.0").
+   - **Yes:** suggest `now`, `next`, `later`, `triage`.
+
+   The user may rename any of them. Keep a triage category. Also ask for area labels (optional, e.g. `platform`, `experience`). Then:
+   `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" enable --categories <a,b,c,d> --launch-event "<name>" --areas <x,y>`
+3. **Labels:** `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" labels` lists only the labels this repo is **missing**; existing labels are never changed. Show the list, ask, and on yes create each with `gh label create "<name>" --color <color> --description "<description>"`.
+4. **Decision register:** show `${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/tracker/register.md` (its two table headings are read by the daily report: keep them). Ask, then:
+   `gh issue create --title "<Project> — Decision Register" --body-file "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/tracker/register.md"`, and record its number: `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" record-register <n>`.
+5. **Pin it.** First `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" pins`. GitHub pins at most **3** issues per repo.
+   - **A slot is free:** ask, then `gh issue pin <n>`.
+   - **All 3 are used:** say so, and let the user choose: unpin one **themselves**, or leave the register unpinned (its number is recorded either way).
+
+   **Never unpin an issue the user pinned.**
+6. **Issue forms (optional):** ask. On yes, copy `${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/tracker/issue-forms/*.yml` to `.github/ISSUE_TEMPLATE/` (create if absent; never overwrite). Tell the user: a form sets its type label, but **GitHub issue forms can't set a label from an answer**, so a new issue counts as "to triage" until someone adds its launch category.
+7. **Next steps, with links** (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/tracker.md): the rules now in the CLAUDE.md block ("Work tracking"); `/govkit-session` reads the register at the start and closes issues in the `Completed:` / `Technical:` format; the daily report arrives in 0.12.0.
 
 ## What this skill does NOT do
 

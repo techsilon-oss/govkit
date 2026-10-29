@@ -470,7 +470,7 @@ export function stable(v) {
 // ------------------------------------------------------------------ write
 
 /** The text of the JSON object that opens at `start` (a "{"), by brace depth, skipping strings. */
-function objectEnd(text, start) {
+export function objectEnd(text, start) {
   let depth = 0;
   for (let i = start; i < text.length; i++) {
     const c = text[i];
