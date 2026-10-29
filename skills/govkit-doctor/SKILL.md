@@ -2,7 +2,7 @@
 name: govkit-doctor
 description: Report which govkit guardrails a project actually has, versus which it declares. Also `/govkit-doctor config` to show the current guardrail configuration. Use when adopting govkit into an existing repo, after upgrading govkit, or when a repo "has the standard" but keeps drifting.
 argument-hint: "[config] [--ci]"
-allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(node *upgrade.mjs check*) Bash(git config *) Bash(gh repo view *) Read Glob
+allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check*) Bash(git config *) Bash(gh repo view *) Read Glob
 ---
 
 # `/govkit-doctor` — is this project actually conformant?
@@ -42,7 +42,7 @@ It also flags **strays** — guardrails present on disk but absent from the mani
 Present is not current. A plugin update never reaches the files init copied into the repo, so a repo can show every guardrail ✅ while running scripts several fixes behind. After the script above, also run the plugin's checker — it ships with the plugin, so it knows releases the repo's own copy of the doctor does not:
 
 ```bash
-node "<this skill's base directory>/../govkit-init/upgrade.mjs" check
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check
 ```
 
 Report each owned file that is **outdated** (with the releases it matches), **edited** (matches no release) or **rename pending**, and a `govkitVersion` the files contradict. Then point at **`/govkit-init --upgrade`**. This is read-only; never apply from the doctor.
@@ -51,10 +51,10 @@ Report each owned file that is **outdated** (with the releases it matches), **ed
 
 The script lists every reference to a name govkit renamed in 0.8.0, with file and line: `/sdlc` (now `/govkit-session`), `/sdlc-docs` (now `/govkit-docsync`), the `sdlc-docs:*` npm scripts (now `docsync:*`), `scripts/sdlc-docs.mjs` and `sdlc-docs.yml`. It searches `CLAUDE.md`, `docs/`, `.github/` and the git hooks; `CHANGELOG.md` is history and is skipped.
 
-- **Report them, and say which matter most:** a CI step running `npm run sdlc-docs:*` breaks when 0.9.0 removes the alias.
+- **Report them, and say which matter most:** a CI step running `npm run sdlc-docs:*` breaks when the first minor release on or after 2026-11-28 removes the alias.
 - A repo with **its own** `.claude/skills/sdlc/` (or `sdlc-docs/`) is not told about that skill name: its mentions are of its own skill, which is the reason govkit renamed.
 - A reference kept on purpose goes in `govkit.json` → `"oldNames": { "ignore": ["path/glob/**", "file:line"] }`.
-- Warnings only in 0.8.0. From 0.9.0, govkit-only names (the npm scripts, the runner, the workflow file) fail `--ci`; skill-name mentions never do.
+- Warnings only in 0.8.0. From the first minor release on or after 2026-11-28, govkit-only names (the npm scripts, the runner, the workflow file) fail `--ci`; skill-name mentions never do.
 
 ## When no manifest exists
 

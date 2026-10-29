@@ -4,21 +4,36 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.9.0] - 2026-10-29
+
+### Added
+- **A repo's own steps in `/govkit-session`** (#13): `.govkit/session.md`, with `## On start`, `## Before commit` and `## On close`. A `sh` block is a command, run through the agent's Bash tool, and one that fails stops that point's remaining steps; a list item or paragraph is an instruction. They run after the standard steps. Guide: [docs/EXTENDING.md](docs/EXTENDING.md).
+- **Trust first:** the file comes from the repo, so nothing in it is used until the user has trusted that exact file on their machine. The SHA-256 is recorded in `.git/govkit/session-trust.json`, never committed, and any edit means trusting it again. The user runs the trust command themselves; the skill never pre-approves it, and shows the file between `UNTRUSTED REPO FILE` markers as data, never instructions.
+- `/govkit-doctor` lists each repo's project steps, with every command spelled out, and whether this machine trusts the file.
+
+### Security
+- **Skills pre-approve only the plugin's own scripts.** `allowed-tools` patterns name the script by its path under `${CLAUDE_PLUGIN_ROOT}`, never by name with a wildcard. `Bash(node *upgrade.mjs check*)` in `/govkit-doctor` matched any file ending in `upgrade.mjs`, so a repo could ship `x-upgrade.mjs` and have it run without a prompt; it's now anchored, like the new `/govkit-session` patterns. A test simulates the matching against look-alike scripts.
+
+### Changed
+- **The 0.8.0 aliases are kept longer:** `/sdlc`, `/sdlc-docs` and the `sdlc-docs:*` npm script aliases now stay until **the first minor release on or after 2026-11-28**, not 0.9.0. 0.8.0 shipped the same day as 0.9.0; removing them now would have left no time to move.
+
+Changed in your repo: `scripts/govkit-doctor.mjs` (project steps listing; alias date).
+
 ## [0.8.0] - 2026-10-29
 
-**Breaking: follow [docs/UPGRADING.md](docs/UPGRADING.md#07--08).** The old names keep working until 0.9.0.
+**Breaking: follow [docs/UPGRADING.md](docs/UPGRADING.md#07--08).** The old names keep working until the first minor release on or after 2026-11-28 (extended in 0.9.0, which first planned to remove them).
 
 ### Changed (breaking)
-- **Skills renamed** so they can't clash with a project's own: `/sdlc` → **`/govkit-session`** (`status`, `close`, or a task), `/sdlc-docs` → **`/govkit-docsync`**. `/sdlc` and `/sdlc-docs` stay as aliases that say so, until 0.9.0. (#12)
+- **Skills renamed** so they can't clash with a project's own: `/sdlc` → **`/govkit-session`** (`status`, `close`, or a task), `/sdlc-docs` → **`/govkit-docsync`**. `/sdlc` and `/sdlc-docs` stay as aliases that say so, until the first minor release on or after 2026-11-28. (#12)
 - **Files renamed with them:** `scripts/sdlc-docs.mjs` → `scripts/govkit-docsync.mjs`, `.github/workflows/sdlc-docs.yml` → `govkit-docsync.yml`. The workflow's check name ("Doc-sync (gate|warn)") is unchanged, so a branch protection rule requiring it keeps working.
-- **npm scripts renamed:** `sdlc-docs:{audit,gate,report}` → `docsync:{audit,gate,report}`. `--upgrade` keeps each old key as `npm run docsync:<name>` until 0.9.0.
+- **npm scripts renamed:** `sdlc-docs:{audit,gate,report}` → `docsync:{audit,gate,report}`. `--upgrade` keeps each old key as `npm run docsync:<name>` until the first minor release on or after 2026-11-28.
 
 ### Added
 - **`--upgrade` carries renames:** an old file is recognised by its release hashes, written under the new name and deleted. An edited old file is never moved or deleted: it's reported and its diff saved.
 - **`package.json`, the one file govkit edits that it does not own:** only scripts whose value runs `scripts/sdlc-docs.mjs` change, shown as a diff, line by line (the file's layout survives), on a clean tree. A file that can't be edited that way stops the upgrade instead of being reformatted.
-- **The doctor lists old names** (`/sdlc`, `/sdlc-docs`, `sdlc-docs:*`, `scripts/sdlc-docs.mjs`, `sdlc-docs.yml`) in `CLAUDE.md`, `docs/`, `.github/` and git hooks, with file and line. A repo with its own `.claude/skills/sdlc/` isn't told about `/sdlc`. `govkit.json` `oldNames.ignore` keeps a reference on purpose. Warnings only, until 0.9.0.
+- **The doctor lists old names** (`/sdlc`, `/sdlc-docs`, `sdlc-docs:*`, `scripts/sdlc-docs.mjs`, `sdlc-docs.yml`) in `CLAUDE.md`, `docs/`, `.github/` and git hooks, with file and line. A repo with its own `.claude/skills/sdlc/` isn't told about `/sdlc`. `govkit.json` `oldNames.ignore` keeps a reference on purpose. Warnings only, until the first minor release on or after 2026-11-28.
 - `--upgrade` offers the new `bootstrapDocs` when a repo still has exactly the old default; a list the user changed is left alone.
-- **An unedited `CLAUDE.md` govkit block is recognised as outdated:** each release's block template is rendered with the repo's values and compared, so a block nobody touched is offered the new one (default yes) instead of keeping `/sdlc` after 0.9.0 removes it. Only a block matching no release counts as edited (default no).
+- **An unedited `CLAUDE.md` govkit block is recognised as outdated:** each release's block template is rendered with the repo's values and compared, so a block nobody touched is offered the new one (default yes) instead of keeping `/sdlc` after the aliases are removed. Only a block matching no release counts as edited (default no).
 
 ### Fixed
 - Scaffolded trackers declare a date: `last checked <scaffold date>` in `PROJECT-HUB.md` and `PRIORITY-ROADMAP.md`, so `docs-sync-check --ci` passes on day one. `CLAUDE.md` leaves the default `bootstrapDocs` (it holds rules, not status). (#26)
@@ -128,6 +143,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.9.0]: https://github.com/techsilon-oss/govkit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/techsilon-oss/govkit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/techsilon-oss/govkit/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/techsilon-oss/govkit/compare/v0.6.0...v0.6.1
