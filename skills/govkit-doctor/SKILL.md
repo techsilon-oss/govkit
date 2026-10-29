@@ -45,7 +45,16 @@ Present is not current. A plugin update never reaches the files init copied into
 node "<this skill's base directory>/../govkit-init/upgrade.mjs" check
 ```
 
-Report each owned file that is **outdated** (with the releases it matches) or **edited** (matches no release), and a `govkitVersion` the files contradict. Then point at **`/govkit-init --upgrade`**. This is read-only; never apply from the doctor.
+Report each owned file that is **outdated** (with the releases it matches), **edited** (matches no release) or **rename pending**, and a `govkitVersion` the files contradict. Then point at **`/govkit-init --upgrade`**. This is read-only; never apply from the doctor.
+
+## Old names (renamed in 0.8.0)
+
+The script lists every reference to a name govkit renamed in 0.8.0, with file and line: `/sdlc` (now `/govkit-session`), `/sdlc-docs` (now `/govkit-docsync`), the `sdlc-docs:*` npm scripts (now `docsync:*`), `scripts/sdlc-docs.mjs` and `sdlc-docs.yml`. It searches `CLAUDE.md`, `docs/`, `.github/` and the git hooks; `CHANGELOG.md` is history and is skipped.
+
+- **Report them, and say which matter most:** a CI step running `npm run sdlc-docs:*` breaks when 0.9.0 removes the alias.
+- A repo with **its own** `.claude/skills/sdlc/` (or `sdlc-docs/`) is not told about that skill name: its mentions are of its own skill, which is the reason govkit renamed.
+- A reference kept on purpose goes in `govkit.json` → `"oldNames": { "ignore": ["path/glob/**", "file:line"] }`.
+- Warnings only in 0.8.0. From 0.9.0, govkit-only names (the npm scripts, the runner, the workflow file) fail `--ci`; skill-name mentions never do.
 
 ## When no manifest exists
 
@@ -57,7 +66,7 @@ If there is no `govkit.json`, the project was never scaffolded (or the manifest 
 | release-gate | `scripts/release-gate.ts` + `release-gate.config.json` + a `release-gate` script |
 | ci | `.github/workflows/ci.yml` |
 | pre-push-hook | `.githooks/pre-push`, `.gitattributes`, `prepare` script, and `git config core.hooksPath` |
-| doc-sync | `scripts/sdlc-docs.mjs`, `scripts/source-doc-map.json`, `.github/workflows/sdlc-docs.yml` |
+| doc-sync | `scripts/govkit-docsync.mjs`, `scripts/source-doc-map.json`, `.github/workflows/govkit-docsync.yml` |
 | docs-sync-check | `scripts/docs-sync-check.mjs` + a `docs:sync-check` script |
 | versioning | `scripts/release-version.mjs` + `release:status`/`release:bump`/`release:tag` scripts. Then run `npm run release:status`: a release-branch version with no tag is a finding. |
 | supabase-account | `scripts/supabase.mjs` + `supabase/projects.json` + `supabase`/`supabase:whoami` scripts. Only expected in a project that uses Supabase. |
@@ -102,4 +111,4 @@ The cost is formatters. A Prettier rewrite matches no release, so the file reads
 ## Related
 
 - [`/govkit-init`](../govkit-init/SKILL.md) — installs guardrails; `--skip <name>` records an opt-out; `--upgrade` updates the files govkit owns
-- [`/sdlc`](../sdlc/SKILL.md) — `status` runs the ground-truth check before reporting
+- [`/govkit-session`](../govkit-session/SKILL.md) — `status` runs the ground-truth check before reporting

@@ -63,8 +63,20 @@ const PLUGIN_JSON = resolve(HERE, "..", "..", ".claude-plugin", "plugin.json");
  */
 export const OWNED = [
   { path: "scripts/docs-sync-check.mjs", template: "scripts/docs-sync-check.mjs", guardrail: "docs-sync-check" },
-  { path: "scripts/sdlc-docs.mjs", template: "scripts/sdlc-docs.mjs", guardrail: "doc-sync" },
-  { path: ".github/workflows/sdlc-docs.yml", template: ".github/workflows/sdlc-docs.yml", guardrail: "doc-sync" },
+  // Renamed in 0.8.0 (#12). `renamedFrom` lets an upgrade recognise the old file by its release
+  // hashes, write the new one and delete the old, and lets the history builder index old releases.
+  {
+    path: "scripts/govkit-docsync.mjs",
+    template: "scripts/govkit-docsync.mjs",
+    guardrail: "doc-sync",
+    renamedFrom: { path: "scripts/sdlc-docs.mjs", template: "scripts/sdlc-docs.mjs" },
+  },
+  {
+    path: ".github/workflows/govkit-docsync.yml",
+    template: ".github/workflows/govkit-docsync.yml",
+    guardrail: "doc-sync",
+    renamedFrom: { path: ".github/workflows/sdlc-docs.yml", template: ".github/workflows/sdlc-docs.yml" },
+  },
   { path: "scripts/govkit-doctor.mjs", template: "scripts/govkit-doctor.mjs", guardrail: null },
   { path: "scripts/release-version.mjs", template: "scripts/release-version.mjs", guardrail: "versioning" },
   { path: "scripts/supabase.mjs", template: "scripts/supabase.mjs", guardrail: "supabase-account" },
@@ -74,6 +86,25 @@ export const OWNED = [
 
 const RELEASE_GATE = "scripts/release-gate.ts";
 const CLAUDE_MD = "CLAUDE.md";
+const PACKAGE_JSON = "package.json";
+const BOOTSTRAP = "govkit.json#bootstrapDocs";
+
+/**
+ * package.json is the one file govkit edits that it does not own. Only script values that run the
+ * renamed doc-sync runner change: the path is rewritten, and the three scripts init wrote are
+ * renamed `docsync:*`, with the old key kept for one version as exactly this alias string. 0.9.0
+ * removes an old key only if its value is still exactly the alias.
+ */
+const OLD_RUNNER = "scripts/sdlc-docs.mjs";
+const NEW_RUNNER = "scripts/govkit-docsync.mjs";
+const RUNNER_REF = /(^|[\s"'=])scripts\/sdlc-docs\.mjs(?=$|[\s"';&|)])/g;
+export const SCRIPT_RENAMES = { "sdlc-docs:audit": "docsync:audit", "sdlc-docs:gate": "docsync:gate", "sdlc-docs:report": "docsync:report" };
+export const aliasFor = (newKey) => `npm run ${newKey}`;
+
+/** bootstrapDocs as templates up to 0.7.0 wrote it, and as 0.8.0 does (#26: CLAUDE.md holds rules, not status). */
+const OLD_BOOTSTRAP = ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md", "CLAUDE.md"];
+const NEW_BOOTSTRAP = ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md"];
+const sameList = (a, b) => Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
 const BLOCK = /<!-- govkit:start -->[\s\S]*?<!-- govkit:end -->/;
 const PROTECTED = /^PROTECTED_BRANCHES=.*$/m;
 
@@ -233,6 +264,32 @@ export function check(root = process.cwd()) {
       continue;
     }
     const text = readText(join(root, at));
+    const old = entry.renamedFrom;
+    const oldAt = old ? located(manifest, old.path, root) : null;
+    if (text === null && old) {
+      // Not at the new name: the repo may still have the file under its pre-rename name.
+      const oldLink = symlinkOnPath(root, oldAt);
+      if (oldLink) {
+        files.push({ path: entry.path, at, from: old.path, status: "symlink", link: oldLink });
+        continue;
+      }
+      const oldText = readText(join(root, oldAt));
+      if (oldText !== null) {
+        const hash = sha256(oldText);
+        const versions = (hist[old.path] ?? []).find((h) => h.sha256 === hash)?.versions ?? [];
+        files.push({
+          path: entry.path,
+          at,
+          from: old.path,
+          fromAt: oldAt,
+          // An edited old file is never moved or deleted: the user decides what to keep.
+          status: versions.length ? "rename" : "rename-edited",
+          versions,
+          matches: versions.length ? range(versions, order) : null,
+        });
+        continue;
+      }
+    }
     if (text === null) {
       files.push({ path: entry.path, at, status: "missing" });
       continue;
@@ -250,6 +307,8 @@ export function check(root = process.cwd()) {
       versions,
       matches: versions.length ? range(versions, order) : null,
       editedSinceRecorded: status === "edited" && Boolean(recorded[entry.path]),
+      // Both names present: the new file is in, the old one was left behind (or edited and kept).
+      oldStillPresent: old && readText(join(root, oldAt)) !== null ? old.path : null,
     });
   }
 
@@ -272,7 +331,7 @@ export function check(root = process.cwd()) {
   // A current file counts for every release that shipped the same bytes, not only this one, so
   // a 0.5.0 repo whose other files are unchanged since 0.2.0 still reads as 0.5.0.
   const sets = files
-    .filter((f) => f.status === "current" || f.status === "outdated")
+    .filter((f) => f.status === "current" || f.status === "outdated" || f.status === "rename")
     .map((f) => (f.status === "current" ? [...new Set([...f.versions, current])] : f.versions));
   let agreed = null;
   if (sets.length) {
@@ -293,6 +352,17 @@ export function check(root = process.cwd()) {
     prettierFiles.some((f) => existsSync(join(root, f))) ||
     Boolean(pkg.prettier || pkg.devDependencies?.prettier || pkg.dependencies?.prettier);
 
+  // bootstrapDocs is written explicitly by init, so a changed default never reaches existing repos.
+  // Offer the new value only when the repo still has exactly the old template's; a list the user
+  // chose is theirs.
+  const sync = manifest?.guardrails?.["docs-sync-check"];
+  let bootstrapDocs = { status: "n/a" };
+  if (sync && sync.enabled !== false && Array.isArray(sync.bootstrapDocs)) {
+    if (sameList(sync.bootstrapDocs, OLD_BOOTSTRAP)) bootstrapDocs = { status: "offer", have: OLD_BOOTSTRAP, want: NEW_BOOTSTRAP };
+    else if (sameList(sync.bootstrapDocs, NEW_BOOTSTRAP)) bootstrapDocs = { status: "current" };
+    else bootstrapDocs = { status: "custom", have: sync.bootstrapDocs };
+  }
+
   return {
     pluginVersion: current,
     govkitVersion: { declared: manifest?.govkitVersion ?? null, derived: agreed },
@@ -300,8 +370,79 @@ export function check(root = process.cwd()) {
     files,
     releaseGate,
     claudeBlock,
+    packageJson: packagePlan(root),
+    bootstrapDocs,
     prettier,
   };
+}
+
+// ------------------------------------------------------------------ package.json (the one exception)
+
+/**
+ * What the rename changes in package.json, as a plan: the edits, and the resulting text. Edited by
+ * line so the file's own formatting survives, then proven by re-parsing: every key other than the
+ * changed scripts must be identical. A file not shaped for that is "manual", never reformatted.
+ */
+export function packagePlan(root) {
+  const text = readText(join(root, PACKAGE_JSON));
+  if (text === null) return { status: "n/a" };
+  const link = symlinkOnPath(root, PACKAGE_JSON);
+  if (link) return { status: "manual", reason: `${link} is a symlink; govkit writes only regular files` };
+  let pkg;
+  try {
+    pkg = JSON.parse(text);
+  } catch {
+    return { status: "manual", reason: "package.json does not parse" };
+  }
+  const scripts = pkg.scripts ?? {};
+  const rewrite = (v) => v.replace(RUNNER_REF, (_, pre) => `${pre}${NEW_RUNNER}`);
+  const changes = [];
+  for (const [key, value] of Object.entries(scripts)) {
+    if (typeof value !== "string" || !new RegExp(RUNNER_REF.source).test(value)) continue;
+    const renamed = SCRIPT_RENAMES[key];
+    if (renamed) {
+      if (scripts[renamed] === undefined) changes.push({ key: renamed, add: rewrite(value), before: key });
+      changes.push({ key, from: value, to: aliasFor(renamed) });
+    } else {
+      changes.push({ key, from: value, to: rewrite(value) });
+    }
+  }
+  if (!changes.length) return { status: "current" };
+
+  let out = text.replace(/\r\n/g, "\n");
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  for (const c of changes.filter((x) => x.from !== undefined)) {
+    const re = new RegExp(`^(\\s*)${esc(JSON.stringify(c.key))}(\\s*:\\s*)${esc(JSON.stringify(c.from))}(,?)\\s*$`, "m");
+    const m = out.match(re);
+    if (!m) return { status: "manual", reason: `cannot find "${c.key}" on a line of its own`, changes };
+    const added = changes.find((x) => x.add !== undefined && x.before === c.key);
+    const line = `${m[1]}${JSON.stringify(c.key)}${m[2]}${JSON.stringify(c.to)}${m[3]}`;
+    const prefix = added ? `${m[1]}${JSON.stringify(added.key)}${m[2]}${JSON.stringify(added.add)},\n` : "";
+    out = out.replace(re, () => `${prefix}${line}`);
+  }
+  // Proof: the scripts are exactly the intended ones, and nothing else in the file moved.
+  const want = { ...scripts };
+  for (const c of changes) want[c.key] = c.add ?? c.to;
+  let after;
+  try {
+    after = JSON.parse(out);
+  } catch {
+    return { status: "manual", reason: "the edited package.json would not parse", changes };
+  }
+  const rest = (o) => stable({ ...o, scripts: undefined });
+  if (stable(after.scripts) !== stable(want) || rest(after) !== rest(pkg)) {
+    return { status: "manual", reason: "package.json is not shaped for a line edit", changes };
+  }
+  return { status: "migrate", changes, text: out };
+}
+
+/** JSON with keys sorted at every level: equality that ignores key order. */
+export function stable(v) {
+  if (Array.isArray(v)) return `[${v.map(stable).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v).filter((k) => v[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v);
 }
 
 // ------------------------------------------------------------------ write
@@ -324,8 +465,18 @@ function objectEnd(text, start) {
  * place, so the project's own formatting (blank lines, alignment) survives and the diff shows
  * the upgrade and nothing else. Returns null when the text is not shaped as expected.
  */
-function patchManifestText(text, want) {
+function patchManifestText(text, want, swaps = []) {
   let out = text.replace(/\r\n/g, "\n");
+  const before = JSON.parse(out);
+  // A renamed owned path, wherever it appears as a whole string (expects, expectsScripts, keys).
+  for (const [from, to] of swaps) out = out.split(JSON.stringify(from)).join(JSON.stringify(to));
+  // bootstrapDocs, only when it changes, so an untouched list keeps its own layout.
+  const docs = want.guardrails?.["docs-sync-check"]?.bootstrapDocs;
+  if (docs && stable(docs) !== stable(before.guardrails?.["docs-sync-check"]?.bootstrapDocs)) {
+    const re = /("bootstrapDocs"\s*:\s*)\[[^\]]*\]/g;
+    if ((out.match(re) ?? []).length !== 1) return null;
+    out = out.replace(re, (_, k) => `${k}[${docs.map((d) => JSON.stringify(d)).join(", ")}]`);
+  }
   const setString = (key, value) => {
     const re = new RegExp(`("${key}"\\s*:\\s*)"[^"]*"`, "g");
     if ((out.match(re) ?? []).length !== 1) return false;
@@ -352,7 +503,7 @@ function patchManifestText(text, want) {
     }
   }
   try {
-    return JSON.stringify(JSON.parse(out)) === JSON.stringify(want) ? out : null;
+    return stable(JSON.parse(out)) === stable(want) ? out : null;
   } catch {
     return null;
   }
@@ -363,12 +514,15 @@ function patchManifestText(text, want) {
  * $comments survive, formatting does not). Returns true when it had to reformat, so the report
  * can say the diff holds more than the upgrade's own lines.
  */
-function writeManifest(root, update) {
+function writeManifest(root, update, swaps = []) {
+  // The same rule as for owned files: govkit writes only regular files inside the repo.
+  const link = symlinkOnPath(root, "govkit.json");
+  if (link) throw new Error(`${link} is a symlink; govkit writes only regular files inside the repo, so it will not write govkit.json through it`);
   const p = join(root, "govkit.json");
   const before = readText(p);
   const manifest = before ? JSON.parse(before) : {};
   update(manifest);
-  const patched = before === null ? null : patchManifestText(before, manifest);
+  const patched = before === null ? null : patchManifestText(before, manifest, swaps);
   if (patched !== null) {
     writeFileSync(p, patched);
     return false;
@@ -427,24 +581,85 @@ export function record(root = process.cwd()) {
 }
 
 /** Replace the named paths with the current template. Only those; nothing else is written. */
+/** Rename a string wherever it is a whole JSON value or key: mirrors the text swap in patchManifestText. */
+function renameEverywhere(v, from, to) {
+  if (Array.isArray(v)) return v.map((x) => renameEverywhere(x, from, to));
+  if (v && typeof v === "object") {
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k === from ? to : k, renameEverywhere(x, from, to)]));
+  }
+  return v === from ? to : v;
+}
+
 export function apply(paths, root = process.cwd()) {
   const manifest = readJson(join(root, "govkit.json"));
+  const report = check(root);
+  const linkError = (link, p) =>
+    new Error(
+      `${link} is a symlink; govkit writes only regular files inside the repo, so it will not write ${p} through it. ` +
+        "Replace the link with the file itself, then re-run.",
+    );
   // Safety first, then cleanliness; nothing is written until both pass. Every target is confined
   // to the repo, so a refused path cannot leave half an upgrade, and none may be or pass through a
   // symlink, whether or not `paths` is set: govkit writes only regular files.
   for (const p of paths) {
-    const target = OWNED.some((e) => e.path === p) ? located(manifest, p, root) : p;
+    if (p === BOOTSTRAP) {
+      if (report.bootstrapDocs.status !== "offer") throw new Error(`bootstrapDocs is ${report.bootstrapDocs.status}; nothing to offer`);
+      continue;
+    }
+    const entry = OWNED.find((e) => e.path === p);
+    const target = entry ? located(manifest, p, root) : p;
     const link = symlinkOnPath(root, target);
-    if (link) {
+    if (link) throw linkError(link, p);
+    const f = report.files.find((x) => x.path === p);
+    if (f?.status === "rename-edited") {
       throw new Error(
-        `${link} is a symlink; govkit writes only regular files inside the repo, so it will not write ${p} through it. ` +
-          "Replace the link with the file itself, then re-run.",
+        `${f.from} is edited (it matches no govkit release), so it is not moved or deleted. ` +
+          `See what differs with: save-diff ${p}. Then move it yourself, or keep it.`,
       );
+    }
+    if (f?.status === "rename") {
+      if (manifest?.paths?.[f.from] !== undefined && manifest?.paths?.[p] === undefined) {
+        throw new Error(`govkit.json paths relocates ${f.from}; rename it by hand (add paths["${p}"]), then re-run`);
+      }
+      const oldLink = symlinkOnPath(root, f.fromAt);
+      if (oldLink) throw linkError(oldLink, f.from);
+      if (p === NEW_RUNNER && report.packageJson.status === "manual") {
+        throw new Error(
+          `package.json scripts run ${OLD_RUNNER}, but ${report.packageJson.reason}. ` +
+            `Point them at ${NEW_RUNNER} by hand, then re-run.`,
+        );
+      }
     }
   }
   assertClean(root);
   let reformatted = false;
   for (const path of paths) {
+    if (path === BOOTSTRAP) {
+      reformatted ||= writeManifest(root, (m) => {
+        m.guardrails["docs-sync-check"].bootstrapDocs = [...NEW_BOOTSTRAP];
+      });
+      continue;
+    }
+    const f = report.files.find((x) => x.path === path);
+    if (f?.status === "rename") {
+      const entry = OWNED.find((e) => e.path === path);
+      const target = join(root, located(manifest, path, root));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, render(entry, root, manifest));
+      rmSync(join(root, f.fromAt));
+      const swaps = [[f.from, path]];
+      if (path === NEW_RUNNER && report.packageJson.status === "migrate") {
+        writeFileSync(join(root, PACKAGE_JSON), report.packageJson.text);
+        // expectsScripts follow the scripts that were renamed (a user's own key stays as it is).
+        for (const c of report.packageJson.changes) if (SCRIPT_RENAMES[c.key]) swaps.push([c.key, SCRIPT_RENAMES[c.key]]);
+      }
+      reformatted ||= writeManifest(
+        root,
+        (m) => Object.assign(m, swaps.reduce((acc, [a, b]) => renameEverywhere(acc, a, b), m)),
+        swaps,
+      );
+      continue;
+    }
     if (path === CLAUDE_MD) {
       writeFileSync(join(root, CLAUDE_MD), withBlockReplaced(root, manifest));
       continue;
@@ -493,18 +708,34 @@ export function diff(path, root = process.cwd()) {
   let have;
   let want;
   let label = path; // the path git apply will patch
+  let from = null; // a rename's old path: the diff then runs old file -> new file
   if (path === CLAUDE_MD) {
     have = readText(join(root, CLAUDE_MD)) ?? "";
     want = withBlockReplaced(root, manifest);
   } else if (path === RELEASE_GATE) {
     have = readText(join(root, path)) ?? "";
     want = readFileSync(join(TEMPLATES, RELEASE_GATE), "utf-8");
+  } else if (path === PACKAGE_JSON) {
+    have = readText(join(root, PACKAGE_JSON)) ?? "";
+    const plan = packagePlan(root);
+    want = plan.status === "migrate" ? plan.text : have;
+  } else if (path === BOOTSTRAP) {
+    label = "govkit.json";
+    have = readText(join(root, label)) ?? "";
+    const m = JSON.parse(have);
+    if (m.guardrails?.["docs-sync-check"]) m.guardrails["docs-sync-check"].bootstrapDocs = [...NEW_BOOTSTRAP];
+    want = patchManifestText(have, m) ?? `${JSON.stringify(m, null, 2)}\n`;
   } else {
     const entry = OWNED.find((e) => e.path === path);
     if (!entry) throw new Error(`${path} is not a file govkit owns`);
     label = located(manifest, path, root);
-    have = readText(join(root, label)) ?? "";
     want = render(entry, root, manifest);
+    have = readText(join(root, label));
+    if (have === null && entry.renamedFrom) {
+      from = located(manifest, entry.renamedFrom.path, root);
+      have = readText(join(root, from));
+    }
+    have ??= "";
   }
   const dir = mkdtempSync(join(tmpdir(), "govkit-diff-"));
   try {
@@ -521,8 +752,8 @@ export function diff(path, root = process.cwd()) {
       // exit 1: they differ, which is the answer. Name both sides as the repo path.
       if (e.status === 1) {
         return String(e.stdout)
-          .replace(/^diff --git a\/repo b\/template$/m, `diff --git a/${label} b/${label}`)
-          .replace(/^--- a\/repo$/m, `--- a/${label}`)
+          .replace(/^diff --git a\/repo b\/template$/m, `diff --git a/${from ?? label} b/${label}`)
+          .replace(/^--- a\/repo$/m, `--- a/${from ?? label}`)
           .replace(/^\+\+\+ b\/template$/m, `+++ b/${label}`);
       }
       throw e;
@@ -542,7 +773,7 @@ export function saveDiff(path, root = process.cwd()) {
   if (!d) return null;
   const dir = join(git(root, ["rev-parse", "--absolute-git-dir"]), "govkit");
   mkdirSync(dir, { recursive: true });
-  const out = join(dir, `upgrade-${path.replace(/[\\/]/g, "-").replace(/^\.+/, "")}.diff`);
+  const out = join(dir, `upgrade-${path.replace(/[\\/#]/g, "-").replace(/^\.+/, "")}.diff`);
   writeFileSync(out, d);
   return out;
 }
@@ -555,11 +786,14 @@ function printReport(r) {
     console.log("  ❌ No govkit.json. Run /govkit-init first.\n");
     return;
   }
-  const icon = { current: "✅", outdated: "⬆️ ", edited: "✏️ ", missing: "❌", skipped: "⏭️ ", symlink: "⛔" };
+  const icon = { current: "✅", outdated: "⬆️ ", edited: "✏️ ", missing: "❌", skipped: "⏭️ ", symlink: "⛔", rename: "🔀", "rename-edited": "✏️ " };
   for (const f of r.files) {
     let note = f.status;
     if (f.status === "outdated") note = `outdated — matches ${f.matches}`;
     if (f.status === "symlink") note = `${f.link} is a symlink; not read or written (replace it with the file)`;
+    if (f.status === "rename") note = `rename pending — ${f.from} (matches ${f.matches}) moves here`;
+    if (f.status === "rename-edited") note = `${f.from} is edited (matches no release): not moved; save-diff, then decide`;
+    if (f.oldStillPresent) note += ` — ${f.oldStillPresent} is still there; delete it once checked`;
     if (f.status === "edited") {
       note = f.editedSinceRecorded ? "edited since govkit wrote it" : "edited locally (matches no release)";
     }
@@ -571,6 +805,23 @@ function printReport(r) {
   }
   if (r.claudeBlock.status === "differs") {
     console.log(`  ✏️  ${"CLAUDE.md (govkit block)".padEnd(34)} differs from the template (edited by design; diff only)`);
+  }
+  if (r.packageJson?.status === "migrate") {
+    console.log(`
+  package.json — the one file govkit edits that it does not own; only these scripts change:`);
+    for (const c of r.packageJson.changes) {
+      console.log(c.add !== undefined ? `    + "${c.key}": "${c.add}"` : `    ~ "${c.key}": "${c.from}"  ->  "${c.to}"`);
+    }
+  } else if (r.packageJson?.status === "manual") {
+    console.log(`
+  package.json still runs ${OLD_RUNNER}, but ${r.packageJson.reason}: point those scripts at ${NEW_RUNNER} by hand.`);
+  }
+  if (r.bootstrapDocs?.status === "offer") {
+    console.log(`
+  govkit.json bootstrapDocs is the old default; 0.8.0 drops CLAUDE.md (rules, not status): ${JSON.stringify(r.bootstrapDocs.want)}`);
+  } else if (r.bootstrapDocs?.status === "custom") {
+    console.log(`
+  govkit.json bootstrapDocs was changed in this repo, so it is left as it is: ${JSON.stringify(r.bootstrapDocs.have)}`);
   }
   const { declared, derived } = r.govkitVersion;
   if (derived === "mixed") {
@@ -584,7 +835,7 @@ function printReport(r) {
         "  more than the upgrade's own lines. Nothing in it changed meaning.",
     );
   }
-  const outdated = r.files.filter((f) => f.status === "outdated").map((f) => f.path);
+  const outdated = r.files.filter((f) => f.status === "outdated" || f.status === "rename").map((f) => f.path);
   if (outdated.length) console.log(`\n  Upgrade: /govkit-init --upgrade  (or: upgrade.mjs apply ${outdated.join(" ")})`);
   console.log("");
 }

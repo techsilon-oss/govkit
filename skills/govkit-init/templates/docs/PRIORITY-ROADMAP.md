@@ -1,8 +1,10 @@
 # {{PROJECT_NAME}} — Priority Roadmap
 
+last checked {{SCAFFOLD_DATE}}
+
 > What to work on next, and why. Start each session by reading this + `gh issue list`. This file captures the WHY and ORDER; GitHub Issues capture the WHAT and STATUS.
 
-## Current Priority Tiers (as of _<date>_)
+## Current Priority Tiers
 
 > Sequence work by risk / value / readiness. Add issue numbers as you create them.
 

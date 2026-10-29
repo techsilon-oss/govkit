@@ -1,6 +1,6 @@
 {
   "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
-  "govkitVersion": "0.7.0",
+  "govkitVersion": "0.8.0",
   "project": {
     "name": "govkit",
     "deployTarget": "none (users install the plugin from GitHub)",
@@ -8,7 +8,7 @@
   },
   "paths": {
     "scripts/docs-sync-check.mjs": "skills/govkit-init/templates/scripts/docs-sync-check.mjs",
-    "scripts/sdlc-docs.mjs": "skills/govkit-init/templates/scripts/sdlc-docs.mjs",
+    "scripts/govkit-docsync.mjs": "skills/govkit-init/templates/scripts/govkit-docsync.mjs",
     "scripts/govkit-doctor.mjs": "skills/govkit-init/templates/scripts/govkit-doctor.mjs",
     ".githooks/pre-push": "skills/govkit-init/templates/githooks/pre-push",
     ".githooks/install-hooks.sh": "skills/govkit-init/templates/githooks/install-hooks.sh",
@@ -17,28 +17,28 @@
   "files": {
     "$comment": "Written by /govkit-init and /govkit-init --upgrade, never by hand: for each file govkit owns, the release that wrote it and the sha256 of what it wrote (LF line endings). A file whose hash no longer matches was edited locally, and the upgrade will not replace it without an explicit yes.",
     "scripts/docs-sync-check.mjs": {
-      "version": "0.7.0",
-      "sha256": "16934c3e3fd19ff182977ba1c6a768398dfe37fc4bb94a6ee8e394313d2e6dcc"
-    },
-    "scripts/sdlc-docs.mjs": {
-      "version": "0.7.0",
-      "sha256": "2d9e243d2c7961e46f3ecf8722f4ba086a377e4841e3109b95701440c1b4d322"
-    },
-    ".github/workflows/sdlc-docs.yml": {
-      "version": "0.7.0",
-      "sha256": "1b6b21b6d209c0e085ea443b86bbe5d1e9471849164b340f71d4319fe372a8bf"
+      "version": "0.8.0",
+      "sha256": "974bc695f1cd6f83c701d464d1ccc526743fedb47803adf13887a6017aa8aefd"
     },
     "scripts/govkit-doctor.mjs": {
-      "version": "0.7.0",
-      "sha256": "482591762aa062ad523b84369af8286ee5d223c1cf99d26dcde2ad5c5d74bcd3"
+      "version": "0.8.0",
+      "sha256": "5f767e40a7331bc83a2726a310d2151209b71f8790b53392dc8e742766d6152d"
     },
     ".githooks/pre-push": {
-      "version": "0.7.0",
-      "sha256": "6422e283cdc24a6dcc253a74d49b527407daa24bc85d9735f8b6ee9ef0acc2c4"
+      "version": "0.8.0",
+      "sha256": "cff9f96c7973b453b68557f8591a7524a9ef6d4ed0c4c43b59eda5999f22cbb6"
     },
     ".githooks/install-hooks.sh": {
-      "version": "0.7.0",
+      "version": "0.8.0",
       "sha256": "805082669618d992e8e6cdb23fac7864a34a78d0239f16cc0ce70a3f6ea62f86"
+    },
+    "scripts/govkit-docsync.mjs": {
+      "version": "0.8.0",
+      "sha256": "2d200d4b8a8ce0a4750ce68141c384a6c5023f94ae083bbcabdad33dda277d0d"
+    },
+    ".github/workflows/govkit-docsync.yml": {
+      "version": "0.8.0",
+      "sha256": "6fee5bb07c7061a3300630eb4b40a7d3fc0066701168b75a4909a8c08344572e"
     }
   },
   "upstreams": {
@@ -50,7 +50,7 @@
     },
     "govkit": {
       "url": "https://github.com/techsilon-oss/govkit",
-      "owns": "The transferable guardrail spine: /govkit-init, /sdlc, /govkit-doctor, the pre-push hook, the doc-sync runners, the tracker convention."
+      "owns": "The transferable guardrail spine: /govkit-init, /govkit-session, /govkit-doctor, the pre-push hook, the doc-sync runners, the tracker convention."
     },
     "house-layer": {
       "url": "(private, if your org has one)",
@@ -103,13 +103,13 @@
       "enabled": true,
       "description": "Per-PR watchdog: code changed without its mapped doc",
       "expects": [
-        "scripts/sdlc-docs.mjs",
+        "scripts/govkit-docsync.mjs",
         "scripts/source-doc-map.json",
-        ".github/workflows/sdlc-docs.yml"
+        ".github/workflows/govkit-docsync.yml"
       ],
       "expectsScripts": [
-        "sdlc-docs:audit",
-        "sdlc-docs:gate"
+        "docsync:audit",
+        "docsync:gate"
       ]
     },
     "supabase-account": {
@@ -168,5 +168,13 @@
     "working": "main",
     "release": "main",
     "$comment": "The pre-push hook protects `release`. Merge strategy follows branch shape: a long-lived working->release pair takes MERGE COMMITS, never squash — squashing writes a new SHA with no ancestry link, so the release branch stops containing the working branch and every later PR replays already-merged commits."
+  },
+  "oldNames": {
+    "ignore": [
+      "docs/archive/**",
+      "docs/UPGRADING.md",
+      "docs/PROJECT-HUB.md"
+    ],
+    "$comment": "The doctor lists references to names govkit renamed in 0.8.0. Kept on purpose: docs/archive (the 0.1.0 build notes, history), docs/UPGRADING.md (it documents the rename) and docs/PROJECT-HUB.md (its decisions log records it)."
   }
 }

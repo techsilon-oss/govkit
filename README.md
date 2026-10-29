@@ -1,6 +1,6 @@
 # govkit
 
-A **Claude Code plugin** that scaffolds the core build/deploy guardrails into any project in one command — `/govkit-init`. It gives you a consistent governance spine (branch flow, a CI-fallback **Local Release Gate**, `PROJECT-HUB`/`PRIORITY-ROADMAP`, a generic `/sdlc`) without copy-pasting between repos.
+A **Claude Code plugin** that scaffolds the core build/deploy guardrails into any project in one command — `/govkit-init`. It gives you a consistent governance spine (branch flow, a CI-fallback **Local Release Gate**, `PROJECT-HUB`/`PRIORITY-ROADMAP`, a generic `/govkit-session`) without copy-pasting between repos.
 
 Decoupled and self-contained: it depends on nothing beyond `git`, the `gh` CLI, and Node/npm.
 
@@ -10,7 +10,7 @@ Decoupled and self-contained: it depends on nothing beyond `git`, the `gh` CLI, 
 claude plugin install govkit --marketplace techsilon-oss/govkit   # once per machine
 ```
 
-Then, in Claude Code, from your project's root: **`/govkit-init`** to scaffold the guardrails, and **`/sdlc status`** at the start of each session.
+Then, in Claude Code, from your project's root: **`/govkit-init`** to scaffold the guardrails, and **`/govkit-session status`** at the start of each session.
 ---
 
 ## Where govkit sits — read this before changing anything
@@ -24,7 +24,7 @@ Three repos, one methodology, **strictly one-way dependencies**. govkit is the m
          │ vendored by      project, in any stack, with zero governance buy-in.
          │
   govkit                    THE TRANSFERABLE SPINE  ← you are here
-  techsilon-oss (public)    Skills (/govkit-init, /sdlc, /govkit-doctor), guardrail
+  techsilon-oss (public)    Skills (/govkit-init, /govkit-session, /govkit-doctor), guardrail
          ▲                  templates, tracker convention. Product-agnostic: nothing
          │ consumed by      here names a company, a client, or a stack.
          │
@@ -65,7 +65,7 @@ govkit **vendors** a copy so `/govkit-init` works offline and in one step. relea
 
 - **Claude Code** (govkit is a plugin).
 - **git**.
-- **GitHub CLI (`gh`)**, authenticated: `gh auth login`. (Used by `/sdlc` and the release gate's `--pr`.)
+- **GitHub CLI (`gh`)**, authenticated: `gh auth login`. (Used by `/govkit-session` and the release gate's `--pr`.)
 - **Node + npm**. The release gate runs via `tsx`, which is added **per project** as a devDependency (`npm i -D tsx`) — not a machine-global tool.
 
 govkit does **not** require the `superpowers` plugin (optional companion), any other plugin, MCP servers, or Python. It ships one Claude Code hook of its own (see *The session hook*); it does nothing in a repo without `govkit.json`.
@@ -79,7 +79,7 @@ claude plugin marketplace add techsilon-oss/govkit
 claude plugin install govkit
 ```
 
-Restart Claude Code if the skills don't appear immediately. Once installed, `/govkit-init` and `/sdlc` are available in every project on that machine.
+Restart Claude Code if the skills don't appear immediately. Once installed, `/govkit-init` and `/govkit-session` are available in every project on that machine.
 
 ## Usage — new project
 
@@ -120,6 +120,8 @@ A plugin update reaches the skills and the session hook straight away. It does *
 
 It hashes each owned file against every govkit release and reports it as **current**, **outdated** (identical to an older release; safe to replace) or **edited** (matches no release). For each one it shows the diff and replaces it only on your yes, defaulting to no for edited files and the `CLAUDE.md` govkit block. When you decline, it saves that diff to `.git/govkit/upgrade-<name>.diff` so you can take only the lines you want. Then review `git diff` and commit the upgrade as one change.
 
+A release that renames something also moves the file, and tells you what else changes. **Upgrading to 0.8.0 renames `/sdlc` and `/sdlc-docs`: follow [docs/UPGRADING.md](docs/UPGRADING.md).**
+
 `/govkit-doctor` reports outdated files too. Both run from the plugin, so they know about releases newer than the repo's own scripts. Works on repos initialised by any release from 0.2.0 on, with no manual steps first. A 0.1.0 repo has no `govkit.json`: run `/govkit-init` first.
 
 **Running govkit's files from somewhere else?** Map each owned path to where the file is, in `govkit.json` `paths` (for example `"scripts/docs-sync-check.mjs": "tools/docs-sync-check.mjs"`). The doctor, `--upgrade` and the doc-sync workflow all look there. A value must stay inside the repo: absolute paths, `..` that climbs out, and symlinks that leave are refused. Whether or not you use `paths`, `--upgrade` writes only regular files: an owned file that is a symlink, or sits in a symlinked directory, is refused. govkit itself uses this to run its guardrails straight from its templates.
@@ -133,13 +135,13 @@ It hashes each owned file against every govkit release and reports it as **curre
 | `trackers` | `CLAUDE.md`, `docs/PROJECT-HUB.md`, `docs/PRIORITY-ROADMAP.md` | Branch strategy, per-merge approval, decisions log, session handoff |
 | `release-gate` | `scripts/release-gate.ts`, `release-gate.config.json` | Local CI-fallback gate. **Vendored from [release-gate-kit](https://github.com/techsilon-oss/release-gate-kit)** — fix bugs upstream, not here |
 | `pre-push-hook` | `.githooks/pre-push`, `.gitattributes` | Blocks direct pushes to the release branch |
-| `doc-sync` | `scripts/sdlc-docs.mjs`, `scripts/source-doc-map.json`, `.github/workflows/sdlc-docs.yml` | Per-PR: code changed without its mapped doc. Warn on PR to working branch, **gate** on PR to release |
+| `doc-sync` | `scripts/govkit-docsync.mjs`, `scripts/source-doc-map.json`, `.github/workflows/govkit-docsync.yml` | Per-PR: code changed without its mapped doc. Warn on PR to working branch, **gate** on PR to release |
 | `docs-sync-check` | `scripts/docs-sync-check.mjs` | Per-session: bootstrap-doc freshness + `git`/`gh` ground truth |
 | `versioning` | `scripts/release-version.mjs` | One version per release: `release:bump` in the release PR, `release:tag` after the merge, `release:status` reports an untagged release or one shipped without a bump |
 | `supabase-account` | `scripts/supabase.mjs`, `supabase/projects.json` | Binds Supabase CLI commands to this repo's account. Only in projects that use Supabase |
 | — | `govkit.json` | The manifest: what is installed, what was skipped and why |
 
-Plus the skills `/govkit-init`, `/sdlc`, `/sdlc-docs` and `/govkit-doctor` (from the plugin, not copied per repo).
+Plus the skills `/govkit-init`, `/govkit-session`, `/govkit-docsync` and `/govkit-doctor` (from the plugin, not copied per repo).
 
 The `.mjs` runners are **dependency-free** — Node built-ins and `git` only, no install step.
 
@@ -147,14 +149,14 @@ The `.mjs` runners are **dependency-free** — Node built-ins and `git` only, no
 
 They are not redundant, and neither substitutes for the other:
 
-- **`sdlc-docs`** asks *"did code change without its doc?"* — a **diff** question, answered per PR.
+- **`govkit-docsync`** asks *"did code change without its doc?"* — a **diff** question, answered per PR.
 - **`docs-sync-check`** asks *"do the trackers still match the repo?"* — which involves **no diff at all**. A tracker rots while the code it describes sits untouched: "no `main` branch" after `main` exists, "nothing deployed" after launch, "zero issues" after a dozen are filed. Each was true when written. Nothing re-checks prose, so nothing catches it.
 
-That is why `/sdlc status` runs `docs-sync-check` **first**, and stops if a bootstrap doc is stale. A session that starts from a stale hub produces work premised on a false picture. When a doc is stale, the check also lists the code commits and merged PRs since its date: that list is the reconciliation work.
+That is why `/govkit-session status` runs `docs-sync-check` **first**, and stops if a bootstrap doc is stale. A session that starts from a stale hub produces work premised on a false picture. When a doc is stale, the check also lists the code commits and merged PRs since its date: that list is the reconciliation work.
 
 ## The session hook
 
-`docs-sync-check` finds a stale tracker only when someone runs it, which in practice is the **next** session's status read. The session that caused the drift (it merged a PR, then ended without the `/sdlc` session close) is gone by then. This happened again and again in every govkit repo.
+`docs-sync-check` finds a stale tracker only when someone runs it, which in practice is the **next** session's status read. The session that caused the drift (it merged a PR, then ended without the `/govkit-session` session close) is gone by then. This happened again and again in every govkit repo.
 
 So the plugin ships a Claude Code hook (`hooks/hooks.json` → `hooks/docs-freshness.mjs`) that watches the moment drift starts:
 
@@ -173,7 +175,7 @@ It comes with the plugin, so a plugin update reaches every repo on the machine a
 - **Writes, all inside `.git/`:** its session state in `.git/govkit/session-*.json` (untracked, pruned after 14 days). When the stop-time fetch runs, git updates the remote-tracking ref `origin/<working branch>`, stores the fetched objects and writes `FETCH_HEAD`, exactly as a `git fetch` you ran yourself would. It never touches your working tree, the index or your local branches.
 - **Says:** at session start, a note into the session if a tracker is stale. At stop, once per change, it asks for the session-close checklist when the working branch gained code and no tracker changed.
 
-**The skills** run only when you invoke them, and act through Claude Code's normal tool permissions. `/govkit-init` writes the files listed under [What it scaffolds](#what-it-scaffolds) into your repo; `--upgrade` replaces owned files only on your yes. Neither commits. `/sdlc` and the release gate use `gh` against your GitHub repo. The scripts init installs run only when you or your CI run them.
+**The skills** run only when you invoke them, and act through Claude Code's normal tool permissions. `/govkit-init` writes the files listed under [What it scaffolds](#what-it-scaffolds) into your repo; `--upgrade` replaces owned files only on your yes. The one file it edits that it does not own is `package.json`, and only when a release renames a script runner (0.8.0): just the scripts that run the old file, shown as a diff first. Neither commits. `/govkit-session` and the release gate use `gh` against your GitHub repo. The scripts init installs run only when you or your CI run them.
 
 **To remove govkit:** `claude plugin uninstall govkit`. The hook and skills go with it. Files `/govkit-init` created stay in your repo, because they are yours: keep using them without the plugin, or delete them, along with `.git/govkit/`.
 
@@ -198,7 +200,7 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 ## Language scope
 
 **Node/TypeScript-first**, but not Node-only:
-- The guardrail structure (`CLAUDE.md`, `PROJECT-HUB`, branch flow, `/sdlc`) is language-agnostic.
+- The guardrail structure (`CLAUDE.md`, `PROJECT-HUB`, branch flow, `/govkit-session`) is language-agnostic.
 - The release gate's `checks` are **arbitrary shell commands** — put `cargo test`, `pytest`, `go build`, etc. in `release-gate.config.json`. The only Node tie is that the gate script runs via `tsx`, so a non-Node project just needs Node available to run it.
 - First-class non-Node scaffolding (e.g. a `make`/`just` target instead of npm scripts) is a future enhancement.
 

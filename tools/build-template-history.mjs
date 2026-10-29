@@ -63,6 +63,11 @@ for (const [version, ref] of releases) {
   for (const entry of OWNED) {
     const text = git(["show", `${ref}:skills/govkit-init/templates/${entry.template}`]);
     if (text !== null) add(version, entry.path, text);
+    // A file renamed since: index that release under its old name, which is what a repo
+    // initialised then still has on disk.
+    const old = entry.renamedFrom;
+    const oldText = old ? git(["show", `${ref}:skills/govkit-init/templates/${old.template}`]) : null;
+    if (oldText !== null) add(version, old.path, oldText);
   }
 }
 

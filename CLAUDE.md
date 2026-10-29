@@ -6,7 +6,7 @@ govkit is a Claude Code plugin that scaffolds guardrails into other repos. It ru
 
 ## Start of a session
 
-`/sdlc status`. Here, `npm run release:check -- --pr` replaces `release:status` (the `versioning` guardrail is skipped, DEC-004). If a tracker is stale, fix it before other work.
+`/govkit-session status`. Here, `npm run release:check -- --pr` replaces `release:status` (the `versioning` guardrail is skipped, DEC-004). If a tracker is stale, fix it before other work.
 
 ## Branch flow (DEC-002)
 

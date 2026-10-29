@@ -22,7 +22,7 @@
     },
     "govkit": {
       "url": "https://github.com/techsilon-oss/govkit",
-      "owns": "The transferable guardrail spine: /govkit-init, /sdlc, /govkit-doctor, the pre-push hook, the doc-sync runners, the tracker convention."
+      "owns": "The transferable guardrail spine: /govkit-init, /govkit-session, /govkit-doctor, the pre-push hook, the doc-sync runners, the tracker convention."
     },
     "house-layer": {
       "url": "(private, if your org has one)",
@@ -64,11 +64,11 @@
       "enabled": true,
       "description": "Per-PR watchdog: code changed without its mapped doc",
       "expects": [
-        "scripts/sdlc-docs.mjs",
+        "scripts/govkit-docsync.mjs",
         "scripts/source-doc-map.json",
-        ".github/workflows/sdlc-docs.yml"
+        ".github/workflows/govkit-docsync.yml"
       ],
-      "expectsScripts": ["sdlc-docs:audit", "sdlc-docs:gate"]
+      "expectsScripts": ["docsync:audit", "docsync:gate"]
     },
 
     "supabase-account": {
@@ -92,7 +92,7 @@
       "description": "Per-session: bootstrap-doc freshness + git/gh ground truth",
       "expects": ["scripts/docs-sync-check.mjs"],
       "expectsScripts": ["docs:sync-check"],
-      "bootstrapDocs": ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md", "CLAUDE.md"],
+      "bootstrapDocs": ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md"],
       "watchedPaths": ["src/", "scripts/", "package.json", ".github/"],
       "sessionHook": true,
       "$comment": "sessionHook: the plugin's Claude Code hook reminds a session to update the trackers before it ends, when the working branch gained code and no tracker changed; false turns it off for this repo. watchedPaths deliberately excludes docs/ — updating one doc must not mark every other doc stale, or the check cries wolf and gets ignored."

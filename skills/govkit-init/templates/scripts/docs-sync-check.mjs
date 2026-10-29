@@ -4,7 +4,7 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * `sdlc-docs.mjs` answers "did a PR change code without changing its mapped doc?" That is a
+ * `govkit-docsync.mjs` answers "did a PR change code without changing its mapped doc?" That is a
  * per-PR question. It cannot catch the failure this repo actually kept hitting: a tracker that
  * confidently ASSERTS something the repo contradicts — "no `main` branch", "nothing has ever been
  * deployed", "zero GitHub issues", "`dev` is the default branch". Every one of those was written
@@ -59,7 +59,6 @@ const RELEASE = releaseBranch();
 const BOOTSTRAP_DOCS = (CFG.bootstrapDocs ?? [
   "docs/PROJECT-HUB.md",
   "docs/PRIORITY-ROADMAP.md",
-  "CLAUDE.md",
 ]).map((path) => ({ path }));
 
 /**

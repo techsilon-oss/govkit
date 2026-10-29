@@ -1,13 +1,11 @@
-// Tests for skills/govkit-init/upgrade.mjs. Run from the govkit repo root: node --test tests/
-// Each test builds a throwaway git repo in the OS temp dir. Past-release fixtures come from this
-// repo's own history (git show v0.5.0:…), so a clone needs its tags.
+// Tests for skills/govkit-init/upgrade.mjs. Run from the govkit repo root: npm test.
+// Fixtures (throwaway repos at a given release) are in fixtures.mjs.
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { afterEach, test } from "node:test";
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { test } from "node:test";
 import {
   OWNED,
   TEMPLATES,
@@ -21,58 +19,10 @@ import {
   saveDiff,
   sha256,
 } from "../skills/govkit-init/upgrade.mjs";
+import { GOVKIT, git, makeRepoWith, status, tempDirs } from "./fixtures.mjs";
 
-const GOVKIT = process.cwd();
-const repos = [];
-afterEach(() => {
-  while (repos.length) rmSync(repos.pop(), { recursive: true, force: true });
-});
-
-const git = (cwd, ...args) =>
-  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], {
-    cwd,
-    encoding: "utf-8",
-    stdio: ["ignore", "pipe", "pipe"],
-  }).trim();
-
-const atRelease = (ref, template) =>
-  execFileSync("git", ["show", `${ref}:skills/govkit-init/templates/${template}`], {
-    cwd: GOVKIT,
-    encoding: "utf-8",
-  });
-
-const fill = (text, version) =>
-  text
-    .replaceAll("{{GOVKIT_VERSION}}", version)
-    .replaceAll("{{PROJECT_NAME}}", "Acme")
-    .replaceAll("{{DEFAULT_BRANCH}}", "dev")
-    .replaceAll("{{DEPLOY_TARGET}}", "Vercel");
-
-/** A committed repo as /govkit-init would leave it. ref: a release tag, or null for the working tree. */
-function makeRepo(ref = null) {
-  const root = mkdtempSync(join(tmpdir(), "govkit-upgrade-"));
-  repos.push(root);
-  git(root, "init", "-q", "-b", "dev");
-  git(root, "config", "core.autocrlf", "false");
-  const read = (t) => (ref ? atRelease(ref, t) : readFileSync(join(TEMPLATES, t), "utf-8"));
-  const put = (path, text) => {
-    mkdirSync(dirname(join(root, path)), { recursive: true });
-    writeFileSync(join(root, path), text);
-  };
-  put("govkit.json", fill(read("govkit.json"), pluginVersion()));
-  const manifest = JSON.parse(readFileSync(join(root, "govkit.json"), "utf-8"));
-  for (const e of OWNED) {
-    const text = read(e.template).replace(/^PROTECTED_BRANCHES=.*$/m, 'PROTECTED_BRANCHES="refs/heads/main"');
-    put(e.path, text);
-  }
-  put("scripts/release-gate.ts", read("scripts/release-gate.ts"));
-  put("CLAUDE.md", `# Acme\n\nOur own notes.\n\n${fill(read("CLAUDE.md"), "")}`);
-  git(root, "add", "-A");
-  git(root, "commit", "-qm", "init");
-  return { root, manifest };
-}
-
-const status = (report, path) => report.files.find((f) => f.path === path)?.status;
+const tmp = tempDirs();
+const makeRepo = makeRepoWith(tmp);
 
 // ------------------------------------------------------------------ hashing
 
@@ -208,8 +158,7 @@ test("apply refuses on a dirty tree and changes nothing; check still runs", () =
 });
 
 test("apply refuses outside a git repo", () => {
-  const root = mkdtempSync(join(tmpdir(), "govkit-nogit-"));
-  repos.push(root);
+  const root = tmp("govkit-nogit-");
   assert.throws(() => apply(["scripts/docs-sync-check.mjs"], root), /not a git repository/);
 });
 
@@ -252,7 +201,13 @@ test("save-diff writes nothing when the file already matches", () => {
 
 test("the CLAUDE.md block renders from values read back from an old block", () => {
   const { root } = makeRepo("v0.5.0"); // 0.5.0's govkit.json has no `project`
-  assert.equal(check(root).claudeBlock.status, "same");
+  // Since 0.8.0 the block differs only by the skill rename: the project name, working branch and
+  // deploy target read back from the old block render identically, so they are not in the diff.
+  assert.equal(check(root).claudeBlock.status, "differs");
+  const changed = diff("CLAUDE.md", root).split("\n").filter((l) => /^[-+][^-+]/.test(l));
+  assert.ok(changed.length > 0);
+  for (const l of changed) assert.match(l, /\/sdlc|\/govkit-session/, `unexpected change: ${l}`);
+  assert.ok(!changed.some((l) => /Acme|Vercel/.test(l)), "rendered values must not show as changes");
 });
 
 test("render keeps a pre-push's custom branch list", () => {
@@ -346,8 +301,7 @@ test("govkit's own repo: the doctor reports nothing missing", () => {
 /** A repo plus an empty sibling directory outside it: the target an escaping `paths` would hit. */
 function repoWithOutside() {
   const { root } = makeRepo();
-  const outside = mkdtempSync(join(tmpdir(), "govkit-outside-"));
-  repos.push(outside);
+  const outside = tmp("govkit-outside-");
   return { root, outside };
 }
 
