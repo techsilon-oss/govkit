@@ -79,11 +79,12 @@ const DATE_PATTERNS = [
   /last_updated:\s*"?(\d{4}-\d{2}-\d{2})/i,
 ];
 
-const git = (args, fallback = "") => {
+const git = (args, fallback = "", timeout) => {
   try {
     return execFileSync("git", args, {
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "ignore"],
+      timeout,
     }).trim();
   } catch {
     return fallback;
@@ -131,9 +132,13 @@ function groundTruth() {
   ]);
   facts.push([`${RELEASE} exists locally`, localRelease ? "yes" : "NO"]);
 
-  // What origin holds right now (one ls-remote, no fetch), keyed by branch name.
+  // What origin holds right now (one ls-remote, no fetch), keyed by branch name. It is git's only
+  // network call here, so it gets the session hook's 8 s bound: a hung remote must not hang the
+  // session's first command.
+  const hasOrigin = git(["remote", "get-url", "origin"]) !== "";
+  const lsRemote = hasOrigin ? git(["ls-remote", "--heads", "origin"], null, 8000) : "";
   const remoteHeads = new Map(
-    git(["ls-remote", "--heads", "origin"])
+    (lsRemote ?? "")
       .split("\n")
       .map((l) => l.split(/\s+refs\/heads\//))
       .filter(([sha, name]) => sha && name)
@@ -174,7 +179,11 @@ function groundTruth() {
     dirty ? `${dirty.split("\n").length} file(s) uncommitted` : "clean",
   ]);
 
-  if (remoteHeads.size) facts.push(["remote branches", [...remoteHeads.keys()].join(", ")]);
+  if (lsRemote === null) {
+    facts.push(["remote branches", "unknown (origin did not answer within 8 s)"]);
+  } else if (remoteHeads.size) {
+    facts.push(["remote branches", [...remoteHeads.keys()].join(", ")]);
+  }
 
   const defaultBranch = gh([
     "repo",
