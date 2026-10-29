@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * sdlc-docs — Documentation Sync Watchdog (portable, dependency-free)
+ * govkit-docsync — Documentation Sync Watchdog (portable, dependency-free)
  *
  * Generalized from rent-a-vacation/rav-website (the origin of the /sdlc + /sdlc-docs
  * system). Canonical template: techsilon-apps/dev-standards → templates/sdlc/.
@@ -11,8 +11,8 @@
  * so the same runner works in any repo.
  *
  * Usage:
- *   node scripts/sdlc-docs.mjs audit [--gate|--warn] [--base <ref>]
- *   node scripts/sdlc-docs.mjs report
+ *   node scripts/govkit-docsync.mjs audit [--gate|--warn] [--base <ref>]
+ *   node scripts/govkit-docsync.mjs report
  *
  * Modes:
  *   --warn   Never exit non-zero. Print findings. Use on dev push.
@@ -149,7 +149,7 @@ function ruleComplianceDocSync(changed, reviewed) {
 
 function runAudit({ mode, base }) {
   const changed = gitChangedFiles(base);
-  console.log("\n📋 sdlc-docs audit");
+  console.log("\n📋 govkit-docsync audit");
   console.log("═".repeat(72));
   console.log(`Mode: ${mode}   Base: ${base}   Changed files: ${changed.length}`);
   console.log("═".repeat(72));
@@ -197,7 +197,7 @@ function runAudit({ mode, base }) {
 }
 
 function runReport() {
-  console.log("\n📋 sdlc-docs report");
+  console.log("\n📋 govkit-docsync report");
   console.log("═".repeat(72));
   const docs = walk(DOCS_DIR, ".md");
   const stale = [];
@@ -222,11 +222,11 @@ const args = process.argv.slice(2);
 const sub = args[0];
 
 if (!sub || sub === "--help" || sub === "-h") {
-  console.log(`sdlc-docs — Documentation Sync Watchdog
+  console.log(`govkit-docsync — Documentation Sync Watchdog
 
 Usage:
-  node scripts/sdlc-docs.mjs audit [--gate|--warn] [--base <ref>]
-  node scripts/sdlc-docs.mjs report
+  node scripts/govkit-docsync.mjs audit [--gate|--warn] [--base <ref>]
+  node scripts/govkit-docsync.mjs report
 
 audit modes:  --warn (never fails; dev push)   --gate (fails on gating; PR to main)
 audit options: --base <ref>   base for the diff (default origin/main)`);

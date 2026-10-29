@@ -1,7 +1,10 @@
 name: sdlc-docs
+# Renamed in govkit 0.8.0 (it was the sdlc-docs workflow file). The workflow name, the job name ("Doc-sync (gate|warn)")
+# and the PR-comment marker keep their old names on purpose: a repo may require the job as a status
+# check, and renaming it would leave every PR waiting for a check that never reports.
 
 # Documentation Sync Watchdog (CLAUDE.md §Doc-Sync Mechanism). Replaces the earlier
-# doc-sync.yml. Runner: scripts/sdlc-docs.mjs (dependency-free Node — no install needed).
+# doc-sync.yml. Runner: scripts/govkit-docsync.mjs (dependency-free Node — no install needed).
 #   • PR to dev  → --warn  (comments, never blocks)
 #   • PR to main → --gate  (comments AND fails on gating drift)
 # Registry: scripts/source-doc-map.json. Override a gate with /skip-doc-sync isn't used here —
@@ -35,8 +38,8 @@ jobs:
           BASE="${{ github.base_ref }}"
           MODE=$([ "$BASE" = "main" ] && echo gate || echo warn)
           git fetch --no-tags --depth=100 origin "$BASE"
-          # The runner is scripts/sdlc-docs.mjs unless govkit.json `paths` puts it elsewhere.
-          RUNNER=$(node -e 'let p; try { p = require("./govkit.json").paths?.["scripts/sdlc-docs.mjs"] } catch {} process.stdout.write(p || "scripts/sdlc-docs.mjs")')
+          # The runner is scripts/govkit-docsync.mjs unless govkit.json `paths` puts it elsewhere.
+          RUNNER=$(node -e 'let p; try { p = require("./govkit.json").paths?.["scripts/govkit-docsync.mjs"] } catch {} process.stdout.write(p || "scripts/govkit-docsync.mjs")')
           set +e
           node "$RUNNER" audit --$MODE --base "origin/$BASE" | tee /tmp/sdlc-docs.txt
           echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"

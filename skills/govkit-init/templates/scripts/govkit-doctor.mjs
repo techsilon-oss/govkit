@@ -21,7 +21,7 @@
  *
  * A guardrail is never silently absent. It is either a decision or a finding.
  *
- * Dependency-free: Node built-ins only. No git, no network, no install step.
+ * Dependency-free: Node built-ins only. No git (it reads .git/config directly), no network, no install step.
  *
  * Usage:
  *   node scripts/govkit-doctor.mjs           # report; exit 0 always
@@ -29,7 +29,7 @@
  *   node scripts/govkit-doctor.mjs config    # print the manifest as a readable table
  */
 
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 const MANIFEST = "govkit.json";
@@ -175,11 +175,76 @@ if (missing.length > 0) {
 const known = new Set(guardrails.map(([n]) => n));
 const strays = [];
 if (existsSync(".githooks/pre-push") && !known.has("pre-push-hook")) strays.push(".githooks/pre-push");
-if (existsSync("scripts/sdlc-docs.mjs") && !known.has("doc-sync")) strays.push("scripts/sdlc-docs.mjs");
+if (existsSync("scripts/govkit-docsync.mjs") && !known.has("doc-sync")) strays.push("scripts/govkit-docsync.mjs");
 if (strays.length) {
   console.log(`  ⚠️  Installed but not in the manifest — govkit will not maintain these:`);
   for (const s of strays) console.log(`        ${s}`);
   console.log("");
+}
+
+// ------------------------------------------------------------------ old names (renamed in 0.8.0)
+
+/**
+ * govkit 0.8.0 renamed /sdlc -> /govkit-session, /sdlc-docs -> /govkit-docsync, the runner
+ * scripts/sdlc-docs.mjs -> scripts/govkit-docsync.mjs, its workflow file, and the sdlc-docs:* npm
+ * scripts -> docsync:*. The old ones keep working until 0.9.0. Listed here with file and line so a
+ * repo can fix its own docs and CI first.
+ *
+ * Two kinds. govkit-only names (the scripts, the runner, the workflow file) are always listed. The
+ * skill names /sdlc and /sdlc-docs are listed only when the repo has no skill of its own by that
+ * name (.claude/skills/<name>/): a project with its own /sdlc is why govkit renamed, and its
+ * mentions are correct. govkit.json `oldNames.ignore` takes "path" (glob) or "path:line" entries.
+ */
+const GOVKIT_ONLY = [
+  [/\bsdlc-docs:(audit|gate|report)\b/, "sdlc-docs:* npm script (now docsync:*)"],
+  [/scripts\/sdlc-docs\.mjs/, "scripts/sdlc-docs.mjs (now scripts/govkit-docsync.mjs)"],
+  [/\bsdlc-docs\.yml\b/, "sdlc-docs.yml (now govkit-docsync.yml)"],
+];
+const SKILL_NAMES = [
+  ["sdlc-docs", /(^|[^\w/.-])\/sdlc-docs\b/, "/sdlc-docs (now /govkit-docsync)"],
+  ["sdlc", /(^|[^\w/.-])\/sdlc\b(?!-)/, "/sdlc (now /govkit-session)"],
+];
+
+function hooksPath() {
+  try {
+    return readFileSync(".git/config", "utf-8").match(/^\s*hookspath\s*=\s*(.+?)\s*$/im)?.[1] ?? null;
+  } catch {
+    return null; // a worktree or submodule keeps .git elsewhere; .githooks/ is scanned regardless
+  }
+}
+
+function filesUnder(dir) {
+  if (!existsSync(dir)) return [];
+  if (!statSync(dir).isDirectory()) return [dir];
+  return readdirSync(dir).flatMap((name) => (name === ".git" || name === "node_modules" ? [] : filesUnder(`${dir}/${name}`)));
+}
+
+const globRe = (g) => new RegExp(`^${g.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\0").replace(/\*/g, "[^/]*").replace(/\0/g, ".*")}$`);
+const ignore = (manifest.oldNames?.ignore ?? []).map((e) => {
+  const m = /^(.*):(\d+)$/.exec(e);
+  return m ? { re: globRe(m[1]), line: Number(m[2]) } : { re: globRe(e), line: null };
+});
+const ignored = (file, line) => ignore.some((i) => i.re.test(file) && (i.line === null || i.line === line));
+
+const scanned = [...new Set(["CLAUDE.md", "docs", ".github", ".githooks", hooksPath()].filter(Boolean).flatMap(filesUnder))]
+  .filter((f) => !/(^|\/)CHANGELOG\.md$/.test(f) && statSync(f).size < 1_000_000);
+const ownSkill = (name) => existsSync(`.claude/skills/${name}`);
+const oldNames = [];
+for (const file of scanned) {
+  const lines = readFileSync(file, "utf-8").split("\n");
+  lines.forEach((text, i) => {
+    const hits = GOVKIT_ONLY.filter(([re]) => re.test(text)).map(([, what]) => ({ what, govkitOnly: true }));
+    for (const [name, re, what] of SKILL_NAMES) if (!ownSkill(name) && re.test(text)) hits.push({ what, govkitOnly: false });
+    for (const h of hits) if (!ignored(file, i + 1)) oldNames.push({ file, line: i + 1, ...h });
+  });
+}
+if (oldNames.length) {
+  console.log(`  ⚠️  Old names, renamed in govkit 0.8.0 (they work until 0.9.0):`);
+  for (const o of oldNames) console.log(`        ${o.file}:${o.line}  ${o.what}`);
+  console.log(
+    `\n  /govkit-init --upgrade moves the files and scripts; fix the rest by hand. To keep a\n` +
+      `  reference on purpose, add "path" or "path:line" to oldNames.ignore in ${MANIFEST}.\n`,
+  );
 }
 
 process.exit(process.argv.includes("--ci") && missing.length > 0 ? 1 : 0);

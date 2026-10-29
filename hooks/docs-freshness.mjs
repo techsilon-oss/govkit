@@ -10,7 +10,7 @@
  * started from a false picture, and this kept happening in every govkit repo.
  *
  * Drift starts at one moment: the working branch moves (a merge, or a direct commit) and the
- * session ends without the /sdlc session-close checklist. So this hook watches that moment:
+ * session ends without the /govkit-session session-close checklist. So this hook watches that moment:
  *
  *   session-start  Records where the working branch was (locally and on origin), and tells the
  *                  session up front if a tracker is already stale.
@@ -86,7 +86,8 @@ try {
 const CFG = manifest?.guardrails?.["docs-sync-check"] ?? {};
 if (CFG.enabled === false || CFG.sessionHook === false) process.exit(0);
 
-const DOCS = CFG.bootstrapDocs ?? ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md", "CLAUDE.md"];
+// Status docs only. CLAUDE.md states rules, not status, and is not dated (0.8.0, #26).
+const DOCS = CFG.bootstrapDocs ?? ["docs/PROJECT-HUB.md", "docs/PRIORITY-ROADMAP.md"];
 const WATCHED = CFG.watchedPaths ?? ["src/", "scripts/", "package.json", ".github/"];
 const WORKING = manifest?.branches?.working ?? "dev";
 
@@ -218,7 +219,7 @@ if (mode === "stop") {
       `govkit: ${WORKING} has new code from this session, and no tracker doc changed.`,
       ...shown,
       `Trackers: ${DOCS.join(", ")}.`,
-      "If the session is finished: do the /sdlc session close. Update the status, the next steps",
+      "If the session is finished: do the /govkit-session session close. Update the status, the next steps",
       "and the 'last checked' date in each tracker, then commit and push.",
       "If more work follows in this session: say so, and do the session close at the end.",
       "This reminder comes once for each new state of the branch.",

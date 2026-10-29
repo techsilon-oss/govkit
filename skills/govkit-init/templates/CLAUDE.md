@@ -10,7 +10,7 @@ This project's guardrails are **not local inventions**. They come from three ups
 | Upstream | Owns | Change it when |
 |---|---|---|
 | [**release-gate-kit**](https://github.com/techsilon-oss/release-gate-kit) | `scripts/release-gate.ts` — the local CI-fallback gate, and nothing else. Standalone by design: usable in any project with zero governance buy-in | The gate itself is wrong or missing a feature. **Never patch the vendored copy here** |
-| [**govkit**](https://github.com/techsilon-oss/govkit) | The guardrail spine: `/govkit-init`, `/sdlc`, `/govkit-doctor`, the hook, the doc-sync runners, this block | Any project would want the change |
+| [**govkit**](https://github.com/techsilon-oss/govkit) | The guardrail spine: `/govkit-init`, `/govkit-session`, `/govkit-doctor`, the hook, the doc-sync runners, this block | Any project would want the change |
 | **dev-standards** (private, TechSilon repos only) | The house layer: stack runbooks, the user `CLAUDE.md` profile, the guardrails cheatsheet | The change is house-specific, not universal |
 
 **Dependencies run one way only:** release-gate-kit ← govkit ← dev-standards ← this project. Nothing upstream references a consumer.
@@ -55,5 +55,5 @@ The gate's checks live in `release-gate.config.json` — edit them to match this
 
 - Architecture decisions, current status, and session handoffs live in [`docs/PROJECT-HUB.md`](docs/PROJECT-HUB.md).
 - What to work on next lives in [`docs/PRIORITY-ROADMAP.md`](docs/PRIORITY-ROADMAP.md).
-- Run `/sdlc status` (govkit skill) at session start for a current-state read.
+- Run `/govkit-session status` (govkit skill) at session start for a current-state read.
 <!-- govkit:end -->

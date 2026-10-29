@@ -4,6 +4,36 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.8.0] - 2026-10-29
+
+**Breaking: follow [docs/UPGRADING.md](docs/UPGRADING.md#07--08).** The old names keep working until 0.9.0.
+
+### Changed (breaking)
+- **Skills renamed** so they can't clash with a project's own: `/sdlc` → **`/govkit-session`** (`status`, `close`, or a task), `/sdlc-docs` → **`/govkit-docsync`**. `/sdlc` and `/sdlc-docs` stay as aliases that say so, until 0.9.0. (#12)
+- **Files renamed with them:** `scripts/sdlc-docs.mjs` → `scripts/govkit-docsync.mjs`, `.github/workflows/sdlc-docs.yml` → `govkit-docsync.yml`. The workflow's check name ("Doc-sync (gate|warn)") is unchanged, so a branch protection rule requiring it keeps working.
+- **npm scripts renamed:** `sdlc-docs:{audit,gate,report}` → `docsync:{audit,gate,report}`. `--upgrade` keeps each old key as `npm run docsync:<name>` until 0.9.0.
+
+### Added
+- **`--upgrade` carries renames:** an old file is recognised by its release hashes, written under the new name and deleted. An edited old file is never moved or deleted: it's reported and its diff saved.
+- **`package.json`, the one file govkit edits that it does not own:** only scripts whose value runs `scripts/sdlc-docs.mjs` change, shown as a diff, line by line (the file's layout survives), on a clean tree. A file that can't be edited that way stops the upgrade instead of being reformatted.
+- **The doctor lists old names** (`/sdlc`, `/sdlc-docs`, `sdlc-docs:*`, `scripts/sdlc-docs.mjs`, `sdlc-docs.yml`) in `CLAUDE.md`, `docs/`, `.github/` and git hooks, with file and line. A repo with its own `.claude/skills/sdlc/` isn't told about `/sdlc`. `govkit.json` `oldNames.ignore` keeps a reference on purpose. Warnings only, until 0.9.0.
+- `--upgrade` offers the new `bootstrapDocs` when a repo still has exactly the old default; a list the user changed is left alone.
+- **An unedited `CLAUDE.md` govkit block is recognised as outdated:** each release's block template is rendered with the repo's values and compared, so a block nobody touched is offered the new one (default yes) instead of keeping `/sdlc` after 0.9.0 removes it. Only a block matching no release counts as edited (default no).
+
+### Fixed
+- Scaffolded trackers declare a date: `last checked <scaffold date>` in `PROJECT-HUB.md` and `PRIORITY-ROADMAP.md`, so `docs-sync-check --ci` passes on day one. `CLAUDE.md` leaves the default `bootstrapDocs` (it holds rules, not status). (#26)
+- The pre-push block suggests `gh pr create --head <the branch you pushed>`, not `--head dev`. (#27)
+- `govkit.json` (and `package.json`) are never written through a symlink, the same rule as owned files.
+
+Changed in your repo:
+- `scripts/sdlc-docs.mjs` → `scripts/govkit-docsync.mjs`, and `.github/workflows/sdlc-docs.yml` → `govkit-docsync.yml` (both moved);
+- `scripts/govkit-doctor.mjs` (old-name scan);
+- `scripts/docs-sync-check.mjs` (default `bootstrapDocs`);
+- `.githooks/pre-push` (#27);
+- `package.json` scripts and `govkit.json` doc-sync entries (as above).
+
+New repos also get dated trackers.
+
 ## [0.7.0] - 2026-10-29
 
 ### Added
@@ -98,6 +128,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.8.0]: https://github.com/techsilon-oss/govkit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/techsilon-oss/govkit/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/techsilon-oss/govkit/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/techsilon-oss/govkit/compare/v0.5.2...v0.6.0

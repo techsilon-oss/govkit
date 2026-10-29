@@ -22,11 +22,19 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 	for protected in $PROTECTED_BRANCHES; do
 		if [ "$remote_ref" = "$protected" ]; then
 			branch=${protected#refs/heads/}
+			# Suggest the branch being pushed, not a fixed name: a trunk-flow repo has no dev.
+			case "$local_ref" in
+				refs/heads/*) head=${local_ref#refs/heads/} ;;
+				*) head=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) ;;
+			esac
+			if [ -z "$head" ] || [ "$head" = "HEAD" ] || [ "$head" = "$branch" ]; then
+				head="<your-branch>"
+			fi
 			echo "" >&2
 			echo "  ✖ Direct push to '$branch' is blocked." >&2
 			echo "    '$branch' is production — it advances only by merging a PR." >&2
 			echo "" >&2
-			echo "    Open one:  gh pr create --base $branch --head dev --fill" >&2
+			echo "    Open one:  gh pr create --base $branch --head $head --fill" >&2
 			echo "    Override (discouraged):  git push --no-verify" >&2
 			echo "" >&2
 			exit 1

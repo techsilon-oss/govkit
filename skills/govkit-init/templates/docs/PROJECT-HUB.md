@@ -1,6 +1,8 @@
 # {{PROJECT_NAME}} — Project Hub
 
-> The single source of truth for architecture decisions, current state, and session-to-session context. `/sdlc status` reads this file. Keep it current — a stale hub poisons the next session's context.
+last checked {{SCAFFOLD_DATE}}
+
+> The single source of truth for architecture decisions, current state, and session-to-session context. `/govkit-session status` reads this file. Keep it current — a stale hub poisons the next session's context.
 
 ## Current Status
 

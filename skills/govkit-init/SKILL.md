@@ -17,7 +17,7 @@ Work through these steps in order. **With `--upgrade`, skip to [Upgrade](#upgrad
 Run and report PASS / MISSING for each:
 
 - `git rev-parse --is-inside-work-tree` — must be inside a git repo. If not, ask the user whether to run `git init`; if they decline, **stop**.
-- `gh --version` then `gh auth status` — the GitHub CLI must be installed and authenticated (`/sdlc` and the release gate's `--pr` need it). If missing/unauthed, **warn** (tell them to install `gh` / run `gh auth login`) but you may continue scaffolding — note it in the summary.
+- `gh --version` then `gh auth status` — the GitHub CLI must be installed and authenticated (`/govkit-session` and the release gate's `--pr` need it). If missing/unauthed, **warn** (tell them to install `gh` / run `gh auth login`) but you may continue scaffolding — note it in the summary.
 - `node --version` and `npm --version` — needed to run the release gate (via `tsx`). If missing, **warn** and continue.
 
 Print a short preflight table before proceeding.
@@ -33,7 +33,7 @@ Ask the user these four, showing defaults so "accept all" is one reply:
 
 ## Step 3 — Scaffold (non-destructive)
 
-For each template in this skill's `templates/` directory, substitute the `{{TOKENS}}` from Step 2, then write to the corresponding path in the user's repo. Apply these rules:
+For each template in this skill's `templates/` directory, substitute the `{{TOKENS}}` from Step 2, then write to the corresponding path in the user's repo. `{{SCAFFOLD_DATE}}` is today's date (`YYYY-MM-DD`): the trackers' `last checked` line, so `docs-sync-check` passes on day one. Apply these rules:
 
 | Template | Target | Rule |
 |---|---|---|
@@ -47,12 +47,12 @@ For each template in this skill's `templates/` directory, substitute the `{{TOKE
 | `templates/gitattributes-snippet.txt` | `./.gitattributes` | Ensure each line is present; create if absent. **Required by the hook** — see below. |
 | `templates/githooks/pre-push` | `./.githooks/pre-push` | Create if absent. **Commit mode `100755`** (`git update-index --chmod=+x`). Substitute the release branch. |
 | `templates/githooks/install-hooks.sh` | `./.githooks/install-hooks.sh` | Create if absent; mode `100755`. |
-| `templates/scripts/sdlc-docs.mjs` | `./scripts/sdlc-docs.mjs` | Create if absent; else skip. Verbatim. |
+| `templates/scripts/govkit-docsync.mjs` | `./scripts/govkit-docsync.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/docs-sync-check.mjs` | `./scripts/docs-sync-check.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/govkit-doctor.mjs` | `./scripts/govkit-doctor.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/release-version.mjs` | `./scripts/release-version.mjs` | Create if absent; else skip. Verbatim. |
 | `templates/scripts/source-doc-map.example.json` | `./scripts/source-doc-map.json` | Create if absent. **Tell the user it is an example that gates nothing until edited.** |
-| `templates/.github/workflows/sdlc-docs.yml` | `./.github/workflows/sdlc-docs.yml` | Create if absent; else skip. |
+| `templates/.github/workflows/govkit-docsync.yml` | `./.github/workflows/govkit-docsync.yml` | Create if absent; else skip. |
 | `templates/scripts/supabase.mjs` | `./scripts/supabase.mjs` | **Only if the project uses Supabase** (a `supabase/` directory, or a `SUPABASE_` variable in `.env.example`). Create if absent; else skip. Verbatim. |
 | `templates/supabase/projects.example.json` | `./supabase/projects.json` | Same condition. Create if absent. **Tell the user it is a placeholder and every Supabase command fails until it is filled in.** |
 | `templates/govkit.json` | `./govkit.json` | Create if absent. Record `govkitVersion`, the branch names from Step 2, `project` (name and deploy target from Step 2), and each guardrail's enabled/skipped state. Substitute `{{GOVKIT_VERSION}}` with `version` from this plugin's `.claude-plugin/plugin.json` (two levels above this skill's base directory), never a remembered value: a literal in the template recorded 0.4.0 for every 0.5.x init. |
@@ -84,7 +84,7 @@ Print a table: each target file → **created** / **appended** / **merged** / **
 5. Try them: `npm run release-gate`, `npm run docs:sync-check`, `node scripts/govkit-doctor.mjs`
 6. **Baseline the version.** If the release branch has no `v*` tag yet, run `npm run release:tag` once to tag what is in production now; from then on `npm run release:status` reports drift. If the UI shows a build identifier, make it the commit SHA, not a commit count (see the `versioning` guardrail in `govkit.json`).
 7. Fill in `docs/PROJECT-HUB.md` (status + first decisions) and `docs/PRIORITY-ROADMAP.md`.
-8. If `gh` was unauthed, run `gh auth login` so `/sdlc` and `--pr` work.
+8. If `gh` was unauthed, run `gh auth login` so `/govkit-session` and `--pr` work.
 9. **Verify the hook actually blocks** — presence is not proof:
    ```bash
    git config core.hooksPath                          # expect: .githooks
@@ -117,18 +117,25 @@ Then run `node scripts/govkit-doctor.mjs` and show the output. It compares `govk
 
 A plugin update reaches the skills and the session hook, never the files init copied into the repo, and a re-run of init skips files that exist. This is how a fix to an owned file reaches a repo that already ran init.
 
-Owned files: `scripts/{docs-sync-check,sdlc-docs,govkit-doctor,release-version,supabase}.mjs`, `.githooks/{pre-push,install-hooks.sh}`, `.github/workflows/sdlc-docs.yml`, plus `scripts/release-gate.ts` (by vendored version) and the `govkit:start/end` block in `CLAUDE.md` (diff only). **Never touch anything else** — the trackers, `release-gate.config.json`, `source-doc-map.json`, `supabase/projects.json` are the project's own.
+Owned files: `scripts/{docs-sync-check,govkit-docsync,govkit-doctor,release-version,supabase}.mjs`, `.githooks/{pre-push,install-hooks.sh}`, `.github/workflows/govkit-docsync.yml`, plus `scripts/release-gate.ts` (by vendored version) and the `govkit:start/end` block in `CLAUDE.md` (diff only). **Never touch anything else** — the trackers, `release-gate.config.json`, `source-doc-map.json`, `supabase/projects.json` are the project's own.
 
 Every command below is `node "<this skill's base directory>/upgrade.mjs" …`, run from the repo root. It runs from the plugin, not from the repo, so it is always the installed version.
 
 1. **`check`** and show the report. Each owned file is `current`, `outdated — matches <releases>` (identical to an older release), or `edited` (matches no release — a local change, or a formatter's rewrite). The match comes from hashing the file against every past release, so it works on repos initialised before the `files` map existed.
 2. **Clean tree first.** `apply` refuses when the working tree has uncommitted changes, and says why: every upgrade should be one reviewable, revertable change. Mixed with other edits, `git diff` no longer shows what the upgrade did, and reverting it would take the user's work with it. If it is dirty, stop here and ask them to commit or stash. `check`, `diff` and `save-diff` still run.
 3. **Outdated files** — one at a time: show `diff <path>`, ask, and on yes (the default) collect it.
-4. **Edited files and the CLAUDE.md block** — show `diff <path>` with a warning that replacing it discards the local change. **Default no.** On no, run `save-diff <path>` and print the path it returns (`.git/govkit/upgrade-<name>.diff`): the user can take only the lines they want, with `git apply --include` or by hand. It lives inside `.git`, so it is never committed.
+   - **`rename pending`** (0.8.0 renamed `scripts/sdlc-docs.mjs` → `scripts/govkit-docsync.mjs` and the workflow file): the same, but say the old file will be deleted. For the runner, also show `diff package.json`. **package.json is the one file govkit edits that it does not own**: say so, and that only the listed scripts change. Default yes.
+   - **`rename-edited`**: the old file matches no release. It is **never moved or deleted**. Run `save-diff <path>`, print the path, and tell the user to carry their change over and delete the old file themselves.
+   - **`old … still present`**: the new file is in, the old one is left. Point it out; don't delete it.
+   - If `check` says package.json must be edited **by hand**, don't apply the runner rename: list the scripts to change and stop there.
+   - **`bootstrapDocs`**: when `check` offers it (the old default), show `diff govkit.json#bootstrapDocs`, default yes, and collect `govkit.json#bootstrapDocs`. A list the user changed is left alone; just say so.
+   - **The CLAUDE.md block, `outdated — matches <releases>`**: it's unedited, identical to an older release's block rendered with this repo's values. Treat it like an outdated file: `diff CLAUDE.md`, **default yes**. (Left alone, an old block keeps naming renamed skills: `/sdlc status` after 0.9.0 removes `/sdlc`.)
+4. **Edited files, and a CLAUDE.md block that matches no release** — show `diff <path>` with a warning that replacing it discards the local change. **Default no.** On no, run `save-diff <path>` and print the path it returns (`.git/govkit/upgrade-<name>.diff`): the user can take only the lines they want, with `git apply --include` or by hand. It lives inside `.git`, so it is never committed.
 5. **`apply <path>…`** with every yes from steps 3–4. It writes only those, keeps pre-push's own `PROTECTED_BRANCHES` line and the exec bit, and updates `govkit.json` (`files`, and `govkitVersion` once every owned file agrees on one release). If the report says `govkit.json` was reformatted, pass that on: its diff then shows more than the upgrade's own lines.
 6. **`record`** if nothing was applied but `check` said `govkitVersion` is wrong (0.5.0 wrote 0.4.0) — it corrects that without touching any file.
 7. **Prettier.** If `check --json` reports `"prettier": true`, offer to add the owned paths to `.prettierignore`. Otherwise the formatter rewrites them, every one reads as `edited`, and future upgrades default to no.
-8. Tell the user to review `git diff` and commit it as one change (`chore(govkit): upgrade to <version>`). Do not commit for them. On Windows, if an applied hook was untracked, remind them to `git update-index --chmod=+x .githooks/<name>` after `git add`.
+8. **After a release that renamed something, run `/govkit-doctor`.** It lists remaining references to old names (CI steps running `npm run sdlc-docs:*`, `/sdlc` in docs) with file and line. Then point at [docs/UPGRADING.md](../../docs/UPGRADING.md) for anything the upgrade can't do (the trackers' `last checked` line).
+9. Tell the user to review `git diff` and commit it as one change (`chore(govkit): upgrade to <version>`). Do not commit for them. On Windows, if an applied hook was untracked, remind them to `git update-index --chmod=+x .githooks/<name>` after `git add`.
 
 ## What this skill does NOT do
 
