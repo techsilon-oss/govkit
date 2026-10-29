@@ -4,7 +4,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, test } from "node:test";
@@ -176,6 +176,9 @@ test("a govkit.json that cannot be edited in place is rewritten, and the report 
 test("apply replaces only the named file, keeps the exec bit, and records it", () => {
   const { root } = makeRepo("v0.5.0");
   const supabaseBefore = readFileSync(join(root, "scripts/supabase.mjs"), "utf-8");
+  // On disk too: where git tracks file modes (Linux, macOS), an index-only +x reads as a
+  // modified file, and apply rightly refuses the dirty tree.
+  chmodSync(join(root, ".githooks/pre-push"), 0o755);
   git(root, "update-index", "--chmod=+x", ".githooks/pre-push");
   git(root, "commit", "-qm", "exec");
 
