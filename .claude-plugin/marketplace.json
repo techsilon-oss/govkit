@@ -9,7 +9,7 @@
     {
       "name": "govkit",
       "description": "Project governance starter kit: guardrails scaffolding (/govkit-init), /govkit-session, and /govkit-doctor conformance reporting.",
-      "version": "0.9.1",
+      "version": "0.9.2",
       "source": "./",
       "author": {
         "name": "Techsilon LLC",

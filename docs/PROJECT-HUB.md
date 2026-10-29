@@ -9,8 +9,8 @@ last checked 2026-10-29
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** 0.9.1 (#31, security): skills pre-approve only the plugin's own scripts, no npm/pnpm, `git config --get` only. 0.9.0 (#13, project steps behind a trust step) is released.
-- **Next, in order:** #16 → #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
+- **Now:** #16, the kit standard: `techsilon-oss/.github` holds `KIT-STANDARD.md` and the org defaults; govkit 0.9.2 links it and drops its own SECURITY.md; one checklist issue per kit.
+- **Next, in order:** govkit's kit-standard checklist → #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
 
@@ -43,4 +43,6 @@ last checked 2026-10-29
 - 0.9.0 (#13) in review: project steps behind a trust step. The aliases were kept longer, because 0.8.0 had shipped the same day (#29 moved to on or after 2026-11-28).
 - Shipped 0.9.0 (#30), with the review fix: pre-approvals anchored to `${CLAUDE_PLUGIN_ROOT}`, tested in a live `dontAsk` session. v0.8.0's release notes now give the new alias date.
 - 0.9.1 (#31) in review: the remaining pre-approvals of repo code removed.
-- Next: merge and tag 0.9.1, then #16.
+- Shipped 0.9.1 (#32): no pre-approved command runs repo code or writes config.
+- #16: created `techsilon-oss/.github` (KIT-STANDARD.md, org SECURITY/CONTRIBUTING/issue templates) in PR .github#1; govkit 0.9.2 links it. Four kit checklist issues drafted for review.
+- Next: merge .github#1, then govkit 0.9.2, protect .github's main, post the checklists, then govkit's checklist.

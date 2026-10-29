@@ -18,4 +18,4 @@ labels: bug
 **Upgrade state** (if it involves a script in your repo)
 <!-- Output of: node "<plugin dir>/skills/govkit-init/upgrade.mjs" check -->
 
-Security problem? Don't open an issue. See SECURITY.md.
+Security problem? Don't open an issue: use this repo's **Security → Report a vulnerability**, or see https://github.com/techsilon-oss/.github/blob/main/SECURITY.md.

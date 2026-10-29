@@ -12,4 +12,6 @@ Thanks for helping. govkit is small, and changes stay small and reviewable.
 
 Releases: see "Releasing govkit itself" in the README. Maintainers only.
 
-Security problems: see [SECURITY.md](SECURITY.md), not a public issue.
+Security problems: the repo's **Security → Report a vulnerability**, or [SECURITY.md](https://github.com/techsilon-oss/.github/blob/main/SECURITY.md). Not a public issue.
+
+govkit follows the [techsilon-oss kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md).

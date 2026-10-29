@@ -239,4 +239,4 @@ That is why guardrails are now **on by default**, why skipping one requires a re
 
 ---
 
-govkit is published by Techsilon LLC and maintained by Sujit Gangadharan. Contact: oss@techsilon.com. Security reports: see [SECURITY.md](SECURITY.md).
+govkit is published by Techsilon LLC and maintained by Sujit Gangadharan. Contact: oss@techsilon.com. Security reports: [SECURITY.md](https://github.com/techsilon-oss/.github/blob/main/SECURITY.md). govkit follows the [techsilon-oss kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md).
