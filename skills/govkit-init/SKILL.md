@@ -1,6 +1,7 @@
 ---
 name: govkit-init
-description: Scaffold the core project guardrails (branch flow, Local Release Gate CI-fallback, PROJECT-HUB + PRIORITY-ROADMAP, generic CLAUDE.md) into the current project. Use when starting a new project, or to add govkit guardrails to an existing one. Non-destructive — creates missing files, appends/merges into existing ones, never overwrites.
+description: Scaffold the core project guardrails (branch flow, Local Release Gate CI-fallback, PROJECT-HUB + PRIORITY-ROADMAP, generic CLAUDE.md) into the current project. Use when starting a new project, or to add govkit guardrails to an existing one. Non-destructive — creates missing files, appends/merges into existing ones, never overwrites. `/govkit-init --upgrade` brings the files govkit owns up to the installed version, replacing each only on an explicit yes.
+argument-hint: "[--skip <guardrail>]... | --upgrade"
 ---
 
 # govkit-init — scaffold project guardrails
@@ -9,7 +10,7 @@ Scaffolds the **minimal tier** of guardrails into the current working directory.
 
 **Principles:** non-destructive (never overwrite), idempotent (safe to re-run), report everything you did. Use only `git`, `gh`, `node`/`npm`. Do not run `npm install`, do not commit, and do not deploy — leave those to the user.
 
-Work through these steps in order.
+Work through these steps in order. **With `--upgrade`, skip to [Upgrade](#upgrade--govkit-init---upgrade) instead.**
 
 ## Step 1 — Preflight
 
@@ -54,7 +55,7 @@ For each template in this skill's `templates/` directory, substitute the `{{TOKE
 | `templates/.github/workflows/sdlc-docs.yml` | `./.github/workflows/sdlc-docs.yml` | Create if absent; else skip. |
 | `templates/scripts/supabase.mjs` | `./scripts/supabase.mjs` | **Only if the project uses Supabase** (a `supabase/` directory, or a `SUPABASE_` variable in `.env.example`). Create if absent; else skip. Verbatim. |
 | `templates/supabase/projects.example.json` | `./supabase/projects.json` | Same condition. Create if absent. **Tell the user it is a placeholder and every Supabase command fails until it is filled in.** |
-| `templates/govkit.json` | `./govkit.json` | Create if absent. Record `govkitVersion`, the branch names from Step 2, and each guardrail's enabled/skipped state. Substitute `{{GOVKIT_VERSION}}` with `version` from this plugin's `.claude-plugin/plugin.json` (two levels above this skill's base directory), never a remembered value: a literal in the template recorded 0.4.0 for every 0.5.x init. |
+| `templates/govkit.json` | `./govkit.json` | Create if absent. Record `govkitVersion`, the branch names from Step 2, `project` (name and deploy target from Step 2), and each guardrail's enabled/skipped state. Substitute `{{GOVKIT_VERSION}}` with `version` from this plugin's `.claude-plugin/plugin.json` (two levels above this skill's base directory), never a remembered value: a literal in the template recorded 0.4.0 for every 0.5.x init. |
 
 Notes:
 - Create parent directories (`docs/`, `scripts/`, `.githooks/`, `.github/workflows/`) as needed.
@@ -106,9 +107,28 @@ Print a table: each target file → **created** / **appended** / **merged** / **
 
 Re-running must not duplicate anything: the `CLAUDE.md` govkit block is skipped if its marker exists; existing files are skipped; `package.json` script keys already present are skipped; `.gitignore` lines already present are not re-added. Report these as "already present".
 
-## Step 6 — Report conformance, don't assume it
+## Step 6 — Record what was written, then report conformance
 
-Finish by running `node scripts/govkit-doctor.mjs` and showing the output. It compares `govkit.json` against what is on disk, so the summary reflects the repo rather than this skill's intentions.
+Run `node "<this skill's base directory>/upgrade.mjs" record`. It writes the `files` map into `govkit.json`: for each file govkit owns, the release that wrote it and its hash. That is what lets a later `--upgrade` tell a file you edited from one that is merely old. It touches only `govkit.json`.
+
+Then run `node scripts/govkit-doctor.mjs` and show the output. It compares `govkit.json` against what is on disk, so the summary reflects the repo rather than this skill's intentions.
+
+## Upgrade — `/govkit-init --upgrade`
+
+A plugin update reaches the skills and the session hook, never the files init copied into the repo, and a re-run of init skips files that exist. This is how a fix to an owned file reaches a repo that already ran init.
+
+Owned files: `scripts/{docs-sync-check,sdlc-docs,govkit-doctor,release-version,supabase}.mjs`, `.githooks/{pre-push,install-hooks.sh}`, `.github/workflows/sdlc-docs.yml`, plus `scripts/release-gate.ts` (by vendored version) and the `govkit:start/end` block in `CLAUDE.md` (diff only). **Never touch anything else** — the trackers, `release-gate.config.json`, `source-doc-map.json`, `supabase/projects.json` are the project's own.
+
+Every command below is `node "<this skill's base directory>/upgrade.mjs" …`, run from the repo root. It runs from the plugin, not from the repo, so it is always the installed version.
+
+1. **`check`** and show the report. Each owned file is `current`, `outdated — matches <releases>` (identical to an older release), or `edited` (matches no release — a local change, or a formatter's rewrite). The match comes from hashing the file against every past release, so it works on repos initialised before the `files` map existed.
+2. **Clean tree first.** `apply` refuses when the working tree has uncommitted changes, and says why: every upgrade should be one reviewable, revertable change. Mixed with other edits, `git diff` no longer shows what the upgrade did, and reverting it would take the user's work with it. If it is dirty, stop here and ask them to commit or stash. `check`, `diff` and `save-diff` still run.
+3. **Outdated files** — one at a time: show `diff <path>`, ask, and on yes (the default) collect it.
+4. **Edited files and the CLAUDE.md block** — show `diff <path>` with a warning that replacing it discards the local change. **Default no.** On no, run `save-diff <path>` and print the path it returns (`.git/govkit/upgrade-<name>.diff`): the user can take only the lines they want, with `git apply --include` or by hand. It lives inside `.git`, so it is never committed.
+5. **`apply <path>…`** with every yes from steps 3–4. It writes only those, keeps pre-push's own `PROTECTED_BRANCHES` line and the exec bit, and updates `govkit.json` (`files`, and `govkitVersion` once every owned file agrees on one release). If the report says `govkit.json` was reformatted, pass that on: its diff then shows more than the upgrade's own lines.
+6. **`record`** if nothing was applied but `check` said `govkitVersion` is wrong (0.5.0 wrote 0.4.0) — it corrects that without touching any file.
+7. **Prettier.** If `check --json` reports `"prettier": true`, offer to add the owned paths to `.prettierignore`. Otherwise the formatter rewrites them, every one reads as `edited`, and future upgrades default to no.
+8. Tell the user to review `git diff` and commit it as one change (`chore(govkit): upgrade to <version>`). Do not commit for them. On Windows, if an applied hook was untracked, remind them to `git update-index --chmod=+x .githooks/<name>` after `git add`.
 
 ## What this skill does NOT do
 

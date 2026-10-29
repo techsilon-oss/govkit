@@ -3,6 +3,16 @@
 
   "govkitVersion": "{{GOVKIT_VERSION}}",
 
+  "project": {
+    "name": "{{PROJECT_NAME}}",
+    "deployTarget": "{{DEPLOY_TARGET}}",
+    "$comment": "The values /govkit-init rendered into the CLAUDE.md block. /govkit-init --upgrade renders the current block with them, so its diff shows template changes rather than your project's name."
+  },
+
+  "files": {
+    "$comment": "Written by /govkit-init and /govkit-init --upgrade, never by hand: for each file govkit owns, the release that wrote it and the sha256 of what it wrote (LF line endings). A file whose hash no longer matches was edited locally, and the upgrade will not replace it without an explicit yes."
+  },
+
   "upstreams": {
     "$comment": "Where this project's guardrails come from. Dependencies run ONE WAY: release-gate-kit <- govkit <- house layer <- this project. Nothing upstream references a consumer. Fix a guardrail in the repo that owns it, never in the local copy — a local patch forks it silently and the fix never reaches the other projects.",
     "release-gate-kit": {
