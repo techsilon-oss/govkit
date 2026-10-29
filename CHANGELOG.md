@@ -4,6 +4,14 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.9.2] - 2026-10-29
+
+### Changed
+- govkit follows the [techsilon-oss kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md) (#16), linked from the README and CONTRIBUTING.
+- `SECURITY.md` is now the org-wide one ([techsilon-oss/.github](https://github.com/techsilon-oss/.github/blob/main/SECURITY.md)): report through the repo's **Security → Report a vulnerability**, or oss@techsilon.com. govkit's own copy is removed; its links point there. govkit keeps its own CONTRIBUTING, PR template and issue templates, which ask for govkit-specific details.
+
+No file in your repo changed in this release.
+
 ## [0.9.1] - 2026-10-29
 
 ### Security
@@ -154,6 +162,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.9.2]: https://github.com/techsilon-oss/govkit/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/techsilon-oss/govkit/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/techsilon-oss/govkit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/techsilon-oss/govkit/compare/v0.7.0...v0.8.0
