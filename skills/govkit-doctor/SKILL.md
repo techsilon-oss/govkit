@@ -2,7 +2,7 @@
 name: govkit-doctor
 description: Report which govkit guardrails a project actually has, versus which it declares. Also `/govkit-doctor config` to show the current guardrail configuration. Use when adopting govkit into an existing repo, after upgrading govkit, or when a repo "has the standard" but keeps drifting.
 argument-hint: "[config] [--ci]"
-allowed-tools: Bash(node scripts/govkit-doctor.mjs *) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check*) Bash(git config *) Bash(gh repo view *) Read Glob
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-doctor.mjs" *) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check*) Bash(git config --get *) Bash(gh repo view *) Read Glob
 ---
 
 # `/govkit-doctor` — is this project actually conformant?
@@ -18,10 +18,14 @@ That is not hypothetical. It is why this skill exists: a repo took "govkit is th
 ## Run it
 
 ```bash
-node scripts/govkit-doctor.mjs          # report
-node scripts/govkit-doctor.mjs --ci     # exit 1 if any declared guardrail is missing
-node scripts/govkit-doctor.mjs config   # show the current configuration
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-doctor.mjs"          # report
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-doctor.mjs" --ci     # exit 1 if any declared guardrail is missing
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-doctor.mjs" config   # show the current configuration
 ```
+
+Run it **exactly** in that form, from the repo root.
+
+> **The skill runs the plugin's copy of the script, never the repo's.** In a repo you cloned, `scripts/` holds whatever its author wrote, and a skill's pre-approved command would run it without asking. The plugin's copy is the installed release, the same as the repo's or newer, so its report can be a little ahead of `npm run govkit:doctor` until you run `/govkit-init --upgrade`. CI and npm scripts keep running the repo's copy.
 
 ## What it reports
 
@@ -65,7 +69,7 @@ If there is no `govkit.json`, the project was never scaffolded (or the manifest 
 | trackers | `CLAUDE.md`, `docs/PROJECT-HUB.md`, `docs/PRIORITY-ROADMAP.md` |
 | release-gate | `scripts/release-gate.ts` + `release-gate.config.json` + a `release-gate` script |
 | ci | `.github/workflows/ci.yml` |
-| pre-push-hook | `.githooks/pre-push`, `.gitattributes`, `prepare` script, and `git config core.hooksPath` |
+| pre-push-hook | `.githooks/pre-push`, `.gitattributes`, `prepare` script, and `git config --get core.hooksPath` |
 | doc-sync | `scripts/govkit-docsync.mjs`, `scripts/source-doc-map.json`, `.github/workflows/govkit-docsync.yml` |
 | docs-sync-check | `scripts/docs-sync-check.mjs` + a `docs:sync-check` script |
 | versioning | `scripts/release-version.mjs` + `release:status`/`release:bump`/`release:tag` scripts. Then run `npm run release:status`: a release-branch version with no tag is a finding. |
@@ -80,7 +84,7 @@ The doctor verifies files exist and scripts are wired. Two things it cannot see:
 **1. Is the hook actually active?** A committed `.githooks/pre-push` does nothing until `core.hooksPath` points at it.
 
 ```bash
-git config core.hooksPath      # expect: .githooks
+git config --get core.hooksPath      # expect: .githooks (read-only: never set config from this skill)
 ```
 
 **1b. Is the Supabase binding real?** A `projects.json` full of `REPLACE_ME` placeholders looks installed and protects nothing:

@@ -2,7 +2,7 @@
 name: govkit-docsync
 description: Documentation sync watchdog. Diff-aware check that flags code shipping without its mapped doc, via scripts/source-doc-map.json. Warn on PR to the working branch, gate on PR to the release branch. Companion to /govkit-session; never edits docs.
 argument-hint: "audit [--gate|--warn] [--base <ref>] | report"
-allowed-tools: Bash(node scripts/govkit-docsync.mjs *) Bash(npm run docsync:*) Bash(pnpm docsync:*) Bash(git diff:*) Bash(git log:*) Read Grep
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-docsync.mjs" *) Bash(git diff:*) Bash(git log:*) Read Grep
 ---
 
 # `/govkit-docsync` — documentation sync watchdog
@@ -16,11 +16,15 @@ allowed-tools: Bash(node scripts/govkit-docsync.mjs *) Bash(npm run docsync:*) B
 ## Run it
 
 ```bash
-node scripts/govkit-docsync.mjs audit --warn     # never exits non-zero  → working-branch PRs
-node scripts/govkit-docsync.mjs audit --gate     # exits 1 on gating drift → release PRs
-node scripts/govkit-docsync.mjs audit --base <ref>
-node scripts/govkit-docsync.mjs report           # health snapshot, no diff
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-docsync.mjs" audit --warn     # never exits non-zero  → working-branch PRs
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-docsync.mjs" audit --gate     # exits 1 on gating drift → release PRs
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-docsync.mjs" audit --base <ref>
+node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/scripts/govkit-docsync.mjs" report           # health snapshot, no diff
 ```
+
+Run it **exactly** in that form, from the repo root. Not through `npm run docsync:*`: `package.json` is the repo's, and so is what those scripts run.
+
+> **The skill runs the plugin's copy of the script, never the repo's.** In a repo you cloned, `scripts/` holds whatever its author wrote, and a skill's pre-approved command would run it without asking. The plugin's copy is the installed release, the same as the repo's or newer, so its report can be a little ahead of `npm run docsync:audit` until you run `/govkit-init --upgrade`. CI and npm scripts keep running the repo's copy.
 
 CI runs both modes automatically via `.github/workflows/govkit-docsync.yml` — **warn** on a PR to the working branch, **gate** on a PR to the release branch.
 

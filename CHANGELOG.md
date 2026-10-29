@@ -4,6 +4,17 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.9.1] - 2026-10-29
+
+### Security
+- **No skill pre-approves a command whose code or effect the repo controls** (#31). A skill's `allowed-tools` runs the listed commands without asking, and in a cloned repo these ran the repo author's code:
+  - `/govkit-doctor` and `/govkit-docsync` now run **the plugin's copy** of their script, anchored to `${CLAUDE_PLUGIN_ROOT}`, never the repo's `scripts/` copy. No prompt is added. The plugin's copy is the installed release, so its report can be a step ahead of `npm run govkit:doctor` until `/govkit-init --upgrade`. CI and npm scripts still run the repo's copy.
+  - `/govkit-docsync` no longer pre-approves `npm run docsync:*` or `pnpm docsync:*`: `package.json` is the repo's.
+  - `/govkit-doctor` pre-approves only `git config --get`, not `git config *`, which allowed writes such as `core.sshCommand` or `core.hooksPath`.
+  - `tests/allowed-tools.test.mjs` now requires every pre-approved script to be under `${CLAUDE_PLUGIN_ROOT}`, and rejects `npm`/`pnpm` patterns and config writes.
+
+No file in your repo changed in this release.
+
 ## [0.9.0] - 2026-10-29
 
 ### Added
@@ -143,6 +154,7 @@ Changed in your repo: `scripts/docs-sync-check.mjs`.
 ### Added
 - Branch flow, the Local Release Gate, `PROJECT-HUB`/`PRIORITY-ROADMAP`, and a generic `/sdlc`.
 
+[0.9.1]: https://github.com/techsilon-oss/govkit/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/techsilon-oss/govkit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/techsilon-oss/govkit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/techsilon-oss/govkit/compare/v0.6.1...v0.7.0
