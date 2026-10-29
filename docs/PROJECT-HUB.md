@@ -9,8 +9,8 @@ last checked 2026-10-29
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** 0.8.0, govkit's first breaking release: the skill rename (#12) with dated trackers (#26) and the pre-push message (#27), so users upgrade once. Steps for users: `docs/UPGRADING.md`.
-- **Next, in order:** 0.9.0 (remove the 0.8.0 aliases) → #13 → #16 → #14. #15 and #25 are ideas.
+- **Now:** 0.9.0: a repo's own steps in `/govkit-session` (#13), used only once trusted (DEC-006). The 0.8.0 aliases stay until the first minor release on or after 2026-11-28 (#29).
+- **Next, in order:** #16 → #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
 
@@ -29,6 +29,9 @@ last checked 2026-10-29
 ### DEC-005: Every govkit skill name starts with `govkit-`
 **2026-10-29 · Active (0.8.0, #12).** Projects have their own `/sdlc` skills, and two skills with one name give wrong advice that looks right. So `/sdlc` → `/govkit-session`, `/sdlc-docs` → `/govkit-docsync`; typing `/govkit` lists the whole kit. A rename ships with one version of aliases, moves the files that carried the old name (except the workflow's check name, which a branch protection rule may require), and `--upgrade` carries it: unedited files move, edited ones stay with their diff saved, and `package.json` changes only where a script runs the renamed file.
 
+### DEC-006: A repo's own session steps are used only after the user trusts that exact file
+**2026-10-29 · Active (0.9.0, #13).** `.govkit/session.md` is repo-authored, so a cloned repo could use it to run commands or give the agent instructions. Claude Code's permissions don't fully cover that (allowlists, auto mode). So nothing in it is used until the user has trusted it by hash (`.git/govkit/session-trust.json`, never committed). Any edit means re-trusting. The agent never trusts it: the user runs the trust command, the skill doesn't pre-approve it, and the file is shown between UNTRUSTED markers as data. Command steps run through the agent's Bash tool, never from a govkit script.
+
 ## Session Handoff
 
 ### Session 1 — 2026-10-29 — 0.5.0 tagged through 0.6.1 shipped, dogfooding started
@@ -36,4 +39,6 @@ last checked 2026-10-29
 - Found in passing: init's `govkitVersion` literal (fixed 0.5.1); the CI-only Linux file-mode bug in a test fixture (fixed 0.6.1).
 - Shipped 0.7.0 (#24): govkit runs its own guardrails; `paths` confined to the repo, owned files must be regular files. `main` protected.
 - 0.8.0 (#12 + #26 + #27) in review: rename with aliases, `--upgrade` renames, the package.json exception, old-name scan, `bootstrapDocs` offer.
-- Next: merge 0.8.0 and tag it, then 0.9.0 (alias removal), then #13.
+- Shipped 0.8.0 (#28): the rename, with `--upgrade` carrying it; an unedited CLAUDE.md block counts as outdated.
+- 0.9.0 (#13) in review: project steps behind a trust step. The aliases were kept longer, because 0.8.0 had shipped the same day (#29 moved to on or after 2026-11-28).
+- Next: merge and tag 0.9.0, then #16.

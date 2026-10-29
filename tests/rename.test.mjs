@@ -333,5 +333,6 @@ test("the /sdlc and /sdlc-docs aliases exist for one version and name their new 
   assert.match(alias("sdlc"), /\.\.\/govkit-session\/SKILL\.md/);
   assert.match(alias("sdlc-docs"), /^name: sdlc-docs$/m);
   assert.match(alias("sdlc-docs"), /\.\.\/govkit-docsync\/SKILL\.md/);
-  for (const n of ["sdlc", "sdlc-docs"]) assert.match(alias(n), /removed in 0\.9\.0/);
+  // Kept longer than 0.8.0 first said (extended in 0.9.0): a date, not a version number.
+  for (const n of ["sdlc", "sdlc-docs"]) assert.match(alias(n), /removed in the first minor release on or after 2026-11-28/);
 });

@@ -92,7 +92,7 @@ const BOOTSTRAP = "govkit.json#bootstrapDocs";
 /**
  * package.json is the one file govkit edits that it does not own. Only script values that run the
  * renamed doc-sync runner change: the path is rewritten, and the three scripts init wrote are
- * renamed `docsync:*`, with the old key kept for one version as exactly this alias string. 0.9.0
+ * renamed `docsync:*`, with the old key kept, until at least 2026-11-28, as exactly this alias string. The alias-removal release
  * removes an old key only if its value is still exactly the alias.
  */
 const OLD_RUNNER = "scripts/sdlc-docs.mjs";

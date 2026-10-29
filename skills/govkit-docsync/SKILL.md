@@ -7,7 +7,7 @@ allowed-tools: Bash(node scripts/govkit-docsync.mjs *) Bash(npm run docsync:*) B
 
 # `/govkit-docsync` — documentation sync watchdog
 
-> Renamed from `/sdlc-docs` in govkit 0.8.0; `/sdlc-docs` still works as an alias until 0.9.0. The runner is now `scripts/govkit-docsync.mjs` and the npm scripts are `docsync:*`. `/govkit-init --upgrade` moves an existing repo over.
+> Renamed from `/sdlc-docs` in govkit 0.8.0; `/sdlc-docs` still works as an alias until the first minor release on or after 2026-11-28. The runner is now `scripts/govkit-docsync.mjs` and the npm scripts are `docsync:*`. `/govkit-init --upgrade` moves an existing repo over.
 
 > Diffs a PR against its base and flags **code that shipped without its mapped doc**.
 > Runner: `scripts/govkit-docsync.mjs` — dependency-free (Node built-ins + `git`), no install step.

@@ -30,6 +30,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 const MANIFEST = "govkit.json";
@@ -182,12 +183,72 @@ if (strays.length) {
   console.log("");
 }
 
+// ------------------------------------------------------------------ project steps (.govkit/session.md)
+
+/**
+ * A repo's own steps for /govkit-session. Listed so the difference from the standard is visible,
+ * with every command spelled out, and whether this machine has trusted the file: until it has,
+ * /govkit-session uses none of it. (Parsing matches project-steps.mjs: a sh/bash/shell fence is a
+ * command, anything else under a point is a text step.)
+ */
+const SESSION_FILE = ".govkit/session.md";
+const SESSION_POINTS = ["On start", "Before commit", "On close"];
+if (existsSync(SESSION_FILE)) {
+  const text = readFileSync(SESSION_FILE, "utf-8").replace(/\r\n/g, "\n");
+  const points = Object.fromEntries(SESSION_POINTS.map((p) => [p, { text: 0, commands: [] }]));
+  const unknown = [];
+  let at = null;
+  let inPara = false;
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const h = /^##\s+(.+?)\s*$/.exec(lines[i]);
+    if (h) {
+      at = SESSION_POINTS.find((p) => p.toLowerCase() === h[1].toLowerCase()) ?? null;
+      if (!at) unknown.push(h[1]);
+      inPara = false;
+      continue;
+    }
+    const fence = /^```\s*(\w*)\s*$/.exec(lines[i]);
+    if (fence) {
+      const body = [];
+      for (i++; i < lines.length && !/^```\s*$/.test(lines[i]); i++) body.push(lines[i]);
+      if (at && ["sh", "bash", "shell"].includes(fence[1].toLowerCase())) points[at].commands.push(body.join(" ; ").trim());
+      else if (at) points[at].text++;
+      inPara = false;
+      continue;
+    }
+    if (/^\s*$/.test(lines[i]) || /^#\s/.test(lines[i])) {
+      inPara = false;
+      continue;
+    }
+    const item = /^\s*(?:[-*]|\d+\.)\s+/.test(lines[i]);
+    if (at && (item || !inPara)) points[at].text++;
+    inPara = true;
+  }
+  let trusted = "not trusted on this machine (/govkit-session uses none of it until the user trusts it)";
+  try {
+    const record = JSON.parse(readFileSync(".git/govkit/session-trust.json", "utf-8"));
+    const sha = createHash("sha256").update(text).digest("hex");
+    trusted = record.sha256 === sha ? `trusted on this machine (${record.trustedAt})` : "CHANGED since it was trusted on this machine: not used until trusted again";
+  } catch {
+    // no record, or .git is elsewhere (worktree): reported as not trusted
+  }
+  console.log(`  🧩 Project steps for /govkit-session, from ${SESSION_FILE}: ${trusted}`);
+  for (const p of SESSION_POINTS) {
+    const { text: t, commands } = points[p];
+    console.log(`        ${p.padEnd(14)} ${t + commands.length} step(s), ${commands.length} command(s)`);
+    for (const c of commands) console.log(`          $ ${c}`);
+  }
+  if (unknown.length) console.log(`        unknown sections, ignored: ${unknown.join(", ")}`);
+  console.log("");
+}
+
 // ------------------------------------------------------------------ old names (renamed in 0.8.0)
 
 /**
  * govkit 0.8.0 renamed /sdlc -> /govkit-session, /sdlc-docs -> /govkit-docsync, the runner
  * scripts/sdlc-docs.mjs -> scripts/govkit-docsync.mjs, its workflow file, and the sdlc-docs:* npm
- * scripts -> docsync:*. The old ones keep working until 0.9.0. Listed here with file and line so a
+ * scripts -> docsync:*. The old ones keep working until the first minor release on or after 2026-11-28 (extended in 0.9.0, which first planned to remove them). Listed here with file and line so a
  * repo can fix its own docs and CI first.
  *
  * Two kinds. govkit-only names (the scripts, the runner, the workflow file) are always listed. The
@@ -239,7 +300,7 @@ for (const file of scanned) {
   });
 }
 if (oldNames.length) {
-  console.log(`  ⚠️  Old names, renamed in govkit 0.8.0 (they work until 0.9.0):`);
+  console.log(`  ⚠️  Old names, renamed in govkit 0.8.0 (they keep working until the first minor release on or after 2026-11-28):`);
   for (const o of oldNames) console.log(`        ${o.file}:${o.line}  ${o.what}`);
   console.log(
     `\n  /govkit-init --upgrade moves the files and scripts; fix the rest by hand. To keep a\n` +

@@ -173,6 +173,7 @@ It comes with the plugin, so a plugin update reaches every repo on the machine a
 - **Reads:** `govkit.json`, the declared dates in the tracker docs, and git's refs, log, diff and status. It makes no `gh` calls.
 - **Network:** git, to the repo's own `origin`, and nothing else. It runs `git ls-remote --heads origin <working branch>` when a session first starts and at each stop (8 s limit). At stop it also runs `git fetch origin <working branch>`, only when origin's tip moved during the session, for example because a PR merged on GitHub (20 s limit). No other hosts, no telemetry, no analytics.
 - **Writes, all inside `.git/`:** its session state in `.git/govkit/session-*.json` (untracked, pruned after 14 days). When the stop-time fetch runs, git updates the remote-tracking ref `origin/<working branch>`, stores the fetched objects and writes `FETCH_HEAD`, exactly as a `git fetch` you ran yourself would. It never touches your working tree, the index or your local branches.
+- **Never reads `.govkit/session.md`.** A repo's own steps run only inside `/govkit-session`, and only after you have trusted that file. The trust record is `.git/govkit/session-trust.json` (its hash; never committed). See [docs/EXTENDING.md](docs/EXTENDING.md).
 - **Says:** at session start, a note into the session if a tracker is stale. At stop, once per change, it asks for the session-close checklist when the working branch gained code and no tracker changed.
 
 **The skills** run only when you invoke them, and act through Claude Code's normal tool permissions. `/govkit-init` writes the files listed under [What it scaffolds](#what-it-scaffolds) into your repo; `--upgrade` replaces owned files only on your yes. The one file it edits that it does not own is `package.json`, and only when a release renames a script runner (0.8.0): just the scripts that run the old file, shown as a diff first. Neither commits. `/govkit-session` and the release gate use `gh` against your GitHub repo. The scripts init installs run only when you or your CI run them.
@@ -203,6 +204,10 @@ CI runs on metered GitHub Actions (Free: 2,000 min/month, resets on the 1st). Wh
 - The guardrail structure (`CLAUDE.md`, `PROJECT-HUB`, branch flow, `/govkit-session`) is language-agnostic.
 - The release gate's `checks` are **arbitrary shell commands** — put `cargo test`, `pytest`, `go build`, etc. in `release-gate.config.json`. The only Node tie is that the gate script runs via `tsx`, so a non-Node project just needs Node available to run it.
 - First-class non-Node scaffolding (e.g. a `make`/`just` target instead of npm scripts) is a future enhancement.
+
+## Can my repo add its own steps?
+
+Yes, without forking the skill: put them in **`.govkit/session.md`**, under `## On start`, `## Before commit` or `## On close`, and `/govkit-session` runs them after its own steps. Because the file comes from the repo, **nothing in it is used until you trust that exact file on your machine**, and any edit means trusting it again. `Before commit` runs only when the agent commits through `/govkit-session`, so it's not a git hook. Format, example and trust model: [docs/EXTENDING.md](docs/EXTENDING.md).
 
 ## Versioning
 

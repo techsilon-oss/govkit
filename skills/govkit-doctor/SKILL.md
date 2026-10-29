@@ -51,10 +51,10 @@ Report each owned file that is **outdated** (with the releases it matches), **ed
 
 The script lists every reference to a name govkit renamed in 0.8.0, with file and line: `/sdlc` (now `/govkit-session`), `/sdlc-docs` (now `/govkit-docsync`), the `sdlc-docs:*` npm scripts (now `docsync:*`), `scripts/sdlc-docs.mjs` and `sdlc-docs.yml`. It searches `CLAUDE.md`, `docs/`, `.github/` and the git hooks; `CHANGELOG.md` is history and is skipped.
 
-- **Report them, and say which matter most:** a CI step running `npm run sdlc-docs:*` breaks when 0.9.0 removes the alias.
+- **Report them, and say which matter most:** a CI step running `npm run sdlc-docs:*` breaks when the first minor release on or after 2026-11-28 removes the alias.
 - A repo with **its own** `.claude/skills/sdlc/` (or `sdlc-docs/`) is not told about that skill name: its mentions are of its own skill, which is the reason govkit renamed.
 - A reference kept on purpose goes in `govkit.json` → `"oldNames": { "ignore": ["path/glob/**", "file:line"] }`.
-- Warnings only in 0.8.0. From 0.9.0, govkit-only names (the npm scripts, the runner, the workflow file) fail `--ci`; skill-name mentions never do.
+- Warnings only in 0.8.0. From the first minor release on or after 2026-11-28, govkit-only names (the npm scripts, the runner, the workflow file) fail `--ci`; skill-name mentions never do.
 
 ## When no manifest exists
 
