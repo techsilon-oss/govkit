@@ -25,6 +25,23 @@ One pinned GitHub issue listing what only an owner can do or decide, in two tabl
 **Can I use my own label names for the launch categories?**
 Yes: `guardrails.tracker.issues.categories` in `govkit.json`. A launched product often uses `now` / `next` / `later` / `triage`. See [the tracker guide](modules/tracker.md#what-you-get).
 
+## The status report
+
+**What is the email key?**
+An API key from a mail provider (Resend) that lets the report's workflow send a designed HTML email. It lives only in your repo's GitHub Actions secrets, never in a file; govkit never asks for it. Without one, the report is a comment on a pinned issue, which GitHub's notification email delivers. See [the tracker guide](modules/tracker.md#the-email-key).
+
+**Can I remove a section?**
+Yes: list only the sections you want, in your order, in `guardrails.tracker.report.sections`. See [the tracker guide](modules/tracker.md#change-or-add-a-section).
+
+**Can I add a section?**
+Yes: put `scripts/daily-report/sections/<name>.mjs` in your repo and add `<name>` to `sections`. Upgrades never touch that folder. See [the tracker guide](modules/tracker.md#change-or-add-a-section).
+
+**Why did the email come late?**
+GitHub starts scheduled workflows when it has capacity, sometimes hours late. The report covers the time since the last successful run, so nothing is missed. See [the tracker guide](modules/tracker.md#why-did-the-email-come-late).
+
+**Can it skip days with no activity?**
+Yes: `"skipQuietDays": true`. A window with no issues closed or opened, no merged PRs and no commits sends nothing. See [the tracker guide](modules/tracker.md#quiet-days).
+
 ## Keeping it current
 
 **Why does the doctor say "outdated"?**

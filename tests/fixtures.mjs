@@ -65,6 +65,7 @@ export function makeRepoWith(tmp) {
     put("govkit.json", fill(read("govkit.json"), pluginVersion()));
     const manifest = JSON.parse(readFileSync(join(root, "govkit.json"), "utf-8"));
     for (const e of OWNED) {
+      if (e.when && !e.when(manifest)) continue; // e.g. the daily report: only when it's on
       let [path, template] = [e.path, e.template];
       if (ref && e.renamedFrom) {
         try {

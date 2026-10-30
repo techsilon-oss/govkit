@@ -61,6 +61,11 @@ const PLUGIN_JSON = resolve(HERE, "..", "..", ".claude-plugin", "plugin.json");
  * Not owned, never touched: the trackers, release-gate.config.json, source-doc-map.json,
  * supabase/projects.json, govkit.json — those are the project's own configuration.
  */
+function reportOn(m) {
+  const t = m?.guardrails?.tracker;
+  return t?.enabled === true && t?.report?.enabled === true;
+}
+
 export const OWNED = [
   { path: "scripts/docs-sync-check.mjs", template: "scripts/docs-sync-check.mjs", guardrail: "docs-sync-check" },
   // Renamed in 0.8.0 (#12). `renamedFrom` lets an upgrade recognise the old file by its release
@@ -82,6 +87,9 @@ export const OWNED = [
   { path: "scripts/supabase.mjs", template: "scripts/supabase.mjs", guardrail: "supabase-account" },
   { path: ".githooks/pre-push", template: "githooks/pre-push", guardrail: "pre-push-hook", exec: true },
   { path: ".githooks/install-hooks.sh", template: "githooks/install-hooks.sh", guardrail: "pre-push-hook", exec: true },
+  // The tracker's report: only when the report is on (the tracker alone writes no files).
+  { path: "scripts/daily-report/report.mjs", template: "scripts/daily-report/report.mjs", guardrail: "tracker", when: reportOn },
+  { path: ".github/workflows/govkit-daily-report.yml", template: ".github/workflows/govkit-daily-report.yml", guardrail: "tracker", when: reportOn },
 ];
 
 const RELEASE_GATE = "scripts/release-gate.ts";
@@ -112,9 +120,22 @@ const PROTECTED = /^PROTECTED_BRANCHES=.*$/m;
 
 // ------------------------------------------------------------------ hashing
 
-/** What the hash sees: LF line endings, and pre-push's per-repo branch line blanked. */
+/**
+ * A line an owned template sets per repo, marked with a trailing `# govkit: per-repo (<what>)`
+ * comment (the daily report's cron schedule and issues permission). Its value differs in every
+ * repo, so the hash blanks it and an upgrade keeps the repo's own line; the comment is its key.
+ */
+const PER_REPO = /^(\s*).*?(\s*# govkit: per-repo\b.*)$/gm;
+
+/** The repo's own per-repo lines, keyed by their marker comment. */
+const perRepoLines = (text) => new Map([...(text ?? "").matchAll(PER_REPO)].map((m) => [m[2].trim(), m[0]]));
+
+/** What the hash sees: LF line endings, pre-push's branch line and every per-repo line blanked. */
 export const canonical = (text) =>
-  text.replace(/\r\n/g, "\n").replace(PROTECTED, 'PROTECTED_BRANCHES=""');
+  text
+    .replace(/\r\n/g, "\n")
+    .replace(PROTECTED, 'PROTECTED_BRANCHES=""')
+    .replace(PER_REPO, (_, indent, marker) => `${indent}<per-repo>${marker}`);
 
 export const sha256 = (text) => createHash("sha256").update(canonical(text)).digest("hex");
 
@@ -214,11 +235,15 @@ export function located(manifest, path, root) {
  */
 export function render(entry, root, manifest) {
   let text = readFileSync(join(TEMPLATES, entry.template), "utf-8").replace(/\r\n/g, "\n");
+  const current = readText(join(root, located(manifest, entry.path, root)));
   if (entry.path === ".githooks/pre-push") {
-    const existing = readText(join(root, located(manifest, entry.path, root)))?.match(PROTECTED)?.[0];
+    const existing = current?.match(PROTECTED)?.[0];
     const release = manifest?.branches?.release ?? "main";
     text = text.replace(PROTECTED, existing ?? `PROTECTED_BRANCHES="refs/heads/${release}"`);
   }
+  // Per-repo lines: the repo's own value survives an upgrade; a new file gets the template's.
+  const own = perRepoLines(current);
+  text = text.replace(PER_REPO, (line, _indent, marker) => own.get(marker.trim()) ?? line);
   return text;
 }
 
@@ -264,8 +289,9 @@ function blockStatus(block, manifest, hist, order) {
 
 // ------------------------------------------------------------------ check
 
-const enabled = (manifest, guardrail) =>
-  guardrail === null || manifest?.guardrails?.[guardrail]?.enabled !== false;
+const enabled = (manifest, guardrail, entry) =>
+  (entry?.when ? entry.when(manifest) : true) &&
+  (guardrail === null || manifest?.guardrails?.[guardrail]?.enabled !== false);
 
 /** Classify every owned file. Read-only. */
 export function check(root = process.cwd()) {
@@ -277,7 +303,7 @@ export function check(root = process.cwd()) {
   const files = [];
 
   for (const entry of OWNED) {
-    if (!enabled(manifest, entry.guardrail)) {
+    if (!enabled(manifest, entry.guardrail, entry)) {
       files.push({ path: entry.path, status: "skipped" });
       continue;
     }

@@ -4,6 +4,19 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.12.0] - 2026-10-29
+
+### Added
+- **The status report** (#14, part 2), part of the tracker module and **opt-in**: `/govkit-init tracker` offers it (a new step). A GitHub Actions workflow, on your schedule, reports what happened since the last successful run: owner actions and open decisions from the register, key deliverables (the `Completed:` lines), issues closed and opened, merged pull requests, fixed and waiting for re-test, reported bugs, open issues by launch category with the to-triage count, milestones and code activity.
+  - **Delivery is a setting** (`guardrails.tracker.report.delivery`): `github-issue` (default, **no key**: a comment on a pinned "Daily status" issue, which GitHub's notification email delivers) or `resend` (a designed HTML email plus plain text; the key lives only in an Actions secret).
+  - **List endpoints only, never the search API.** Every list is paginated; a failed call is retried once, a rate-limited one never; something that can't be read is said in the report, never shown as a zero. Issue text is escaped and `@mentions` are defused.
+  - **Sections** can be removed, reordered, or added from `scripts/daily-report/sections/<name>.mjs` (never touched by upgrades). **`skipQuietDays`** sends nothing when nothing happened. **Test mode** (the default for a manual run) posts no comment, and emails the test recipient only.
+  - The schedule, the `issues` permission and the secret's name are set per repo, in lines marked `# govkit: per-repo`; `/govkit-init --upgrade` keeps them.
+- **`/govkit-doctor`:** with the report on, it checks both files, the delivery, and (for `github-issue`) the status issue's number.
+- Guide: [docs/modules/tracker.md → Daily status report](docs/modules/tracker.md#daily-status-report), plus FAQ entries.
+
+Added in your repo, only when you turn the report on: `scripts/daily-report/report.mjs` and `.github/workflows/govkit-daily-report.yml` (both owned: `--upgrade` keeps them current). Changed in your repo: `scripts/govkit-doctor.mjs` (the report checks).
+
 ## [0.11.1] - 2026-10-29
 
 ### Fixed

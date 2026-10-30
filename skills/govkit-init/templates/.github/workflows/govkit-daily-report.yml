@@ -1,0 +1,48 @@
+name: govkit daily report
+
+# govkit's status report (tracker module): what happened since the last report, delivered as set in
+# govkit.json → guardrails.tracker.report. The logic is in scripts/daily-report/report.mjs (no
+# dependencies). Lines marked "govkit: per-repo" are set for this repo and kept by
+# /govkit-init --upgrade.
+
+on:
+  schedule:
+    # UTC, no daylight saving. GitHub can start a scheduled run hours late under load.
+    - cron: "30 3 * * *" # govkit: per-repo (tracker.report.schedule)
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Test mode: no comment posted; the email goes to the test recipient only"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read # to find the last successful run: the report covers the time since then
+  issues: write # govkit: per-repo (read; write only for github-issue delivery)
+
+concurrency:
+  group: govkit-daily-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Status report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # v5+ run on Node 24: a self-hosted runner must be v2.327.1 or later.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Build and deliver the report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TEST_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_mode && 'true' || 'false' }}
+          # Only used with resend delivery; the name must match tracker.report.resend.secret.
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }} # govkit: per-repo (tracker.report.resend.secret)
+        run: node scripts/daily-report/report.mjs

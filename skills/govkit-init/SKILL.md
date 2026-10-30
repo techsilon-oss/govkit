@@ -164,7 +164,19 @@ Opt-in: GitHub Issues as the source of truth, with labels, themed milestones and
 
    **Never unpin an issue the user pinned.**
 6. **Issue forms (optional):** ask. On yes, copy `${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/templates/tracker/issue-forms/*.yml` to `.github/ISSUE_TEMPLATE/` (create if absent; never overwrite). Tell the user: a form sets its type label, but **GitHub issue forms can't set a label from an answer**, so a new issue counts as "to triage" until someone adds its launch category.
-7. **Next steps, with links** (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/tracker.md): the rules now in the CLAUDE.md block ("Work tracking"); `/govkit-session` reads the register at the start and closes issues in the `Completed:` / `Technical:` format; the daily report arrives in 0.12.0.
+7. **Daily status report?** Ask, default no. It's a GitHub Actions workflow that reports what happened since the last report: issues closed and opened, merged PRs, the register's owner actions and open decisions, the open-issue breakdown, milestones, code activity. About 1–2 Actions minutes a run. On yes:
+   - **Delivery**, explained in one line each:
+     - `github-issue` (default, **no key**): a comment on a pinned "Daily status" issue. GitHub's notification email delivers it to everyone watching the issue.
+     - `resend`: a designed HTML email (plus plain text). It **needs a Resend API key**, stored only as a GitHub Actions secret (`gh secret set RESEND_API_KEY`, or Settings → Secrets and variables → Actions), never in a file.
+   - **github-issue:** show the issue, ask, `gh issue create --title "Daily status" --body "govkit posts the daily status report here. Watch this issue to get it by email."`. Then run `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" pins` before pinning, with the same 3-slot rule: never unpin theirs.
+   - **resend:**
+     - **Say this before asking for the from-address:** without a verified domain, Resend sends only from `onboarding@resend.dev`, and only to the Resend account owner's own address. That's fine for a test, but sending to a team needs a domain verified in Resend.
+     - Then ask for the from-address, the recipients and a test recipient, and the secret name (default `RESEND_API_KEY`).
+     - The user adds the key **themselves**: never ask for it, print it, or put it in a file.
+   - **Schedule:** a cron line in **UTC** (no daylight saving; GitHub can start scheduled runs hours late). Then ask about **quiet days**: skip the report when nothing happened (`--skip-quiet-days`)? Recommended for a weekly schedule or a quiet repo.
+   - Write it all, including the two files (prompts): `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/tracker.mjs" report --delivery <…> --schedule "<cron>" [--issue <n>] [--work <branch> --release <branch>] [--from … --recipients a,b --test-recipient … --secret NAME] [--skip-quiet-days]`.
+   - **Try it:** commit and push, then run it once in test mode: Actions → govkit daily report → Run workflow (`test_mode` on). For github-issue, that only writes the job summary; for resend, it emails the test recipient only.
+8. **Next steps, with links** (https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/tracker.md): the rules now in the CLAUDE.md block ("Work tracking"); `/govkit-session` reads the register at the start and closes issues in the `Completed:` / `Technical:` format; the daily report's guide is at https://github.com/techsilon-oss/govkit/blob/v<version>/docs/modules/tracker.md#daily-status-report.
 
 ## What this skill does NOT do
 
