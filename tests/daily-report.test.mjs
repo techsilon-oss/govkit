@@ -121,7 +121,7 @@ const cfg = (report = {}, issues = {}) => ({
 test("the window starts at the last successful run", async () => {
   const d = await gather(fakeApi(busyRoutes()), cfg(), NOW);
   assert.equal(d.window.since.toISOString(), ago(24));
-  assert.equal(d.window.fallback, false);
+  assert.equal(d.window.fallback, null);
 });
 
 test("a test-mode run doesn't move the window: it delivered nothing", async () => {
@@ -129,15 +129,33 @@ test("a test-mode run doesn't move the window: it delivered nothing", async () =
   const d = await gather(fakeApi(busyRoutes({ "actions/workflows/": runs })), cfg(), NOW);
   assert.equal(d.window.since.toISOString(), ago(30));
   const onlyTests = { data: { workflow_runs: [{ display_title: "govkit daily report (test)", run_started_at: ago(1) }] } };
-  assert.equal((await gather(fakeApi(busyRoutes({ "actions/workflows/": onlyTests })), cfg(), NOW)).window.fallback, true);
+  assert.equal((await gather(fakeApi(busyRoutes({ "actions/workflows/": onlyTests })), cfg(), NOW)).window.fallback, "the last 24 hours");
 });
 
-test("with no successful run, the window is the last 24 hours, and the header says so", async () => {
-  const d = await gather(fakeApi(busyRoutes({ "actions/workflows/": { data: { workflow_runs: [] } } })), cfg(), NOW);
-  assert.equal(d.window.fallback, true);
+const noRuns = () => busyRoutes({ "actions/workflows/": { data: { workflow_runs: [] } } });
+
+test("with no successful run and a daily schedule, the window is the last 24 hours, and the header says so", async () => {
+  for (const schedule of [undefined, "30 3 * * *", "0 */6 * * ?"]) {
+    const c = cfg({ schedule });
+    const d = await gather(fakeApi(noRuns()), c, NOW);
+    assert.equal(d.window.fallback, "the last 24 hours", String(schedule));
+    assert.equal(d.window.since.toISOString(), ago(24));
+    assert.match((await render(d, c)).markdown, /no earlier successful report found: the last 24 hours/);
+  }
+});
+
+test("with no successful run and a day-of-week schedule, the first window is the last 7 days, and the header says so", async () => {
+  for (const schedule of ["0 7 * * 1", "0 7 * * MON", "0 7 * * 1-5"]) {
+    const c = cfg({ schedule });
+    const d = await gather(fakeApi(noRuns()), c, NOW);
+    assert.equal(d.window.fallback, "the last 7 days", schedule);
+    assert.equal(d.window.since.toISOString(), ago(7 * 24));
+    assert.match((await render(d, c)).markdown, /no earlier successful report found: the last 7 days/);
+  }
+  // Once a report has run, the window starts there, whatever the schedule.
+  const d = await gather(fakeApi(busyRoutes()), cfg({ schedule: "0 7 * * 1" }), NOW);
   assert.equal(d.window.since.toISOString(), ago(24));
-  const r = await render(d, cfg());
-  assert.match(r.markdown, /no earlier successful report found: the last 24 hours/);
+  assert.equal(d.window.fallback, null);
 });
 
 test("closed and new in the window; the register and the status issue are never counted", async () => {
@@ -151,6 +169,11 @@ test("open counts by the configured categories; to triage; engineering vs busine
   const d = await gather(fakeApi(busyRoutes()), cfg(), NOW);
   assert.deepEqual(d.breakdown.byCategory, { now: 2, next: 1, later: 1, triage: 0 });
   assert.deepEqual(d.breakdown.toTriage.map((i) => i.number), [3]);
+  // Worded apart from the table's "triage" row, which counts issues labelled triage.
+  const r = await render(d, cfg({ sections: ["open-breakdown"] }));
+  assert.match(r.markdown, /\| triage \| 0 \|/);
+  assert.match(r.markdown, /\*\*⚠️ No launch category: 1\*\* \(each open issue needs exactly one\)\n- \[#3 /);
+  assert.doesNotMatch(r.markdown, /To triage/);
   assert.equal(d.breakdown.business, 1);
   assert.equal(d.breakdown.engineering, 4);
   assert.deepEqual(d.fixShipped.map((i) => i.number), [4]);
@@ -442,7 +465,8 @@ test("the workflow: schedule and test_mode triggers, read-only permissions but i
   assert.match(WORKFLOW, /actions\/checkout@v7/);
   assert.match(WORKFLOW, /actions\/setup-node@v7\n\s+with:\n\s+node-version: 22/);
   assert.match(WORKFLOW, /RESEND_API_KEY: \$\{\{ secrets\.RESEND_API_KEY \}\} # govkit: per-repo \(tracker\.report\.resend\.secret\)/);
-  assert.match(WORKFLOW, /run: node scripts\/daily-report\/report\.mjs/);
+  assert.match(WORKFLOW, /paths\?\.\["scripts\/daily-report\/report\.mjs"\] \} catch \{\} process\.stdout\.write\(p \|\| "scripts\/daily-report\/report\.mjs"\)/, "a govkit.json paths entry can move the script");
+  assert.match(WORKFLOW, /node "\$REPORT"/);
   assert.doesNotMatch(WORKFLOW, /npm (ci|install)/, "dependency-free");
 });
 
@@ -550,6 +574,19 @@ test("the doctor: report on with its files and issue passes; without the issue n
   const noFiles = doctor(reportOnly({ enabled: true, delivery: "resend" }, false));
   assert.equal(noFiles.code, 1, noFiles.out);
   assert.match(noFiles.out, /govkit-daily-report\.yml/);
+  // A repo that runs the script from elsewhere (govkit itself, DEC-003) maps it in `paths`.
+  const moved = reportOnly({ enabled: true, delivery: "github-issue", issue: 40 }, false);
+  mkdirSync(join(moved, ".github/workflows"), { recursive: true });
+  mkdirSync(join(moved, "lib"), { recursive: true });
+  writeFileSync(join(moved, ".github/workflows/govkit-daily-report.yml"), "");
+  writeFileSync(join(moved, "lib/report.mjs"), "");
+  const mm = JSON.parse(readFileSync(join(moved, "govkit.json"), "utf-8"));
+  mm.paths = { "scripts/daily-report/report.mjs": "lib/report.mjs" };
+  writeFileSync(join(moved, "govkit.json"), JSON.stringify(mm, null, 2));
+  assert.equal(doctor(moved).code, 0, "found through paths");
+  mm.paths = { "scripts/daily-report/report.mjs": "../outside.mjs" };
+  writeFileSync(join(moved, "govkit.json"), JSON.stringify(mm, null, 2));
+  assert.match(doctor(moved).out, /points outside|refused/);
   const bad = doctor(reportOnly({ enabled: true, delivery: "pigeon" }));
   assert.equal(bad.code, 1, bad.out);
   assert.match(bad.out, /a known delivery/);

@@ -166,15 +166,14 @@ for (const [name, g] of guardrails) {
 
   // `paths` relocates an owned file (a repo that runs govkit's files from elsewhere); look there.
   // A value outside the repo is refused and reported, never followed (see confined()).
-  const absentFiles = (g.expects ?? [])
-    .map((f) => {
-      const p = manifest.paths?.[f];
-      if (p === undefined) return existsSync(f) ? null : f;
-      const why = confined(p);
-      if (why) return `${f}: govkit.json paths value ${JSON.stringify(p)} ${why} (refused)`;
-      return existsSync(p) ? null : `${f} (at ${p})`;
-    })
-    .filter(Boolean);
+  const absent = (f) => {
+    const p = manifest.paths?.[f];
+    if (p === undefined) return existsSync(f) ? null : f;
+    const why = confined(p);
+    if (why) return `${f}: govkit.json paths value ${JSON.stringify(p)} ${why} (refused)`;
+    return existsSync(p) ? null : `${f} (at ${p})`;
+  };
+  const absentFiles = (g.expects ?? []).map(absent).filter(Boolean);
   const absentScripts = (g.expectsScripts ?? []).filter((s) => !scripts[s]);
   // The tracker, once on, needs its decision register: the session and the report read it.
   if (name === "tracker" && !Number.isInteger(g.issues?.register)) {
@@ -183,7 +182,10 @@ for (const [name, g] of guardrails) {
   // The status report, once on: its two files, a delivery govkit knows, and (for github-issue) the
   // issue it posts on. Secrets live in GitHub, which the doctor never contacts: it can't check them.
   if (name === "tracker" && g.report?.enabled === true) {
-    for (const f of ["scripts/daily-report/report.mjs", ".github/workflows/govkit-daily-report.yml"]) if (!existsSync(f)) absentFiles.push(f);
+    for (const f of ["scripts/daily-report/report.mjs", ".github/workflows/govkit-daily-report.yml"]) {
+      const a = absent(f);
+      if (a) absentFiles.push(a);
+    }
     const delivery = g.report.delivery ?? "github-issue";
     if (!["github-issue", "resend"].includes(delivery)) absentFiles.push(`a known delivery (tracker.report.delivery is "${delivery}")`);
     if (delivery === "github-issue" && !Number.isInteger(g.report.issue)) absentFiles.push("the status issue's number (guardrails.tracker.report.issue)");

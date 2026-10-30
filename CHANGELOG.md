@@ -4,6 +4,20 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.12.1] - 2026-10-30
+
+### Fixed
+- **A first report covers one schedule period.** With no earlier report, a schedule that names days of the week (a weekly report, `0 7 * * 1`) now covers the last 7 days, not 24 hours; any other schedule still covers 24 hours. The header says which.
+- **"No launch category: N"** replaces the report's "To triage: N" line, which read as a contradiction next to a category row named `triage`.
+- **The status report's issue is not planned work:** `/govkit-session` and the CLAUDE.md "Work tracking" rule leave it out of the to-triage count, as they do the register.
+- **The report workflow finds the script through `govkit.json` `paths`**, as the doc-sync workflow does, and the doctor checks it there. A repo that runs the script from elsewhere needs no copy.
+- The report's footer says "govkit status report" (it can be weekly).
+
+### Changed
+- govkit runs its own weekly report: Mondays, `skipQuietDays`, on the pinned issue #41.
+
+Changed in your repo: `scripts/daily-report/report.mjs`, `.github/workflows/govkit-daily-report.yml` and `scripts/govkit-doctor.mjs` (`/govkit-init --upgrade` keeps your schedule and permission lines), and the CLAUDE.md govkit block (one sentence; an unedited block is offered the new one).
+
 ## [0.12.0] - 2026-10-29
 
 ### Added
