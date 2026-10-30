@@ -59,6 +59,12 @@ It reads GitHub's list endpoints only, never the search API (whose low rate limi
 
 More providers (SendGrid, Postmark, SMTP, Slack/Teams) can come later, as one function each. Ask in an issue.
 
+What each looks like, from govkit's end-to-end test repo:
+
+| `github-issue`: the comment | `resend`: the email |
+|---|---|
+| <img src="tracker/github-issue-comment.png" alt="The status report as a comment on the Daily status issue" width="380"> | <img src="tracker/resend-email.png" alt="The status report as a designed HTML email" width="380"> |
+
 ### Make the email look designed
 1. Create a Resend account at resend.com.
 2. **Domain:** without a verified domain, Resend sends **only from `onboarding@resend.dev`, and only to your own (the account owner's) address**. That's fine for a test. To send to a team, add your domain under **Domains** and add the DNS records it shows, then use a from-address on that domain.

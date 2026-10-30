@@ -9,7 +9,7 @@ last checked 2026-10-29
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** #14 part 2, 0.12.0: the daily status report, built and unit-tested; next its end-to-end test in the kept private repo `jisujit/govkit-e2e`, then the PR. govkit tracks its own work with the tracker (register #38; categories now/next/later/triage).
+- **Now:** #14 part 2, 0.12.0: the daily status report, built, unit-tested and tested end to end in the kept private repo `jisujit/govkit-e2e` (its schedule is disabled: enable, run, disable for each manual test). PR in review. govkit tracks its own work with the tracker (register #38; categories now/next/later/triage).
 - **Next, in order:** after the v0.12.0 tag, govkit's own weekly report (Monday, `skipQuietDays`, a pinned "Weekly status" issue) and closing #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
@@ -50,4 +50,4 @@ last checked 2026-10-29
 - Shipped 0.10.0 (#36): module notes, guides, /govkit-help, version-pinned fix links (the doctor links to its own release, never below v0.10.0).
 - Shipped 0.11.0 (#37): the tracker module, end-to-end tested on a private throwaway repo (since deleted); docs ↔ documentation alias found there and fixed.
 - 0.11.1: govkit's own tracker on: 11 labels created, register #38 pinned, open issues categorised (#14 now, #29 next, #25 and #15 later and typed idea); the register left out of the to-triage count.
-- 0.12.0 on `feat/daily-report`: the status report (github-issue or resend delivery, per-repo workflow lines kept by `--upgrade`, `skipQuietDays`, custom sections), with its tests. End-to-end in `jisujit/govkit-e2e` (kept; reused for future e2e) before the PR; screenshots for the guide with personal data blurred.
+- 0.12.0 on `feat/daily-report`: the status report (github-issue or resend delivery, per-repo workflow lines kept by `--upgrade`, `skipQuietDays`, custom sections), with its tests. End-to-end in `jisujit/govkit-e2e` (kept; reused for future e2e): github-issue test and real runs, skipQuietDays both ways, Resend test sends from a verified domain. It found two bugs, fixed: test runs moved the window; a status issue unknown to a resend setup counted as to triage (setup fix: pass `--issue`). The guide shows both deliveries; the screenshots contain no addresses.

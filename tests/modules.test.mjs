@@ -136,7 +136,7 @@ test("every doc link with an anchor resolves, in the docs as they will be tagged
     "docs/FAQ.md",
     "docs/EXTENDING.md",
     "README.md",
-    ...readdirSync(join(GOVKIT, "docs/modules")).map((f) => `docs/modules/${f}`),
+    ...readdirSync(join(GOVKIT, "docs/modules")).filter((f) => f.endsWith(".md")).map((f) => `docs/modules/${f}`), // not the image folders
   ];
   let checked = 0;
   for (const src of sources) {
