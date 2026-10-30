@@ -9,7 +9,7 @@ Your user stories, bugs and ideas kept as GitHub issues, run the same way every 
   - **launch category**: exactly one per open issue (see below);
   - **area**: optional, your own;
   - **status and flow**: `in-progress`, `blocked`, `needs-decision`, `fix-shipped`, `business`.
-- **Launch categories, your names:** before launch, `pre-launch` / `post-launch` / `idea` / `triage`; after it, `now` / `next` / `later` / `triage`, or any names you choose (`guardrails.tracker.issues.categories`). An open issue without one counts as **to triage**, and that number should be 0: work with no category is invisible work. The decision register itself is left out: it isn't planned work.
+- **Launch categories, your names:** before launch, `pre-launch` / `post-launch` / `idea` / `triage`; after it, `now` / `next` / `later` / `triage`, or any names you choose (`guardrails.tracker.issues.categories`). An open issue without one counts as **to triage**, and that number should be 0: work with no category is invisible work. The decision register and the status report's issue are left out: they aren't planned work.
 - **Themed milestones:** outcomes a non-engineer can read ("Launch Readiness", "Search & Discovery"), never "Phase 1". One-off bugs go in "Maintenance & Bugs".
 - **The decision register:** one pinned issue holding everything only an owner can do or decide, in two tables ("Things only an owner can do", "Open decisions") plus a "Decided" history. Agents add `D-###` rows and never invent an owner's answer.
 - **A closing format:** `Completed: <what the user gains>` and optionally `Technical: <notes>`. `/govkit-session close` writes it, and the daily report quotes the `Completed:` line.
@@ -38,14 +38,14 @@ Run **`/govkit-init tracker`** (a new repo is asked during `/govkit-init`). It s
 5. offers the issue forms. A form sets its type label, but **GitHub issue forms can't set a label from an answer**, so a new issue is "to triage" until someone adds its launch category.
 
 ### Daily status report
-`/govkit-init tracker` offers it (step 7), or run it later. A workflow, `.github/workflows/govkit-daily-report.yml`, runs `scripts/daily-report/report.mjs` on your schedule. It reports from the last successful run until now (the last 24 hours if there's none, and it says so). Test-mode runs don't count: they delivered nothing. The sections, in order:
+`/govkit-init tracker` offers it (step 7), or run it later. A workflow, `.github/workflows/govkit-daily-report.yml`, runs `scripts/daily-report/report.mjs` on your schedule. It reports from the last successful run until now. With no earlier report it covers one schedule period, and says so: 7 days when the schedule names days of the week (a weekly report, `0 7 * * 1`), 24 hours otherwise. Test-mode runs don't count: they delivered nothing. The sections, in order:
 - owner actions and the top open decisions, from the register;
 - key deliverables (the `Completed:` lines);
 - issues closed, plus pull requests merged that closed none of them;
 - fixed and waiting for re-test;
 - new issues;
 - reported bugs (with `reportedLabel`);
-- open issues by launch category, with the **to triage** count;
+- open issues by launch category, and the issues with **no launch category** (to triage; not the same as a category named `triage`);
 - active milestones;
 - code activity.
 

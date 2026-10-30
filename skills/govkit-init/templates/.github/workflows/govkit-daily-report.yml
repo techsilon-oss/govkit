@@ -47,4 +47,7 @@ jobs:
           TEST_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_mode && 'true' || 'false' }}
           # Only used with resend delivery; the name must match tracker.report.resend.secret.
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }} # govkit: per-repo (tracker.report.resend.secret)
-        run: node scripts/daily-report/report.mjs
+        # The script is scripts/daily-report/report.mjs unless govkit.json `paths` puts it elsewhere.
+        run: |
+          REPORT=$(node -e 'let p; try { p = require("./govkit.json").paths?.["scripts/daily-report/report.mjs"] } catch {} process.stdout.write(p || "scripts/daily-report/report.mjs")')
+          node "$REPORT"

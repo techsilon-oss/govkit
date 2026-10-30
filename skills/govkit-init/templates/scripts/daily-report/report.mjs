@@ -159,6 +159,15 @@ const labels = (i) => (Array.isArray(i?.labels) ? i.labels.map((l) => String(l.n
 const has = (i, name) => labels(i).includes(String(name).toLowerCase());
 const CLOSING = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
 
+/**
+ * The window when there's no earlier report: a schedule with a day-of-week field (a weekly report,
+ * "0 7 * * 1") covers 7 days, any other 24 hours. Otherwise a first weekly report shows one day.
+ */
+export function fallbackPeriod(schedule) {
+  const dow = String(schedule ?? "").trim().split(/\s+/)[4];
+  return dow && dow !== "*" && dow !== "?" ? { hours: 7 * 24, label: "the last 7 days" } : { hours: 24, label: "the last 24 hours" };
+}
+
 /** Everything the report shows, read through `api`. Pure apart from `api`. */
 export async function gather(api, cfg, now = new Date()) {
   const notes = new Notes();
@@ -169,14 +178,16 @@ export async function gather(api, cfg, now = new Date()) {
   const alias = (t) => issuesCfg.labelAliases?.[t] ?? t;
   const special = new Set([issuesCfg.register, rep.issue].filter(Number.isInteger));
 
-  // The window: since the last successful real run of this report, else the last 24 hours. A test
-  // run (the workflow names it "… (test)") delivered nothing, so it doesn't move the window.
+  // The window: since the last successful real run of this report, else one schedule period (see
+  // fallbackPeriod). A test run (the workflow names it "… (test)") delivered nothing, so it doesn't
+  // move the window.
   const runs = await api(`repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=success&per_page=30`);
   const lastRun = runs.ok && Array.isArray(runs.data?.workflow_runs)
     ? runs.data.workflow_runs.find((r) => !/\(test\)\s*$/.test(r.display_title ?? "")) ?? null
     : null;
-  const since = lastRun ? new Date(lastRun.run_started_at ?? lastRun.created_at) : new Date(now - 24 * 3600 * 1000);
-  const window = { since, until: now, fallback: !lastRun };
+  const period = fallbackPeriod(rep.schedule);
+  const since = lastRun ? new Date(lastRun.run_started_at ?? lastRun.created_at) : new Date(now - period.hours * 3600 * 1000);
+  const window = { since, until: now, fallback: lastRun ? null : period.label };
   const inWindow = (t) => t && new Date(t) >= since && new Date(t) <= now;
 
   const isIssue = (i) => i && !i.pull_request;
@@ -277,7 +288,7 @@ export const SECTIONS = {
     title: `${mdText(cfg.report?.brand?.name ?? d.repo)} — status ${day(d.now)}`,
     markdown: [
       `**${d.closed.length}** closed · **${d.opened.length}** opened · **${d.open.length}** open`,
-      `Window: ${d.window.since.toISOString().slice(0, 16).replace("T", " ")} → ${d.now.toISOString().slice(0, 16).replace("T", " ")} UTC${d.window.fallback ? " (no earlier successful report found: the last 24 hours)" : ""}`,
+      `Window: ${d.window.since.toISOString().slice(0, 16).replace("T", " ")} → ${d.now.toISOString().slice(0, 16).replace("T", " ")} UTC${d.window.fallback ? ` (no earlier successful report found: ${d.window.fallback})` : ""}`,
     ].join("\n\n"),
   }),
   "owner-actions": (d) => ({
@@ -310,8 +321,10 @@ export const SECTIONS = {
       table(["Launch category", "Open"], Object.entries(d.breakdown.byCategory).map(([c, n]) => [c, String(n)])),
       `Engineering ${d.breakdown.engineering} · Business ${d.breakdown.business} · Blocked ${d.breakdown.blocked} · Ideas ${d.breakdown.ideas}`,
       d.breakdown.toTriage.length
-        ? `**⚠️ To triage: ${d.breakdown.toTriage.length}** (open issues with no launch category)\n${ul(d.breakdown.toTriage, issueLine)}`
-        : "To triage: 0",
+        // Not the table's category rows: these have no category label at all (a row named
+        // "triage" counts issues labelled triage), so the line says that, not "to triage".
+        ? `**⚠️ No launch category: ${d.breakdown.toTriage.length}** (each open issue needs exactly one)\n${ul(d.breakdown.toTriage, issueLine)}`
+        : "No launch category: 0",
     ].join("\n\n"),
   }),
   milestones: (d) => ({
@@ -374,7 +387,7 @@ export async function render(d, cfg, { root = process.cwd() } = {}) {
     head ? `## ${head.title}\n\n${head.markdown}` : "",
     ...warn,
     ...rest.map((p) => `### ${p.title}\n\n${p.markdown}`),
-    `<sub>govkit daily report · ${day(d.now)}</sub>`,
+    `<sub>govkit status report · ${day(d.now)}</sub>`,
   ].filter(Boolean).join("\n\n");
   return { markdown, parts, unknown };
 }
