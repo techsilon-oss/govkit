@@ -10,7 +10,7 @@ last checked 2026-10-29
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
 - **Now:** #14 part 2, 0.12.0: the daily status report, built, unit-tested and tested end to end in the kept private repo `jisujit/govkit-e2e` (its schedule is disabled: enable, run, disable for each manual test). PR in review. govkit tracks its own work with the tracker (register #38; categories now/next/later/triage).
-- **Next, in order:** after the v0.12.0 tag, govkit's own weekly report (Monday, `skipQuietDays`, a pinned "Weekly status" issue) and closing #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
+- **Next, in order:** after the v0.12.0 tag, govkit's own weekly report (Monday, `skipQuietDays`, a pinned "Weekly status" issue), with one report wording fix: the "To triage: N" line reads as a contradiction next to the `triage 0` category row (rename it, e.g. "No launch category: N", or explain the difference in one line); then close #14 → #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
 
