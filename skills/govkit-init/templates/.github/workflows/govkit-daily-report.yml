@@ -1,4 +1,6 @@
 name: govkit daily report
+# A test run is named "(test)": the report skips those when it looks for the last real report.
+run-name: ${{ inputs.test_mode && 'govkit daily report (test)' || 'govkit daily report' }}
 
 # govkit's status report (tracker module): what happened since the last report, delivered as set in
 # govkit.json → guardrails.tracker.report. The logic is in scripts/daily-report/report.mjs (no

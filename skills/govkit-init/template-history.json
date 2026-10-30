@@ -367,7 +367,7 @@
   ],
   "scripts/daily-report/report.mjs": [
     {
-      "sha256": "8596b59a3dd48b039a4fc82bcb8d7f781168f96cc7f180c78fe4d2ac12746299",
+      "sha256": "40a7b25a3313c3d3a144325490084ad4bf509f5acf2b26862fba502d8f00471f",
       "versions": [
         "0.12.0"
       ]
@@ -375,7 +375,7 @@
   ],
   ".github/workflows/govkit-daily-report.yml": [
     {
-      "sha256": "065d930197e1a1dd9744b2f40f832dd6398b58f5b88004e4e13640eacd8c028f",
+      "sha256": "961ea98a8cc8fcf439ff98ee67b26f2574595132c14bbf6a3885ce49575bf1d3",
       "versions": [
         "0.12.0"
       ]

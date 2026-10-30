@@ -306,7 +306,7 @@ if (process.argv[1] && resolve(process.argv[1]) === SELF) {
       const r = recordRegister(root, rest[0]);
       console.log(`tracker: decision register is #${r.tracker.issues.register}${r.reformatted ? " (govkit.json was reformatted)" : ""}`);
     } else {
-      console.error("usage: tracker.mjs labels [--json] | record-aliases | pins [--json] | enable --categories a,b,c,d [--launch-event …] [--areas x,y] | decline --reason … | record-register <n>");
+      console.error("usage: tracker.mjs labels [--json] | record-aliases | pins [--json] | enable --categories a,b,c,d [--launch-event …] [--areas x,y] | decline --reason … | record-register <n> | report --delivery github-issue|resend [--issue n] [--schedule \"cron\"] [--work b] [--release b] [--from a] [--recipients a,b] [--test-recipient a] [--secret NAME] [--reported-label l] [--effort-hours h] [--skip-quiet-days]");
       process.exit(2);
     }
   } catch (e) {

@@ -38,7 +38,7 @@ Run **`/govkit-init tracker`** (a new repo is asked during `/govkit-init`). It s
 5. offers the issue forms. A form sets its type label, but **GitHub issue forms can't set a label from an answer**, so a new issue is "to triage" until someone adds its launch category.
 
 ### Daily status report
-`/govkit-init tracker` offers it (step 7), or run it later. A workflow, `.github/workflows/govkit-daily-report.yml`, runs `scripts/daily-report/report.mjs` on your schedule. It reports from the last successful run until now (the last 24 hours if there's none, and it says so). The sections, in order:
+`/govkit-init tracker` offers it (step 7), or run it later. A workflow, `.github/workflows/govkit-daily-report.yml`, runs `scripts/daily-report/report.mjs` on your schedule. It reports from the last successful run until now (the last 24 hours if there's none, and it says so). Test-mode runs don't count: they delivered nothing. The sections, in order:
 - owner actions and the top open decisions, from the register;
 - key deliverables (the `Completed:` lines);
 - issues closed, plus pull requests merged that closed none of them;

@@ -169,9 +169,12 @@ export async function gather(api, cfg, now = new Date()) {
   const alias = (t) => issuesCfg.labelAliases?.[t] ?? t;
   const special = new Set([issuesCfg.register, rep.issue].filter(Number.isInteger));
 
-  // The window: since the last successful run of this report, else the last 24 hours.
-  const runs = await api(`repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=success&per_page=1`);
-  const lastRun = runs.ok && Array.isArray(runs.data?.workflow_runs) ? runs.data.workflow_runs[0] : null;
+  // The window: since the last successful real run of this report, else the last 24 hours. A test
+  // run (the workflow names it "… (test)") delivered nothing, so it doesn't move the window.
+  const runs = await api(`repos/${repo}/actions/workflows/${WORKFLOW_FILE}/runs?status=success&per_page=30`);
+  const lastRun = runs.ok && Array.isArray(runs.data?.workflow_runs)
+    ? runs.data.workflow_runs.find((r) => !/\(test\)\s*$/.test(r.display_title ?? "")) ?? null
+    : null;
   const since = lastRun ? new Date(lastRun.run_started_at ?? lastRun.created_at) : new Date(now - 24 * 3600 * 1000);
   const window = { since, until: now, fallback: !lastRun };
   const inWindow = (t) => t && new Date(t) >= since && new Date(t) <= now;
@@ -266,6 +269,7 @@ const ul = (items, fmt) => (items.length ? items.map((x) => `- ${fmt(x)}`).join(
 const table = (head, rows) =>
   rows.length ? [`| ${head.join(" | ")} |`, `|${head.map(() => "---").join("|")}|`, ...rows.map((r) => `| ${r.map((c) => mdText(c)).join(" | ")} |`)].join("\n") : "_None._";
 const day = (d) => d.toISOString().slice(0, 10);
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** Built-in sections: each returns { title, markdown } from the gathered data. */
 export const SECTIONS = {
@@ -319,11 +323,11 @@ export const SECTIONS = {
   }),
   "code-activity": (d) => {
     const authors = new Set(d.commits.map((c) => c.author?.login ?? c.commit?.author?.name).filter(Boolean));
-    return { title: "Code activity", markdown: `${d.commits.length} commits · ${d.prs.length} pull requests merged · ${authors.size} active authors` };
+    return { title: "Code activity", markdown: `${plural(d.commits.length, "commit")} · ${plural(d.prs.length, "pull request")} merged · ${plural(authors.size, "active author")}` };
   },
   effort: (d, cfg) => ({
     title: "Effort (estimate)",
-    markdown: cfg.report?.effortHours ? `About ${d.closed.length * cfg.report.effortHours} hours (${d.closed.length} closed issues × ${cfg.report.effortHours} h, an estimate)` : "_Not configured (effortHours)._",
+    markdown: cfg.report?.effortHours ? `About ${d.closed.length * cfg.report.effortHours} hours (${plural(d.closed.length, "closed issue")} ×${cfg.report.effortHours} h, an estimate)` : "_Not configured (effortHours)._",
   }),
 };
 

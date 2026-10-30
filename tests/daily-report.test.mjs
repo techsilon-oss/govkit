@@ -124,6 +124,14 @@ test("the window starts at the last successful run", async () => {
   assert.equal(d.window.fallback, false);
 });
 
+test("a test-mode run doesn't move the window: it delivered nothing", async () => {
+  const runs = { data: { workflow_runs: [{ display_title: "govkit daily report (test)", run_started_at: ago(1) }, { display_title: "govkit daily report", run_started_at: ago(30) }] } };
+  const d = await gather(fakeApi(busyRoutes({ "actions/workflows/": runs })), cfg(), NOW);
+  assert.equal(d.window.since.toISOString(), ago(30));
+  const onlyTests = { data: { workflow_runs: [{ display_title: "govkit daily report (test)", run_started_at: ago(1) }] } };
+  assert.equal((await gather(fakeApi(busyRoutes({ "actions/workflows/": onlyTests })), cfg(), NOW)).window.fallback, true);
+});
+
 test("with no successful run, the window is the last 24 hours, and the header says so", async () => {
   const d = await gather(fakeApi(busyRoutes({ "actions/workflows/": { data: { workflow_runs: [] } } })), cfg(), NOW);
   assert.equal(d.window.fallback, true);
@@ -290,6 +298,8 @@ test("sections: default order; a configured list reorders and removes; an unknow
   assert.deepEqual(some.unknown, ["nope"]);
   assert.match(some.markdown, /Unknown section\(s\) in govkit.json, skipped: `nope`/);
   assert.match(some.markdown, /3 commits · 2 pull requests merged · 2 active authors/);
+  const one = await render({ ...d, commits: [{ author: { login: "ann" } }], prs: [d.prs[0]] }, cfg({ sections: ["code-activity"] }));
+  assert.match(one.markdown, /1 commit · 1 pull request merged · 1 active author\b/);
 });
 
 test("a custom section from scripts/daily-report/sections/ is rendered; one that throws says 'Could not read'", async () => {
@@ -426,6 +436,7 @@ const WORKFLOW = readFileSync(join(GOVKIT, "skills/govkit-init/templates/.github
 test("the workflow: schedule and test_mode triggers, read-only permissions but issues, v7 actions, Node 22", () => {
   assert.match(WORKFLOW, /- cron: "30 3 \* \* \*" # govkit: per-repo \(tracker\.report\.schedule\)/);
   assert.match(WORKFLOW, /workflow_dispatch:\n {4}inputs:\n {6}test_mode:[\s\S]*?default: true/);
+  assert.match(WORKFLOW, /^run-name: \$\{\{ inputs\.test_mode && 'govkit daily report \(test\)' \|\| 'govkit daily report' \}\}$/m, "report.mjs finds test runs by this name");
   assert.match(WORKFLOW, /contents: read\n {2}pull-requests: read\n {2}actions: read/);
   assert.match(WORKFLOW, /issues: write # govkit: per-repo/);
   assert.match(WORKFLOW, /actions\/checkout@v7/);
