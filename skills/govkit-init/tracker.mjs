@@ -13,11 +13,14 @@
  *   node tracker.mjs enable --categories a,b,c,d [--launch-event "…"] [--areas x,y]
  *   node tracker.mjs decline --reason "…"
  *   node tracker.mjs record-register <issue number>
+ *   node tracker.mjs report --delivery github-issue|resend --schedule "30 3 * * *" [--issue <n>]
+ *       [--work dev --release main] [--from … --recipients a,b --test-recipient … --secret NAME]
+ *       [--reported-label …] [--effort-hours 3] [--skip-quiet-days]   # settings + the two files
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { objectEnd, stable, symlinkOnPath } from "./upgrade.mjs";
 
@@ -152,6 +155,71 @@ export function decline(root, reason) {
   return updateTracker(root, (t) => ({ ...t, enabled: false, skippedReason: String(reason).trim() }));
 }
 
+// ------------------------------------------------------------------ the status report (0.12.0)
+
+const TEMPLATES = join(dirname(fileURLToPath(import.meta.url)), "templates");
+// Five cron fields, cron characters only: the value goes into a YAML string in the workflow.
+const CRON = /^[0-9A-Za-z*,/-]+( [0-9A-Za-z*,/-]+){4}$/;
+const SECRET = /^[A-Z_][A-Z0-9_]*$/;
+export const DELIVERIES = ["github-issue", "resend"];
+
+/**
+ * The workflow as this repo needs it: the three lines marked `govkit: per-repo` filled in from the
+ * settings (schedule; issues permission: write only to post the github-issue comment; the env line
+ * naming the Resend secret). /govkit-init --upgrade keeps these lines as the repo has them.
+ */
+export function renderReportWorkflow(template, report) {
+  const secret = report.resend?.secret ?? "RESEND_API_KEY";
+  return template
+    .replace(/^(\s*- cron: )".*?"(\s*# govkit: per-repo .*)$/m, (_, a, b) => `${a}"${report.schedule}"${b}`)
+    .replace(/^(\s*issues: )\S+(\s*# govkit: per-repo .*)$/m, (_, a, b) => `${a}${report.delivery === "github-issue" ? "write" : "read"}${b}`)
+    .replace(/^(\s*)\S+: \$\{\{ secrets\.\S+ \}\}(\s*# govkit: per-repo \(tracker\.report\.resend\.secret\).*)$/m, (_, a, b) => `${a}${secret}: \${{ secrets.${secret} }}${b}`);
+}
+
+/**
+ * Turn the report on: settings into govkit.json, the two owned files into the repo. Validates
+ * everything first, so a bad value writes nothing.
+ */
+export function setupReport(root, opts) {
+  const report = {
+    enabled: true,
+    delivery: opts.delivery ?? "github-issue",
+    issue: opts.issue === undefined || opts.issue === null ? null : Number(opts.issue),
+    schedule: String(opts.schedule ?? "30 3 * * *").trim().replace(/\s+/g, " "),
+    branches: { work: opts.work ?? "main", release: opts.release ?? "main" },
+    sections: opts.sections ?? undefined,
+    reportedLabel: opts.reportedLabel ?? null,
+    effortHours: opts.effortHours ?? null,
+    skipQuietDays: Boolean(opts.skipQuietDays),
+  };
+  if (!DELIVERIES.includes(report.delivery)) throw new Error(`delivery must be ${DELIVERIES.join(" or ")}`);
+  if (!CRON.test(report.schedule))throw new Error(`"${report.schedule}" is not a five-field cron schedule`);
+  if (report.delivery === "github-issue" && !(Number.isInteger(report.issue) && report.issue > 0)) {
+    throw new Error("github-issue delivery needs --issue <the status issue's number>");
+  }
+  if (report.delivery === "resend") {
+    const secret = opts.secret ?? "RESEND_API_KEY";
+    if (!SECRET.test(secret)) throw new Error(`"${secret}" is not a valid secret name (A-Z, 0-9, _)`);
+    if (!opts.from) throw new Error("resend delivery needs --from (onboarding@resend.dev works without a verified domain, to your own address only)");
+    report.resend = { secret, from: opts.from, recipients: opts.recipients ?? [], testRecipient: opts.testRecipient ?? null };
+  }
+  if (opts.brand) report.brand = opts.brand;
+  if (report.sections === undefined) delete report.sections;
+  for (const rel of ["scripts/daily-report/report.mjs", ".github/workflows/govkit-daily-report.yml"]) {
+    const link = symlinkOnPath(root, rel);
+    if (link) throw new Error(`${link} is a symlink; govkit writes only regular files inside the repo`);
+  }
+  const result = updateTracker(root, (t) => ({ ...t, report }));
+  mkdirSync(join(root, "scripts", "daily-report"), { recursive: true });
+  mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+  writeFileSync(join(root, "scripts/daily-report/report.mjs"), readText(join(TEMPLATES, "scripts/daily-report/report.mjs")));
+  writeFileSync(
+    join(root, ".github/workflows/govkit-daily-report.yml"),
+    renderReportWorkflow(readText(join(TEMPLATES, ".github/workflows/govkit-daily-report.yml")), report),
+  );
+  return result;
+}
+
 /** Record the type labels this repo has under another name (resolveLabels' `aliases`). */
 export function recordAliases(root, aliases) {
   return updateTracker(root, (t) => {
@@ -218,11 +286,27 @@ if (process.argv[1] && resolve(process.argv[1]) === SELF) {
     } else if (cmd === "decline") {
       const r = decline(root, opt("reason"));
       console.log(`tracker: off, reason recorded${r.reformatted ? " (govkit.json was reformatted)" : ""}`);
+    } else if (cmd === "report") {
+      const r = setupReport(root, {
+        delivery: opt("delivery"),
+        issue: opt("issue"),
+        schedule: opt("schedule"),
+        work: opt("work"),
+        release: opt("release"),
+        from: opt("from"),
+        recipients: list(opt("recipients")),
+        testRecipient: opt("test-recipient"),
+        secret: opt("secret"),
+        reportedLabel: opt("reported-label"),
+        effortHours: opt("effort-hours") ? Number(opt("effort-hours")) : null,
+        skipQuietDays: rest.includes("--skip-quiet-days"),
+      });
+      console.log(`report: on, ${r.tracker.report.delivery}, schedule "${r.tracker.report.schedule}" (UTC)${r.tracker.report.skipQuietDays ? ", quiet days skipped" : ""}; wrote scripts/daily-report/report.mjs and .github/workflows/govkit-daily-report.yml${r.reformatted ? " (govkit.json was reformatted)" : ""}`);
     } else if (cmd === "record-register") {
       const r = recordRegister(root, rest[0]);
       console.log(`tracker: decision register is #${r.tracker.issues.register}${r.reformatted ? " (govkit.json was reformatted)" : ""}`);
     } else {
-      console.error("usage: tracker.mjs labels [--json] | record-aliases | pins [--json] | enable --categories a,b,c,d [--launch-event …] [--areas x,y] | decline --reason … | record-register <n>");
+      console.error("usage: tracker.mjs labels [--json] | record-aliases | pins [--json] | enable --categories a,b,c,d [--launch-event …] [--areas x,y] | decline --reason … | record-register <n> | report --delivery github-issue|resend [--issue n] [--schedule \"cron\"] [--work b] [--release b] [--from a] [--recipients a,b] [--test-recipient a] [--secret NAME] [--reported-label l] [--effort-hours h] [--skip-quiet-days]");
       process.exit(2);
     }
   } catch (e) {

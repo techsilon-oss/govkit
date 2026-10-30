@@ -1,4 +1,4 @@
-This issue is the **decision register**: everything only an owner can do or decide. It stays open and pinned. Agents add to it; owners decide. govkit's daily report (0.12.0) reads the two tables below, under these exact headings, every run, so keep the headings as they are.
+This issue is the **decision register**: everything only an owner can do or decide. It stays open and pinned. Agents add to it; owners decide. govkit's status report reads the two tables below, under these exact headings, every run, so keep the headings as they are.
 
 ### Things only an owner can do
 | # | Action | Why it matters | Blocks |

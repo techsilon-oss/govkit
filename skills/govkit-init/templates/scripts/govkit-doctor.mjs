@@ -180,6 +180,14 @@ for (const [name, g] of guardrails) {
   if (name === "tracker" && !Number.isInteger(g.issues?.register)) {
     absentFiles.push("the decision register's issue number (guardrails.tracker.issues.register)");
   }
+  // The status report, once on: its two files, a delivery govkit knows, and (for github-issue) the
+  // issue it posts on. Secrets live in GitHub, which the doctor never contacts: it can't check them.
+  if (name === "tracker" && g.report?.enabled === true) {
+    for (const f of ["scripts/daily-report/report.mjs", ".github/workflows/govkit-daily-report.yml"]) if (!existsSync(f)) absentFiles.push(f);
+    const delivery = g.report.delivery ?? "github-issue";
+    if (!["github-issue", "resend"].includes(delivery)) absentFiles.push(`a known delivery (tracker.report.delivery is "${delivery}")`);
+    if (delivery === "github-issue" && !Number.isInteger(g.report.issue)) absentFiles.push("the status issue's number (guardrails.tracker.report.issue)");
+  }
 
   if (absentFiles.length === 0 && absentScripts.length === 0) {
     ok.push(name);

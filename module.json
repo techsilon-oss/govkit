@@ -131,12 +131,14 @@
       "files": [
         ".github/ISSUE_TEMPLATE/bug.yml",
         ".github/ISSUE_TEMPLATE/user-story.yml",
-        ".github/ISSUE_TEMPLATE/idea.yml"
+        ".github/ISSUE_TEMPLATE/idea.yml",
+        "scripts/daily-report/report.mjs",
+        ".github/workflows/govkit-daily-report.yml"
       ],
-      "youGet": "Your user stories, bugs and ideas kept as GitHub issues: standard labels (type, area, launch category, status), themed milestones, one pinned decision register for what only the owners can decide, and a closing format the session uses. A daily status report comes in 0.12.0.",
-      "changesOutsideRepo": "On GitHub: it creates the labels you are missing and one pinned issue (the decision register), each only after you say yes. It never changes or removes existing labels or pins.",
-      "costs": "Nothing for issue tracking. The daily report (0.12.0) uses about 1-2 GitHub Actions minutes a day; with no mail key it posts to a GitHub issue, with a mail-provider key it sends a designed HTML email.",
-      "undo": "Set enabled:false with a skippedReason in govkit.json. The labels and issues stay on GitHub; delete them there if you want.",
+      "youGet": "Your user stories, bugs and ideas kept as GitHub issues: standard labels (type, area, launch category, status), themed milestones, one pinned decision register for what only the owners can decide, and a closing format the session uses. Optionally, a daily (or weekly) status report delivered to the team.",
+      "changesOutsideRepo": "On GitHub: it creates the labels you are missing and one pinned issue (the decision register), each only after you say yes; with the report, one more pinned issue it comments on. It never changes or removes existing labels or pins.",
+      "costs": "Nothing for issue tracking. The status report uses about 1-2 GitHub Actions minutes a run. No key = GitHub's notification email; a mail-provider key = a designed HTML email.",
+      "undo": "Set enabled:false with a skippedReason in govkit.json. The labels and issues stay on GitHub; delete them there if you want. Report only: set report.enabled to false and delete its workflow and scripts/daily-report/.",
       "readMore": "docs/modules/tracker.md"
     }
   ]

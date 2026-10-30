@@ -53,7 +53,9 @@ test("the history index covers every current template (rebuild it after a versio
 test("a fresh scaffold of the current templates is current throughout", () => {
   const { root } = makeRepo();
   const r = check(root);
-  for (const f of r.files) assert.equal(f.status, "current", f.path);
+  // The daily report's files exist only once the report is on (tests/daily-report.test.mjs).
+  const conditional = new Set(OWNED.filter((e) => e.when).map((e) => e.path));
+  for (const f of r.files) assert.equal(f.status, conditional.has(f.path) ? "skipped" : "current", f.path);
   assert.equal(r.claudeBlock.status, "same");
   assert.equal(r.govkitVersion.derived, pluginVersion());
 });
