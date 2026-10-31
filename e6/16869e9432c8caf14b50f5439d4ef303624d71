@@ -1,0 +1,31 @@
+docs/modules/tracker.md
+  s_df478532468d28::t_b63253d125a7e3 41
+skills/govkit-init/template-history.json
+  s_df478532468d28::t_48f486769fd6cf 370,378
+skills/govkit-init/templates/.github/workflows/govkit-daily-report.yml
+  s_df478532468d28::t_4eedc021088464 2-3
+skills/govkit-init/templates/scripts/daily-report/report.mjs
+  s_df478532468d28::t_fa4d057ba00bb0 172-177,272,326,330
+skills/govkit-init/templates/tracker/register.md
+  s_df478532468d28::t_953fc452195d32 1
+skills/govkit-init/tracker.mjs
+  s_df478532468d28::t_69dab0cea7c563 309
+tests/daily-report.test.mjs
+  s_df478532468d28::t_cdb24b3d6c5593 127-134,301-302,439
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e616869e9432c8caf14b50f5439d4ef303624d71",
+  "prompts": {},
+  "sessions": {
+    "s_df478532468d28": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_df478532468d28",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
