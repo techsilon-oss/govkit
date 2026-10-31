@@ -1,0 +1,27 @@
+CHANGELOG.md
+  s_b22e054218ff0b::t_5577fba0ce48ee 16
+govkit.json
+  s_b22e054218ff0b::t_f69f7d1a4e69a1 25
+skills/govkit-init/template-history.json
+  s_b22e054218ff0b::t_707cd119bcad9b 182
+skills/govkit-init/templates/scripts/govkit-doctor.mjs
+  s_b22e054218ff0b::t_3af80f7f4a2ffd 35,86-93,95-111
+tests/modules.test.mjs
+  s_b22e054218ff0b::t_16c1659ff633fa 7,64-69,72-80,82,88-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2d0772fcfbd2d0017cb23372739b0c47d4f20b87",
+  "prompts": {},
+  "sessions": {
+    "s_b22e054218ff0b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_b22e054218ff0b",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
