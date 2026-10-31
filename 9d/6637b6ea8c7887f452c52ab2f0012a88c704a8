@@ -1,0 +1,19 @@
+docs/PROJECT-HUB.md
+  s_6ca7d11e703858::t_c8ab7c6e20ac30 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9d6637b6ea8c7887f452c52ab2f0012a88c704a8",
+  "prompts": {},
+  "sessions": {
+    "s_6ca7d11e703858": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_6ca7d11e703858",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
