@@ -1,0 +1,45 @@
+.claude-plugin/marketplace.json
+  s_cba2e520c91a46::t_2a2039bccb4e20 12
+.claude-plugin/plugin.json
+  s_cba2e520c91a46::t_fa465a271073bf 4
+.github/workflows/govkit-daily-report.yml
+  s_cba2e520c91a46::t_4625d668ab5f7f 1-53
+CHANGELOG.md
+  s_cba2e520c91a46::t_da93d956dc98a1 7-20
+docs/PROJECT-HUB.md
+  s_cba2e520c91a46::t_15c54f02619760 12-13,54
+docs/modules/tracker.md
+  s_cba2e520c91a46::t_6a320e7315bc11 12,41,48
+govkit.json
+  s_cba2e520c91a46::t_14af51cf9216c5 3,15,21,25-26,29,33,37,41,43-50,191-203
+skills/govkit-init/template-history.json
+  s_cba2e520c91a46::t_4cb39535493a30 23-24,71-76,126-127,226-231,261-262,288-289,323-324,346-347,362-363,383-384,394-399,408-413
+skills/govkit-init/templates/.github/workflows/govkit-daily-report.yml
+  s_cba2e520c91a46::t_a2721232f76652 50-53
+skills/govkit-init/templates/CLAUDE.md
+  s_cba2e520c91a46::t_ec49612880c6e8 59
+skills/govkit-init/templates/scripts/daily-report/report.mjs
+  s_cba2e520c91a46::t_876ba1fe182bca 162-170,181-183,188-190,291,324-327,390
+skills/govkit-init/templates/scripts/govkit-doctor.mjs
+  s_cba2e520c91a46::t_d157090952083d 169-176,185-188
+skills/govkit-session/SKILL.md
+  s_cba2e520c91a46::t_cb177117c94e41 29
+tests/daily-report.test.mjs
+  s_cba2e520c91a46::t_a5fa18a54d4f08 124,132,135-156,158,172-176,468-469,577-589
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a4461c8129b6e2392219f3ff3bea93662792b1e6",
+  "prompts": {},
+  "sessions": {
+    "s_cba2e520c91a46": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_cba2e520c91a46",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
