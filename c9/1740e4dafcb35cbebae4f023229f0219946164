@@ -1,0 +1,75 @@
+.claude-plugin/marketplace.json
+  s_03130b3004eb09::t_5665ab08c2fe9e 11-12
+.claude-plugin/plugin.json
+  s_03130b3004eb09::t_fc251aa7b1c721 3-4
+.github/workflows/ci.yml
+  s_03130b3004eb09::t_d0d87bfa51ea56 18,23
+.github/workflows/govkit-docsync.yml
+  s_03130b3004eb09::t_254b6ef697be62 27-28,32,49-50,52-64
+CHANGELOG.md
+  s_03130b3004eb09::t_02379b5849e347 7-24,183
+README.md
+  s_03130b3004eb09::t_656e651aa04bb7 13,131,133-146,154,196,198,207,209
+docs/EXTENDING.md
+  s_03130b3004eb09::t_b41950a0bbb778 72
+docs/FAQ.md
+  s_03130b3004eb09::t_181e74fbfd9564 1-58
+docs/PROJECT-HUB.md
+  s_03130b3004eb09::t_56a0da80623382 12-13,49-50
+docs/UPGRADING.md
+  s_03130b3004eb09::t_c87a9aeca712b1 5-14
+docs/modules/ci.md
+  s_03130b3004eb09::t_1f9a9c33df26ef 1-23
+docs/modules/doc-sync.md
+  s_03130b3004eb09::t_38d00ad35c2738 1-34
+docs/modules/docs-sync-check.md
+  s_03130b3004eb09::t_005f2842ec8354 1-40
+docs/modules/pre-push-hook.md
+  s_03130b3004eb09::t_33b736594f2a93 1-37
+docs/modules/release-gate.md
+  s_03130b3004eb09::t_bb476c671df90c 1-37
+docs/modules/supabase-account.md
+  s_03130b3004eb09::t_bbcbc47c8d3229 1-41
+docs/modules/trackers.md
+  s_03130b3004eb09::t_c1353622b190e5 1-33
+docs/modules/versioning.md
+  s_03130b3004eb09::t_e4ed5389ee521b 1-40
+govkit.json
+  s_03130b3004eb09::t_fb7930f9edcad4 3,20,24-25,28,32,36,40-41,176-177,179
+module.json
+  s_03130b3004eb09::t_a500ed55f60d81 1-103
+skills/govkit-help/SKILL.md
+  s_03130b3004eb09::t_6c5f693c2324f6 1-29
+skills/govkit-init/SKILL.md
+  s_03130b3004eb09::t_7fbabb4b9b09b9 5,35-40,85,88-90,92-93,95
+skills/govkit-init/modules.mjs
+  s_03130b3004eb09::t_3a78b123f227b3 1-82
+skills/govkit-init/template-history.json
+  s_03130b3004eb09::t_0c715a4a05871c 19-20,51-52,99-100,180-185,211-212,234-235,265-266,284-285,296-297,310-315
+skills/govkit-init/templates/.github/workflows/govkit-docsync.yml
+  s_03130b3004eb09::t_8efd7a575d0c02 27-28,32,49-50,52-64
+skills/govkit-init/templates/scripts/govkit-doctor.mjs
+  s_03130b3004eb09::t_4e0d5ef5686955 84-94,167-168,174,251,320
+skills/govkit-init/upgrade.mjs
+  s_03130b3004eb09::t_c526bd9126a450 133-136,865-869
+tests/modules.test.mjs
+  s_03130b3004eb09::t_8a5f4be303db93 1-168
+tools/build-module-table.mjs
+  s_03130b3004eb09::t_5acc65855e3c4b 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c91740e4dafcb35cbebae4f023229f0219946164",
+  "prompts": {},
+  "sessions": {
+    "s_03130b3004eb09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_03130b3004eb09",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
