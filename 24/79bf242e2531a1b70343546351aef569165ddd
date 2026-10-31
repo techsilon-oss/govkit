@@ -1,0 +1,63 @@
+.claude-plugin/marketplace.json
+  s_1255b5775bc79b::t_b67823da7bb528 12
+.claude-plugin/plugin.json
+  s_1255b5775bc79b::t_78e17f02f67317 4
+CHANGELOG.md
+  s_1255b5775bc79b::t_2061836583222c 7-22,199
+README.md
+  s_1255b5775bc79b::t_dfea1111c43e55 144
+docs/FAQ.md
+  s_1255b5775bc79b::t_ddb10cb5de9c44 19-27
+docs/PROJECT-HUB.md
+  s_1255b5775bc79b::t_4541ad45c680c7 12-13,50-52
+docs/modules/tracker.md
+  s_1255b5775bc79b::t_f36075c32f851e 1-50
+govkit.json
+  s_1255b5775bc79b::t_7d31c50de951bf 3,20,24-25,28,32,36,40
+module.json
+  s_1255b5775bc79b::t_8622f7a11298ea 10-14,26-29,41-43,55-59,71-75,87-89,101-103,116-119,125-140
+skills/govkit-init/SKILL.md
+  s_1255b5775bc79b::t_53fdf072a7fb6a 4-5,39,147-168
+skills/govkit-init/template-history.json
+  s_1255b5775bc79b::t_7307460c4c66b3 20-21,55-60,107-108,194-199,226-227,250-251,282-283,302-303,315-316,333-334
+skills/govkit-init/templates/CLAUDE.md
+  s_1255b5775bc79b::t_d5174e793bc68f 54-64
+skills/govkit-init/templates/govkit.json
+  s_1255b5775bc79b::t_7442aed3e58ac2 99-110
+skills/govkit-init/templates/scripts/govkit-doctor.mjs
+  s_1255b5775bc79b::t_e5a0d7b792e3f7 113,155-158,161,179-182,207-211,213-214
+skills/govkit-init/templates/tracker/issue-forms/bug.yml
+  s_1255b5775bc79b::t_ad1b46af1fecde 1-31
+skills/govkit-init/templates/tracker/issue-forms/idea.yml
+  s_1255b5775bc79b::t_27d41dde932f13 1-16
+skills/govkit-init/templates/tracker/issue-forms/user-story.yml
+  s_1255b5775bc79b::t_8c72fc11aae9be 1-32
+skills/govkit-init/templates/tracker/register.md
+  s_1255b5775bc79b::t_60800b74f54202 1-26
+skills/govkit-init/tracker.mjs
+  s_1255b5775bc79b::t_0c5e41e5fa7809 1-191
+skills/govkit-init/upgrade.mjs
+  s_1255b5775bc79b::t_7ff8fe6e3bab7d 473
+skills/govkit-session/SKILL.md
+  s_1255b5775bc79b::t_28f4fe2909ebea 27-30,72-78
+tests/tracker.test.mjs
+  s_1255b5775bc79b::t_892819f1c474f5 1-194
+tests/upgrade.test.mjs
+  s_1255b5775bc79b::t_eacfe15ed43103 205-206,210-212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2479bf242e2531a1b70343546351aef569165ddd",
+  "prompts": {},
+  "sessions": {
+    "s_1255b5775bc79b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_1255b5775bc79b",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
