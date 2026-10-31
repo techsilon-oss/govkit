@@ -1,0 +1,23 @@
+docs/PROJECT-HUB.md
+  s_9d6885dbdf3edb::t_91a371d7db6602 12,53
+docs/modules/tracker.md
+  s_9d6885dbdf3edb::t_f704e0a9e14b69 62-67
+tests/modules.test.mjs
+  s_9d6885dbdf3edb::t_4c1c5cc17be904 139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "394bd37c1132de3196c0c248964f5cc522495409",
+  "prompts": {},
+  "sessions": {
+    "s_9d6885dbdf3edb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_9d6885dbdf3edb",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
