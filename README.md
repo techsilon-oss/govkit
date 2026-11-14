@@ -236,8 +236,10 @@ That is why guardrails are now **on by default**, why skipping one requires a re
 
 ## License
 
-[MIT](LICENSE), © 2026 Techsilon LLC. Releases up to and including 0.6.0 were published under CC0-1.0, and remain available under it.
+Apache License 2.0 from 0.13.1. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Earlier releases stay under the license they were published with: MIT from 0.6.1 to 0.13.0, CC0-1.0 up to and including 0.6.0.
+
+Contributions are signed off under the [DCO](https://developercertificate.org/) (`git commit -s`); a required check enforces it.
 
 ---
 
-govkit is published by Techsilon LLC and maintained by Sujit Gangadharan. Contact: oss@techsilon.com. Security reports: [SECURITY.md](https://github.com/techsilon-oss/.github/blob/main/SECURITY.md). govkit follows the [techsilon-oss kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md).
+Published by Techsilon LLC. Maintained by [@jisujit](https://github.com/jisujit). Contact: oss@techsilon.com. Security reports: [SECURITY.md](https://github.com/techsilon-oss/.github/blob/main/SECURITY.md). "govkit" and "Techsilon" are trademarks of Techsilon LLC: see [TRADEMARKS](https://github.com/techsilon-oss/.github/blob/main/TRADEMARKS.md). govkit follows the [techsilon-oss kit standard](https://github.com/techsilon-oss/.github/blob/main/KIT-STANDARD.md).

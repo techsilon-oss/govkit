@@ -1,4 +1,5 @@
-# govkit's own CI: the plugin's manifests, its scripts, and its tests.
+# govkit's own CI: the plugin's manifests, its scripts, its tests, and the kit standard's DCO and
+# plain-words checks.
 # Actions minutes are free on public repos, so every step runs on every PR.
 name: CI
 
@@ -45,3 +46,11 @@ jobs:
         run: |
           npx -y @anthropic-ai/claude-code@2.1.312 plugin validate .
           npx -y @anthropic-ai/claude-code@2.1.312 plugin validate .claude-plugin/marketplace.json
+
+  # The kit standard's checks (techsilon-oss/.github), kept there once: every commit signed off,
+  # and no filler words in README.md and docs/. Both are required checks on main.
+  dco:
+    uses: techsilon-oss/.github/.github/workflows/dco.yml@main
+
+  plain-words:
+    uses: techsilon-oss/.github/.github/workflows/plain-words.yml@main
