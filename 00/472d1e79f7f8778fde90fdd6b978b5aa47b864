@@ -1,0 +1,39 @@
+.github/workflows/ci.yml
+  s_323ae1232e9c2d::t_253b89035e282b 34-36
+CHANGELOG.md
+  s_323ae1232e9c2d::t_7bd236ef2c20a1 7-13
+CLAUDE.md
+  s_323ae1232e9c2d::t_873e09a63c0873 28
+CONTRIBUTING.md
+  s_323ae1232e9c2d::t_94c4e4f225cdb2 11-12
+README.md
+  s_323ae1232e9c2d::t_3e9f7e2782f0ba 37-38
+docs/PROJECT-HUB.md
+  s_323ae1232e9c2d::t_b1aa4dc64a6363 18,35-37
+docs/archive/superpowers/plans/2026-06-25-govkit-init-minimal-tier.md
+  s_323ae1232e9c2d::t_14b43aa9c8d89e 15
+package.json
+  s_323ae1232e9c2d::t_f0065cab3c9ad1 16-17
+skills/govkit-init/templates/scripts/govkit-docsync.mjs
+  s_323ae1232e9c2d::t_2bf3b861360348 5-6
+tests/check-names.test.mjs
+  s_323ae1232e9c2d::t_04622699cd017d 1-43
+tools/check-names.mjs
+  s_323ae1232e9c2d::t_4acabea5c4285f 1-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "00472d1e79f7f8778fde90fdd6b978b5aa47b864",
+  "prompts": {},
+  "sessions": {
+    "s_323ae1232e9c2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f171b240-812f-4132-b013-9d8b7df53b7c",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
