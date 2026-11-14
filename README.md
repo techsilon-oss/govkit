@@ -34,8 +34,8 @@ Three repos, one methodology, **strictly one-way dependencies**. govkit is the m
          │ applied to       guardrails cheatsheet. CONSUMES govkit, never competes.
          │
   consumer repos            The actual products.
-  (omnisilon, pulsilon,     Install the govkit plugin per machine, scaffold guardrails
-   techsilon-website, RAV)  per repo, follow dev-standards for house specifics.
+  (your projects)           Install the govkit plugin per machine, scaffold guardrails
+                            per repo, follow dev-standards for house specifics.
 ```
 
 **Nothing upstream ever references a consumer.** Context flows down only.
