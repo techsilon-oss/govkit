@@ -4,6 +4,14 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.12.2] - 2026-11-13
+
+### Fixed
+- **A docs move no longer trips the doc-sync gate** (#52). When a PR renames docs (for example `docs-kit move`) and rewrites the paths that name them, a source file whose every changed line only swaps a renamed path for its new one is not counted as changed, and the audit lists it under "Not counted as changed". git's rename detection decides what was renamed. One other changed line in the file and it counts again. `compliance-doc-map.json` rules still count every change. Guide: [doc-sync → Fix a finding](docs/modules/doc-sync.md#source-changed--mapped-doc-not-updated).
+- The doc-sync runner calls `git` without a shell, so a file name in a PR can't be read as a command.
+
+Changed in your repo: `scripts/govkit-docsync.mjs`.
+
 ## [0.12.1] - 2026-10-30
 
 ### Fixed
