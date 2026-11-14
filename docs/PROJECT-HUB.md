@@ -9,8 +9,9 @@ last checked 2026-11-14
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test**, **DCO sign-off** and **Plain words** are required. `v*` tags can't be moved or deleted (ruleset).
-- **Now:** #52 and #49 are done (0.12.2 and 0.13.0 shipped, each tagged with a Release). #53 is done: 0.13.1 shipped (Apache-2.0 with a `NOTICE`, the README footer, and the org's DCO and plain-words checks in CI), and the two checks are required on `main`, with a ruleset protecting `v*` tags. govkit runs its own weekly status report on the pinned issue #41 (Mondays ~07:00 UTC, `skipQuietDays`). govkit tracks its own work with the tracker (register #38; categories now/next/later/triage). The e2e repo `jisujit/govkit-e2e` is kept, its schedule disabled (enable, run, disable for each manual test).
-- **Next, in order:** #29 (alias removal, not before 2026-11-28). To triage: #47, #48, #50, #51. #15 and #25 are ideas.
+- **Last session:** #52 and #49 are done (0.12.2 and 0.13.0 shipped, each tagged with a Release). #53 is done: 0.13.1 shipped (Apache-2.0 with a `NOTICE`, the README footer, and the org's DCO and plain-words checks in CI), and the two checks are required on `main`, with a ruleset protecting `v*` tags. govkit runs its own weekly status report on the pinned issue #41 (Mondays ~07:00 UTC, `skipQuietDays`). govkit tracks its own work with the tracker (register #38; categories now/next/later/triage). The e2e repo `jisujit/govkit-e2e` is kept, its schedule disabled (enable, run, disable for each manual test).
+- **Now:** #50 (no client or consumer project names, DEC-007; PR #59). #51 (supabase-account rejects Supabase project-scoped tokens).
+- **Next, in order:** #47 (Before work / Before release steps), #48 (close: archive handoffs, record lessons), #61 (govkit default standard; a house standard adds to it), #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
 
