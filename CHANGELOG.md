@@ -4,6 +4,13 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.13.2] - 2026-11-14
+
+### Changed
+- **govkit names no client or consumer project** (#50). The header comment of `scripts/govkit-docsync.mjs` and the README's layer diagram describe where things came from in generic words. Decision: DEC-007, which replaces DEC-001.
+
+Changed in your repo: `scripts/govkit-docsync.mjs` (the header comment only; `/govkit-init --upgrade` reports it as outdated).
+
 ## [0.13.1] - 2026-11-14
 
 ### Changed

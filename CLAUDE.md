@@ -25,7 +25,7 @@ feature branch  →  PR  →  main
 - **Tests with the change.** `npm test` (`node --test "tests/*.test.mjs"`). Fixtures come from the release tags, so keep tags fetched.
 - **Scripts stay dependency-free:** Node built-ins and `git`.
 - **A changed owned template** (`skills/govkit-init/templates/{scripts,githooks,.github}/`) changes files in every consumer's repo through `/govkit-init --upgrade`. Its CHANGELOG entry must name the file; the doc-sync gate enforces this.
-- **Provenance comments stay as they are** (DEC-001), in templates and README.
+- **Name no client or consumer project** (DEC-007), in files, templates or issues. Provenance notes stay, in generic words.
 - **The release gate belongs to [release-gate-kit](https://github.com/techsilon-oss/release-gate-kit).** Fix it there, never here.
 
 ## Releasing

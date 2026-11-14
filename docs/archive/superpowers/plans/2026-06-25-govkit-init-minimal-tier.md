@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **Decoupled:** zero references to any specific project (no rav, no rent-a-vacation). Generic only.
+- **Decoupled:** zero references to any specific project (no consumer project names). Generic only.
 - **Self-contained:** no dependency on superpowers/other plugins, MCP, Python, husky, or global config. Uses `git` + `gh` CLI only.
 - **Node/TS-first scaffold; language-agnostic guardrails** (gate checks are arbitrary shell commands).
 - **Non-destructive init:** create if absent; append (CLAUDE.md) / merge (package.json scripts) if present; never overwrite; idempotent; print a summary.

@@ -16,7 +16,7 @@ last checked 2026-11-14
 ## Key Decisions Log
 
 ### DEC-001: Provenance comments stay as they are
-**2026-10-27 · Decided in qa-kit (DEC-014) · Active.** Provenance comments in govkit's templates and README stay as written, including names of the repos the files came from. Consumers that want different wording keep a local edit; `/govkit-init --upgrade` reports such a file as `edited` and defaults to keeping it.
+**2026-10-27 · Decided in qa-kit (DEC-014) · Replaced by DEC-007 (2026-11-14).** Provenance comments in govkit's templates and README stay as written, including names of the repos the files came from. Consumers that want different wording keep a local edit; `/govkit-init --upgrade` reports such a file as `edited` and defaults to keeping it.
 
 ### DEC-002: Trunk flow — feature branch → PR → main
 **2026-10-29 · Active.** govkit has no `dev` branch. Every merge to `main` is a release, so each PR that ships is its own release PR (version bump as its last commit) and is tagged after the merge. `main` is protected with admins included; force pushes and deletion are blocked.
@@ -32,6 +32,9 @@ last checked 2026-11-14
 
 ### DEC-006: A repo's own session steps are used only after the user trusts that exact file
 **2026-10-29 · Active (0.9.0, #13).** `.govkit/session.md` is repo-authored, so a cloned repo could use it to run commands or give the agent instructions. Claude Code's permissions don't fully cover that (allowlists, auto mode). So nothing in it is used until the user has trusted it by hash (`.git/govkit/session-trust.json`, never committed). Any edit means re-trusting. The agent never trusts it: the user runs the trust command, the skill doesn't pre-approve it, and the file is shown between UNTRUSTED markers as data. Command steps run through the agent's Bash tool, never from a govkit script.
+
+### DEC-007: govkit names no client or consumer project
+**2026-11-14 · Active (D-001 in #38, #50). Replaces DEC-001.** govkit is a product anyone can install, so its files, templates and issues describe problems generically and name no client or consumer project. Provenance notes stay, in generic words ("generalised from an earlier in-house version"). Review enforces it; there is no automated check, because the list of names would itself name them, and a list kept in repository settings is one more thing to maintain. A consumer that edited its copy of a template keeps it; `/govkit-init --upgrade` reports it as `edited`.
 
 ## Session Handoff
 

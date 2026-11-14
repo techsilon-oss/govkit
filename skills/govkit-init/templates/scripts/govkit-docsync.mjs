@@ -2,8 +2,8 @@
 /**
  * govkit-docsync — Documentation Sync Watchdog (portable, dependency-free)
  *
- * Generalized from rent-a-vacation/rav-website (the origin of the /sdlc + /sdlc-docs
- * system). Canonical template: techsilon-apps/dev-standards → templates/sdlc/.
+ * Generalized from an earlier in-house version of the /sdlc + /sdlc-docs system.
+ * Canonical template: govkit → skills/govkit-init/templates/scripts/.
  *
  * Diff-aware doc-sync checker. Cross-references PR-wide file changes against a
  * project-local registry (scripts/source-doc-map.json) and flags code that shipped
