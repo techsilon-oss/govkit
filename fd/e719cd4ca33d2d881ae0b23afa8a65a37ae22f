@@ -1,0 +1,41 @@
+README.md
+  s_323ae1232e9c2d::t_564dd3b62d8f5e 145
+docs/modules/docs-kit.md
+  s_323ae1232e9c2d::t_0637a2a5f0409e 1-41
+module.json
+  s_323ae1232e9c2d::t_7717d3030728b0 2,143-155
+skills/govkit-doctor/SKILL.md
+  s_323ae1232e9c2d::t_1252e69fe8b73f 54-65
+skills/govkit-init/SKILL.md
+  s_323ae1232e9c2d::t_d7e043b142634d 39
+skills/govkit-init/modules.mjs
+  s_323ae1232e9c2d::t_0db28169646f69 38-39,45,56
+skills/govkit-init/templates/scripts/govkit-doctor.mjs
+  s_323ae1232e9c2d::t_2e09717b782384 113,246-267
+skills/govkit-session/SKILL.md
+  s_323ae1232e9c2d::t_5979eff796a848 5,32-34,82-92
+skills/govkit-session/docs-kit.mjs
+  s_323ae1232e9c2d::t_f59d9a89c2eec3 1-158
+CHANGELOG.md
+  s_323ae1232e9c2d::t_1aa6360f431860 7-18
+tests/docs-kit.test.mjs
+  s_323ae1232e9c2d::t_45071947d8c919 1-159
+tests/modules.test.mjs
+  s_323ae1232e9c2d::t_7d860411be151b 21,24-26,29-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fde719cd4ca33d2d881ae0b23afa8a65a37ae22f",
+  "prompts": {},
+  "sessions": {
+    "s_323ae1232e9c2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f171b240-812f-4132-b013-9d8b7df53b7c",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
