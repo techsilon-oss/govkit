@@ -236,7 +236,7 @@ That is why guardrails are now **on by default**, why skipping one requires a re
 
 ## License
 
-Apache License 2.0 from the release after 0.13.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Earlier releases stay under the license they were published with: MIT from 0.6.1 to 0.13.0, CC0-1.0 up to and including 0.6.0.
+Apache License 2.0 from 0.13.1. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Earlier releases stay under the license they were published with: MIT from 0.6.1 to 0.13.0, CC0-1.0 up to and including 0.6.0.
 
 Contributions are signed off under the [DCO](https://developercertificate.org/) (`git commit -s`); a required check enforces it.
 

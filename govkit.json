@@ -1,6 +1,6 @@
 {
   "$comment": "govkit guardrail manifest. Written by /govkit-init, read by /govkit-doctor and /govkit config. This file is the DECLARED state; the doctor compares it against what is actually on disk and reports the difference. A guardrail you deliberately do not want is recorded here with enabled:false and a reason — so a missing guardrail is always either a recorded decision or a finding, never an accident.",
-  "govkitVersion": "0.13.0",
+  "govkitVersion": "0.13.1",
   "project": {
     "name": "govkit",
     "deployTarget": "none (users install the plugin from GitHub)",
@@ -18,35 +18,35 @@
   "files": {
     "$comment": "Written by /govkit-init and /govkit-init --upgrade, never by hand: for each file govkit owns, the release that wrote it and the sha256 of what it wrote (LF line endings). A file whose hash no longer matches was edited locally, and the upgrade will not replace it without an explicit yes.",
     "scripts/docs-sync-check.mjs": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "974bc695f1cd6f83c701d464d1ccc526743fedb47803adf13887a6017aa8aefd"
     },
     "scripts/govkit-doctor.mjs": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "c177c01e9638c6656a31e270019de9ef176d7a80012d58e7113b303be96fa21b"
     },
     ".githooks/pre-push": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "cff9f96c7973b453b68557f8591a7524a9ef6d4ed0c4c43b59eda5999f22cbb6"
     },
     ".githooks/install-hooks.sh": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "805082669618d992e8e6cdb23fac7864a34a78d0239f16cc0ce70a3f6ea62f86"
     },
     "scripts/govkit-docsync.mjs": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "45cc0bc4356466190e199416dd260c1dbff564c269955aa53f1d274236503ab7"
     },
     ".github/workflows/govkit-docsync.yml": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "d7ca88b25121cb55e96ba25ba1ae526efd607b3db20c5a0ae182ae5a46adac8a"
     },
     "scripts/daily-report/report.mjs": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "59c42d58dc297544588765f295cd559ad33ed1d88e3ee42cd29c86bbdad5a0c8"
     },
     ".github/workflows/govkit-daily-report.yml": {
-      "version": "0.13.0",
+      "version": "0.13.1",
       "sha256": "0ad2f2dd9fad8fc6ae0b5241a66cd91353b5b5a2def11e41051b0d8a1163376a"
     }
   },
