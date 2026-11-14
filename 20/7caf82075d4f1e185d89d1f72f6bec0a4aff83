@@ -1,0 +1,23 @@
+docs/modules/doc-sync.md
+  s_323ae1232e9c2d::t_0275e41bdc9169 33-37
+skills/govkit-init/templates/scripts/govkit-docsync.mjs
+  s_323ae1232e9c2d::t_76773940f8b499 28,48-55,60-61,66-115,159,164-166,207,218-224,226
+tests/docsync.test.mjs
+  s_323ae1232e9c2d::t_8103cef9a92a8e 1-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "207caf82075d4f1e185d89d1f72f6bec0a4aff83",
+  "prompts": {},
+  "sessions": {
+    "s_323ae1232e9c2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f171b240-812f-4132-b013-9d8b7df53b7c",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
