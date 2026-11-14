@@ -1,6 +1,6 @@
 # govkit — rules for working in this repo
 
-last checked 2026-10-29
+last checked 2026-11-14
 
 govkit is a Claude Code plugin that scaffolds guardrails into other repos. It runs those same guardrails on itself, in place (see DEC-003). Status, decisions and handoffs: [`docs/PROJECT-HUB.md`](docs/PROJECT-HUB.md). Open work: GitHub issues.
 
@@ -15,7 +15,8 @@ feature branch  →  PR  →  main
 ```
 
 - `main` is the release. Every merge to `main` ships to everyone who installs the plugin.
-- `main` is protected on GitHub: a PR, and a green **Validate and test** check, are required; force pushes and deletion are blocked; admins included.
+- `main` is protected on GitHub: a PR, and green **Validate and test**, **DCO sign-off** and **Plain words** checks, are required; force pushes and deletion are blocked; admins included. Sign off every commit (`git commit -s`).
+- Release tags (`v*`) are protected by a ruleset: a tag can be created, never moved or deleted.
 - **Every merge needs the maintainer's explicit approval** ("merge it"). Green CI is necessary, not sufficient.
 - Conventional commits: `type(scope): description`.
 

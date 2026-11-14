@@ -1,6 +1,6 @@
 # govkit — Project Hub
 
-last checked 2026-10-30
+last checked 2026-11-14
 
 > Decisions, current state, and session-to-session context. `/govkit-session status` reads this file. Repo facts (branches, tags, CI, issue counts) are not copied here: `npm run docs:sync-check` and `npm run release:check -- --pr` print them from git and GitHub.
 
@@ -8,9 +8,9 @@ last checked 2026-10-30
 
 - **Stage:** live. Public on GitHub, installed from the marketplace (`claude plugin install govkit --marketplace techsilon-oss/govkit`).
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
-- **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test** are required.
-- **Now:** #14 is done (0.12.0 and 0.12.1 shipped). govkit runs its own weekly status report on the pinned issue #41 (Mondays ~07:00 UTC, `skipQuietDays`); its test-mode run on `main` passed. govkit tracks its own work with the tracker (register #38; categories now/next/later/triage). The e2e repo `jisujit/govkit-e2e` is kept, its schedule disabled (enable, run, disable for each manual test).
-- **Next, in order:** #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
+- **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test**, **DCO sign-off** and **Plain words** are required. `v*` tags can't be moved or deleted (ruleset).
+- **Now:** #52 and #49 are done (0.12.2 and 0.13.0 shipped, each tagged with a Release). #53 is done: 0.13.1 shipped (Apache-2.0 with a `NOTICE`, the README footer, and the org's DCO and plain-words checks in CI), and the two checks are required on `main`, with a ruleset protecting `v*` tags. govkit runs its own weekly status report on the pinned issue #41 (Mondays ~07:00 UTC, `skipQuietDays`). govkit tracks its own work with the tracker (register #38; categories now/next/later/triage). The e2e repo `jisujit/govkit-e2e` is kept, its schedule disabled (enable, run, disable for each manual test).
+- **Next, in order:** #29 (alias removal, not before 2026-11-28). To triage: #47, #48, #50, #51. #15 and #25 are ideas.
 
 ## Key Decisions Log
 
@@ -53,3 +53,10 @@ last checked 2026-10-30
 - 0.12.0 on `feat/daily-report`: the status report (github-issue or resend delivery, per-repo workflow lines kept by `--upgrade`, `skipQuietDays`, custom sections), with its tests. End-to-end in `jisujit/govkit-e2e` (kept; reused for future e2e): github-issue test and real runs, skipQuietDays both ways, Resend test sends from a verified domain. It found two bugs, fixed: test runs moved the window; a status issue unknown to a resend setup counted as to triage (setup fix: pass `--issue`). The guide shows both deliveries; the screenshots contain no addresses.
 - Shipped 0.12.0 (#40), tagged with a Release. 0.12.1 on `feat/weekly-report`: govkit's weekly report on #41 (2 of 3 pins), a first report covers one schedule period (7 days for a weekly schedule), "No launch category" wording, the status issue left out of to-triage, the report script found through `paths`.
 - Shipped 0.12.1 (#42), tagged with a Release. The weekly report's test-mode run on `main` covered the last 7 days and posted nothing. #14 closed (the PR's wording closed it at the merge; the `Completed:` comment was added after). Lesson: a PR body names a later issue close without "close", "fix" or "resolve" before the number.
+
+### Session 2 — 2026-11-13 to 2026-11-14 — 0.12.2, 0.13.0 and 0.13.1
+- Shipped 0.12.2 (#54, for #52): a source file whose only changes swap a renamed doc path for the new one no longer trips the doc-sync gate. The runner now calls `git` without a shell.
+- Shipped 0.13.0 (#55, for #49): the docs-kit module, default `detected` (on when `docs-kit.json` exists, govkit installs nothing). `docs-kit check` is repo code, so the skills run it through the permission prompt; the doctor script only reports.
+- 0.13.1 (#56, for #53): Apache-2.0 from 0.13.1 (earlier releases keep MIT or CC0), `NOTICE`, DCO and plain-words jobs in CI. Every commit is now signed off (`git commit -s`). Shipped 0.13.1, tagged with a Release; DCO sign-off and Plain words made required on `main`; tag ruleset "Protect release tags" on `refs/tags/v*` (no update, no deletion).
+- Lesson: the release check fails on the next PR until the last merge is tagged. Tag right after each merge, then rebase the next PR.
+- Local `npm test` on Windows fails some tests with `EPERM`/`ENOTEMPTY` while removing temp folders, on a clean `main` too. Linux CI is the check.
