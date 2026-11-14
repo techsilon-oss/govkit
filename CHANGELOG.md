@@ -4,6 +4,15 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [Unreleased]
+
+### Changed
+- **License: Apache License 2.0 from this release** (#53), with a `NOTICE` file. Earlier releases stay under the license they were published with: MIT from 0.6.1, CC0-1.0 up to and including 0.6.0. The files `/govkit-init` copies into your repo come from govkit, so new copies are under Apache-2.0 too; the copies you already have keep the license of the release that wrote them.
+- **Contributions are signed off** under the DCO (`git commit -s`), checked on every PR, as is the kit standard's plain-words rule for `README.md` and `docs/`.
+- The README footer names the publisher, the maintainer and the trademarks ([TRADEMARKS](https://github.com/techsilon-oss/.github/blob/main/TRADEMARKS.md)).
+
+Nothing changes in your repo.
+
 ## [0.13.0] - 2026-11-13
 
 ### Added

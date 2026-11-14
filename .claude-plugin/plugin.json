@@ -9,7 +9,7 @@
   },
   "homepage": "https://github.com/techsilon-oss/govkit#readme",
   "repository": "https://github.com/techsilon-oss/govkit",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "governance",
     "sdlc",

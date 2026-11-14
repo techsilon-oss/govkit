@@ -2,7 +2,7 @@
   "name": "govkit",
   "private": true,
   "description": "govkit's own guardrails, run in place from the templates it ships. The version lives in .claude-plugin/plugin.json, not here.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "prepare": "git config core.hooksPath skills/govkit-init/templates/githooks || exit 0",
     "test": "node --test \"tests/*.test.mjs\"",
