@@ -25,7 +25,7 @@
  * Zero dependencies: Node built-ins + git only.
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -45,20 +45,74 @@ function matchesGlob(filePath, pattern) {
   return new RegExp(`^${regexStr}$`).test(filePath);
 }
 
+function git(args) {
+  return execFileSync("git", ["-c", "core.quotepath=off", ...args], {
+    encoding: "utf-8",
+    stdio: ["pipe", "pipe", "pipe"],
+    maxBuffer: 64 * 1024 * 1024,
+  });
+}
+
 /** PR-wide diff: everything since this branch diverged from base. Falls back to HEAD~1. */
 function gitChangedFiles(base) {
   for (const range of [`${base}...HEAD`, "HEAD~1..HEAD"]) {
     try {
-      const out = execSync(`git diff --name-only --diff-filter=ACMR ${range}`, {
-        encoding: "utf-8",
-        stdio: ["pipe", "pipe", "pipe"],
-      });
-      return out.split("\n").filter(Boolean);
+      const files = git(["diff", "--name-only", "--diff-filter=ACMR", range]).split("\n").filter(Boolean);
+      return { range, files };
     } catch {
       // try next range
     }
   }
-  return [];
+  return { range: null, files: [] };
+}
+
+/** Files the diff renamed (git rename detection, -M): [{ from, to }]. */
+function gitRenames(range) {
+  const renames = [];
+  for (const line of git(["diff", "--name-status", "-M", "--diff-filter=R", range]).split("\n")) {
+    const [status, from, to] = line.split("\t");
+    if (status?.startsWith("R") && from && to) renames.push({ from, to });
+  }
+  return renames;
+}
+
+/**
+ * True when every line that differs in `file` only rewrites a path the same diff renamed: each
+ * removed line, with the renamed paths replaced by their new ones, is one of the added lines, one
+ * for one. A single other changed line, and the file counts as changed (#52).
+ */
+function onlyRenamedPaths(range, file, renames) {
+  if (renames.length === 0) return false;
+  let diff;
+  try {
+    diff = git(["diff", "-U0", "--no-color", "--no-ext-diff", "-M", range, "--", file]);
+  } catch {
+    return false;
+  }
+  // a file that was itself added, deleted or renamed is a real change
+  if (/^(new file|deleted file|rename from|similarity index)/m.test(diff)) return false;
+  const removed = [];
+  const added = [];
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("---") || line.startsWith("+++")) continue;
+    if (line.startsWith("-")) removed.push(line.slice(1));
+    else if (line.startsWith("+")) added.push(line.slice(1));
+  }
+  if (removed.length === 0 || removed.length !== added.length) return false;
+  // longest first, so docs/a/B.md is not rewritten through a shorter docs/a rename
+  const sorted = [...renames].sort((a, b) => b.from.length - a.from.length);
+  const pattern = new RegExp(sorted.map((r) => r.from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "g");
+  const to = new Map(sorted.map((r) => [r.from, r.to]));
+  const pending = new Map();
+  for (const line of added) pending.set(line, (pending.get(line) ?? 0) + 1);
+  for (const line of removed) {
+    const rewritten = line.replace(pattern, (m) => to.get(m));
+    if (rewritten === line) return false; // a removed line that names no renamed path
+    const n = pending.get(rewritten) ?? 0;
+    if (n === 0) return false;
+    pending.set(rewritten, n - 1);
+  }
+  return true;
 }
 
 function loadJson(path, fallback) {
@@ -102,12 +156,14 @@ function readFrontmatter(content) {
 
 // ── Rules ────────────────────────────────────────────────────────────────────
 
-function ruleSourceDocMap(changed) {
+function ruleSourceDocMap(changed, pathOnly = new Set()) {
   const findings = [];
   const { mappings = [] } = loadJson(SOURCE_DOC_MAP, { mappings: [] });
   for (const mapping of mappings) {
     const severity = mapping.severity === "warn" ? "warn" : "gate";
-    const hit = changed.filter((f) => mapping.source.some((p) => matchesGlob(f, p)));
+    const hit = changed.filter(
+      (f) => !pathOnly.has(f) && mapping.source.some((p) => matchesGlob(f, p)),
+    );
     if (hit.length === 0) continue;
     const missing = mapping.docs.filter((doc) => !requiredDocSatisfied(doc, changed));
     if (missing.length === 0) continue;
@@ -148,7 +204,7 @@ function ruleComplianceDocSync(changed, reviewed) {
 // ── Subcommands ──────────────────────────────────────────────────────────────
 
 function runAudit({ mode, base }) {
-  const changed = gitChangedFiles(base);
+  const { range, files: changed } = gitChangedFiles(base);
   console.log("\n📋 govkit-docsync audit");
   console.log("═".repeat(72));
   console.log(`Mode: ${mode}   Base: ${base}   Changed files: ${changed.length}`);
@@ -159,8 +215,15 @@ function runAudit({ mode, base }) {
     return;
   }
 
+  // A source file whose only change rewrites a renamed path (a docs move) has not changed (#52).
+  const renames = gitRenames(range);
+  const pathOnly = new Set(changed.filter((f) => onlyRenamedPaths(range, f, renames)));
+  if (pathOnly.size > 0) {
+    console.log(`\nNot counted as changed (only a renamed path rewritten): ${[...pathOnly].join(", ")}`);
+  }
+
   const findings = [
-    ...ruleSourceDocMap(changed),
+    ...ruleSourceDocMap(changed, pathOnly),
     ...ruleComplianceDocSync(changed, process.env.COMPLIANCE_DOC_REVIEWED === "true"),
   ];
   const gating = findings.filter((f) => f.severity === "gate");

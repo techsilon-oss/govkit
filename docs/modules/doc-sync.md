@@ -30,5 +30,10 @@ Run `/govkit-init --upgrade`. The workflow's check name, "Doc-sync (gate)" / "Do
 ### Old names
 The doctor lists `sdlc-docs` names left from before 0.8.0. See [UPGRADING 0.7 → 0.8](../UPGRADING.md#07--08).
 
+### Source changed → mapped doc not updated
+The gate found a mapped source file that changed in the PR while its doc did not. Update the doc, or move the pairing to `warn` in `scripts/source-doc-map.json` if it usually doesn't hold.
+
+**A docs move doesn't count (0.12.2+).** When a PR renames docs (for example `docs-kit move`) and rewrites the paths that name them, a source file whose every changed line only swaps an old path for its new one is not counted as changed: the audit lists it under "Not counted as changed". git's rename detection decides what was renamed. One other changed line in that file, even on the same line as the path, and it counts again, so a real change is never hidden. The rule applies to `source-doc-map.json` only; `compliance-doc-map.json` still counts every change.
+
 ## Undo
 Set `enabled: false` with a `skippedReason` in `govkit.json`, and delete the three files and the `docsync:*` npm scripts.
