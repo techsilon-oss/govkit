@@ -1,0 +1,33 @@
+.claude-plugin/plugin.json
+  s_323ae1232e9c2d::t_71dd8dbc3e0263 12
+.github/workflows/ci.yml
+  s_323ae1232e9c2d::t_c9793d90a65680 1-2,49-56
+CHANGELOG.md
+  s_323ae1232e9c2d::t_b8cc5b5f27640b 7-15
+CONTRIBUTING.md
+  s_323ae1232e9c2d::t_2a02f7822f1bbf 7
+LICENSE
+  s_323ae1232e9c2d::t_f2f75747f61d3e 1-202
+NOTICE
+  s_323ae1232e9c2d::t_e7f95cbbd0c967 1-4
+README.md
+  s_323ae1232e9c2d::t_af85967f87beb9 239-241,245
+package.json
+  s_323ae1232e9c2d::t_6f91a82c812ede 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "96ec0a40540804a07fac31e131dda33268dbc932",
+  "prompts": {},
+  "sessions": {
+    "s_323ae1232e9c2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f171b240-812f-4132-b013-9d8b7df53b7c",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
