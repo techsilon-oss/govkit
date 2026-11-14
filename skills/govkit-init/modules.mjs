@@ -35,13 +35,14 @@ export { guideUrl, pluginVersion };
 
 /** One module's note, as the user sees it before saying yes. */
 export function noteText(m, version = pluginVersion()) {
-  const lines = [`${m.title}  (${m.id}; ${m.default === "opt-in" ? "opt-in: off unless you choose it" : "on unless you skip it"})`];
+  const mode = { "opt-in": "opt-in: off unless you choose it", detected: "detected: on when the repo has what it needs, nothing to install" }[m.default] ?? "on unless you skip it";
+  const lines = [`${m.title}  (${m.id}; ${mode})`];
   if (m.condition) lines.push(`  When: ${m.condition}`);
   lines.push(`  You get: ${m.youGet}`);
   lines.push(`  It changes, outside your code: ${m.changesOutsideRepo}`);
   lines.push(`  It costs: ${m.costs}`);
   lines.push(`  To undo: ${m.undo}`);
-  lines.push(`  Files: ${m.files.join(", ")}`);
+  lines.push(`  Files: ${m.files.length ? m.files.join(", ") : "none (govkit writes nothing for it)"}`);
   lines.push(`  Read more: ${guideUrl(m.readMore, version)}`);
   if (!m.skippable) lines.push("  (Not skippable: every other guardrail depends on it.)");
   return lines.join("\n");
@@ -52,7 +53,7 @@ export function moduleTable(modules) {
   const esc = (s) => s.replace(/\|/g, "\\|");
   const rows = modules.map(
     (m) =>
-      `| [\`${m.id}\`](${m.readMore}) | ${esc(m.youGet)} | ${esc(m.changesOutsideRepo)} | ${esc(m.costs)} | ${m.default === "opt-in" ? "opt-in" : m.skippable ? "on (skippable)" : "on (required)"} |`,
+      `| [\`${m.id}\`](${m.readMore}) | ${esc(m.youGet)} | ${esc(m.changesOutsideRepo)} | ${esc(m.costs)} | ${m.default === "opt-in" || m.default === "detected" ? m.default : m.skippable ? "on (skippable)" : "on (required)"} |`,
   );
   return [
     "| Module | You get | Changes outside your code | Costs | Default |",

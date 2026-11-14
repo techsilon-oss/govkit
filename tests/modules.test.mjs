@@ -18,12 +18,16 @@ const GUIDE_SECTIONS = ["What you get", "What it changes outside your repo", "Co
 
 // ------------------------------------------------------------------ module.json, kept once
 
+// A "detected" module (docs-kit) installs nothing, so the template declares nothing for it.
 test("every module has every field, and its id is a guardrail in the govkit.json template", () => {
   const guardrails = Object.keys(JSON.parse(read("skills/govkit-init/templates/govkit.json")).guardrails).filter((k) => !k.startsWith("$"));
-  assert.deepEqual(modules.map((m) => m.id).sort(), [...guardrails].sort(), "module ids = guardrail keys");
+  const declared = modules.filter((m) => m.default !== "detected").map((m) => m.id);
+  assert.deepEqual(declared.sort(), [...guardrails].sort(), "module ids = guardrail keys");
+  assert.ok(!guardrails.includes("docs-kit"), "a detected module has no template entry");
   for (const m of modules) {
     for (const f of ["id", "title", "default", "skippable", "files", ...NOTE_FIELDS]) assert.ok(m[f] !== undefined && m[f] !== "", `${m.id}: ${f}`);
-    assert.ok(["on", "opt-in"].includes(m.default), `${m.id}: default`);
+    assert.ok(["on", "opt-in", "detected"].includes(m.default), `${m.id}: default`);
+    if (m.default === "detected") assert.ok(m.condition && m.files.length === 0, `${m.id}: a detected module says when, and writes nothing`);
     assert.ok(existsSync(join(GOVKIT, m.readMore)), `${m.id}: ${m.readMore} exists`);
   }
   assert.equal(modules.find((m) => m.id === "trackers").skippable, false);

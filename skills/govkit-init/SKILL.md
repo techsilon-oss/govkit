@@ -36,7 +36,7 @@ Ask the user these four, showing defaults so "accept all" is one reply:
 
 Run `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/modules.mjs" notes` and show its output: for each module, what you get, what it changes outside the code, what it costs, how to undo it, and a link to its guide. The notes come from `module.json`, the one place they're kept, so show them as printed rather than paraphrasing.
 
-Then ask **once**: "Install all of these, or skip some?" A skip needs a reason, which is recorded (Step 3b). `trackers` can't be skipped. A module marked **opt-in** is off unless the user chooses it: ask about each one separately, default no. For `tracker`, follow [The tracker module](#the-tracker-module-govkit-init-tracker), and record the answer either way. `supabase-account` is only offered where its `When:` condition holds.
+Then ask **once**: "Install all of these, or skip some?" A skip needs a reason, which is recorded (Step 3b). `trackers` can't be skipped. A module marked **opt-in** is off unless the user chooses it: ask about each one separately, default no. For `tracker`, follow [The tracker module](#the-tracker-module-govkit-init-tracker), and record the answer either way. `supabase-account` is only offered where its `When:` condition holds. A module marked **detected** (`docs-kit`) has nothing to install and isn't asked about: say whether its `When:` condition holds in this repo, and write nothing to `govkit.json` for it.
 
 ## Step 3 — Scaffold (non-destructive)
 

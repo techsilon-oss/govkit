@@ -4,6 +4,18 @@ All notable changes to govkit. Format: [Keep a Changelog](https://keepachangelog
 
 **Files in your repo.** A plugin update does not change the files `/govkit-init` copied into a repo. When a release changes one, its entry says which; `/govkit-init --upgrade` (0.6.0+) brings them current.
 
+## [0.13.0] - 2026-11-13
+
+### Added
+- **The docs-kit module** (#49), for a repo that also uses [docs-kit](https://github.com/techsilon-oss/docs-kit). It is **detected**: govkit installs nothing, and it is on only when `docs-kit.json` is at the repo root. A repo without that file sees no change.
+  - `/govkit-doctor` says docs-kit is configured and which version the repo has (or that it isn't installed, with the fix), then runs `docs-kit check` and reports the result. A docs-kit finding never fails `--ci`.
+  - `/govkit-session status` lists the waiting pins (`pin_status: pinned` under `<docsRoot>/notes/`, oldest first) and the how-tos past their `last_checked` limit. `/govkit-session close` runs `docs-kit check` and asks whether anything from the session should be pinned.
+  - `docs-kit check` is the repo's own code, so it is never pre-approved: the skills run it through the normal permission prompt, and the doctor script only reports. The pins come from a new read-only plugin script, `skills/govkit-session/docs-kit.mjs`.
+  - Turn it off with `guardrails["docs-kit"]` `enabled: false` and a `skippedReason` in `govkit.json`.
+  - Guide: [docs/modules/docs-kit.md](docs/modules/docs-kit.md). Module notes have a third default, `detected`, next to `on` and `opt-in`.
+
+Changed in your repo: `scripts/govkit-doctor.mjs` (the docs-kit lines; it prints nothing new without `docs-kit.json`).
+
 ## [0.12.2] - 2026-11-13
 
 ### Fixed
