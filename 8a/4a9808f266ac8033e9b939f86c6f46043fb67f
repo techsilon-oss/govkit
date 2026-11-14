@@ -1,0 +1,21 @@
+CLAUDE.md
+  s_323ae1232e9c2d::t_51d34e5b3e4961 3
+docs/PROJECT-HUB.md
+  s_323ae1232e9c2d::t_f67895ccfe3de9 3,12-13,56-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8a4a9808f266ac8033e9b939f86c6f46043fb67f",
+  "prompts": {},
+  "sessions": {
+    "s_323ae1232e9c2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f171b240-812f-4132-b013-9d8b7df53b7c",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
