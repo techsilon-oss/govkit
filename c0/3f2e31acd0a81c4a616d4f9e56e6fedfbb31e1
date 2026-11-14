@@ -1,0 +1,29 @@
+.claude-plugin/marketplace.json
+  s_323ae1232e9c2d::t_48499be463f138 12
+.claude-plugin/plugin.json
+  s_323ae1232e9c2d::t_fa6323fdcdd25a 4
+CHANGELOG.md
+  s_323ae1232e9c2d::t_18cbdbff8b8a2f 7,10
+README.md
+  s_323ae1232e9c2d::t_e22e26e710a7b8 239
+govkit.json
+  s_323ae1232e9c2d::t_4e607c0e61504a 3,21,25,29,33,37,41,45,49
+skills/govkit-init/template-history.json
+  s_323ae1232e9c2d::t_aa687dcaa7a72c 25-26,78-79,132-133,236-237,243,276-277,305-306,342-343,367-368,390-391,413-414,429-430,445-446
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c03f2e31acd0a81c4a616d4f9e56e6fedfbb31e1",
+  "prompts": {},
+  "sessions": {
+    "s_323ae1232e9c2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f171b240-812f-4132-b013-9d8b7df53b7c",
+        "model": "unknown"
+      },
+      "human_author": "Sujit Gangadharan <45203324+jisujit@users.noreply.github.com>"
+    }
+  }
+}
