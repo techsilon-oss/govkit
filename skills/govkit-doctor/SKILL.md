@@ -51,6 +51,18 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-init/upgrade.mjs" check
 
 Report each owned file that is **outdated** (with the releases it matches), **edited** (matches no release) or **rename pending**, and a `govkitVersion` the files contradict. Then point at **`/govkit-init --upgrade`**. This is read-only; never apply from the doctor.
 
+## docs-kit (when the repo uses it)
+
+With `docs-kit.json` at the repo root, the script prints a **📚 docs-kit** line: configured, and the version the repo has, or "not installed" with the fix. Without that file it prints nothing, and you do nothing here. ([guide](../../docs/modules/docs-kit.md))
+
+When it shows a version, run the layout check and report its result (errors, then warnings):
+
+```bash
+npx --no-install docs-kit check
+```
+
+That is the repo's own docs-kit, so it is **not pre-approved**: run it with the Bash tool and let the normal permission prompt ask. The doctor script never runs it. A failing check is reported, never "fixed" from the doctor, and never counts toward `--ci`: fixes go through docs-kit (`/docs-kit-reorg`, `docs-kit move`).
+
 ## Old names (renamed in 0.8.0)
 
 The script lists every reference to a name govkit renamed in 0.8.0, with file and line: `/sdlc` (now `/govkit-session`), `/sdlc-docs` (now `/govkit-docsync`), the `sdlc-docs:*` npm scripts (now `docsync:*`), `scripts/sdlc-docs.mjs` and `sdlc-docs.yml`. It searches `CLAUDE.md`, `docs/`, `.github/` and the git hooks; `CHANGELOG.md` is history and is skipped.

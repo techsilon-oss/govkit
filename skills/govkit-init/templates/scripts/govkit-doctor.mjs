@@ -110,7 +110,7 @@ function doctorRelease() {
 const DOCTOR_RELEASE = doctorRelease();
 const GUIDE_REF = `v${DOCTOR_RELEASE && atLeast(DOCTOR_RELEASE, FIRST_GUIDES) >= 0 ? DOCTOR_RELEASE : FIRST_GUIDES}`;
 const guide = (path) => `https://github.com/techsilon-oss/govkit/blob/${GUIDE_REF}/${path}`;
-const MODULE_GUIDES = ["trackers", "release-gate", "ci", "pre-push-hook", "doc-sync", "docs-sync-check", "versioning", "supabase-account", "tracker"];
+const MODULE_GUIDES = ["trackers", "release-gate", "ci", "pre-push-hook", "doc-sync", "docs-sync-check", "versioning", "supabase-account", "tracker", "docs-kit"];
 const fixLink = (name) => (MODULE_GUIDES.includes(name) ? `        fix: ${guide(`docs/modules/${name}.md#fix-a-finding`)}` : null);
 
 // ------------------------------------------------------------------ config view
@@ -240,6 +240,28 @@ if (existsSync("scripts/govkit-docsync.mjs") && !known.has("doc-sync")) strays.p
 if (strays.length) {
   console.log(`  ⚠️  Installed but not in the manifest — govkit will not maintain these:`);
   for (const s of strays) console.log(`        ${s}`);
+  console.log("");
+}
+
+// ------------------------------------------------------------------ docs-kit (optional, #49)
+
+/**
+ * docs-kit owns the docs layout (https://github.com/techsilon-oss/docs-kit). With docs-kit.json at
+ * the repo root, the doctor says so and which version the repo has. It never runs `docs-kit check`:
+ * that is the repo's code. /govkit-doctor runs it after this, through the normal permission prompt.
+ * A docs-kit result never fails --ci; the check belongs in the repo's own tests. Without
+ * docs-kit.json, or with guardrails["docs-kit"].enabled false, nothing is printed.
+ */
+if (existsSync("docs-kit.json") && manifest.guardrails?.["docs-kit"]?.enabled !== false) {
+  const installed = read("node_modules/docs-kit/package.json")?.version;
+  const spec = pkg.devDependencies?.["docs-kit"] ?? pkg.dependencies?.["docs-kit"];
+  if (installed) {
+    console.log(`  📚 docs-kit — configured (docs-kit.json), version ${installed}`);
+    console.log("        layout check: npx --no-install docs-kit check (docs-kit's own; the doctor doesn't run it)");
+  } else {
+    console.log(`  📚 docs-kit — configured (docs-kit.json), but not installed${spec ? ` (package.json asks for ${spec}: run npm install)` : " (not in package.json)"}`);
+    if (fixLink("docs-kit")) console.log(fixLink("docs-kit"));
+  }
   console.log("");
 }
 

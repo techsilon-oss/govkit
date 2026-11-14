@@ -1,5 +1,5 @@
 {
-  "$comment": "The module notes, kept once (techsilon-oss KIT-STANDARD.md). /govkit-init shows them before the user says yes (skills/govkit-init/modules.mjs), the README module table is generated from them (tools/build-module-table.mjs), and every readMore guide carries the details. Module ids are the guardrail keys in govkit.json. default: \"on\" = installed unless skipped with a reason; \"opt-in\" = asked, off unless chosen.",
+  "$comment": "The module notes, kept once (techsilon-oss KIT-STANDARD.md). /govkit-init shows them before the user says yes (skills/govkit-init/modules.mjs), the README module table is generated from them (tools/build-module-table.mjs), and every readMore guide carries the details. Module ids are the guardrail keys in govkit.json. default: \"on\" = installed unless skipped with a reason; \"opt-in\" = asked, off unless chosen; \"detected\" = nothing to install, on when its condition holds, off with enabled:false and a reason (no govkit.json entry otherwise).",
   "schemaVersion": 1,
   "modules": [
     {
@@ -140,6 +140,19 @@
       "costs": "Nothing for issue tracking. The status report uses about 1-2 GitHub Actions minutes a run. No key = GitHub's notification email; a mail-provider key = a designed HTML email.",
       "undo": "Set enabled:false with a skippedReason in govkit.json. The labels and issues stay on GitHub; delete them there if you want. Report only: set report.enabled to false and delete its workflow and scripts/daily-report/.",
       "readMore": "docs/modules/tracker.md"
+    },
+    {
+      "id": "docs-kit",
+      "title": "docs-kit in the doctor and the session",
+      "default": "detected",
+      "condition": "Only when docs-kit.json is at the repo root (the repo uses docs-kit, techsilon-oss/docs-kit).",
+      "skippable": true,
+      "files": [],
+      "youGet": "/govkit-doctor says docs-kit is configured, its version, and the result of docs-kit check. /govkit-session status lists the pins waiting in docs/notes/ and the how-tos past their last_checked limit; /govkit-session close runs docs-kit check and asks whether anything from the session should be pinned. govkit builds nothing about docs layout: that is docs-kit's.",
+      "changesOutsideRepo": "Nothing.",
+      "costs": "Nothing. docs-kit check is the repo's own docs-kit, so the session asks before running it.",
+      "undo": "Set guardrails[\"docs-kit\"] to enabled:false with a skippedReason in govkit.json. Removing docs-kit.json turns it off too.",
+      "readMore": "docs/modules/docs-kit.md"
     }
   ]
 }

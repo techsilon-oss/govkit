@@ -2,7 +2,7 @@
 name: govkit-session
 description: Start, run and close a work session in a govkit-scaffolded project — status review, dev cycle, branch/PR flow with the CI-fallback release gate, and the session-close doc checklist. /govkit-session status reads the current state; /govkit-session close runs the close checklist; /govkit-session <task> runs the cycle. (Was /sdlc before 0.8.0.)
 argument-hint: "status | close | <task>"
-allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-session/project-steps.mjs" status*) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-session/project-steps.mjs" steps *)
+allowed-tools: Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-session/project-steps.mjs" status*) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-session/project-steps.mjs" steps *) Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-session/docs-kit.mjs" status*)
 ---
 
 # /govkit-session — start, run and close a work session
@@ -29,8 +29,9 @@ Give a current-state read. **Ground truth first, prose second — that order is 
    - group the open issues by launch category (`guardrails.tracker.issues.categories`), and count the ones with **none**: that's the "to triage" number, and it should be 0. The register issue and the status report's issue (`guardrails.tracker.report.issue`, if set) aren't planned work: leave them out of the groups and the count;
    - confirm with the user which issue to work on. Never change an issue's priority.
 5. `git log --oneline -10` — what changed recently. **If the docs and git disagree, trust git, then fix the doc.**
-6. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.
-7. **Project steps, `On start`** (see [Project steps](#project-steps-govkitsessionmd)): the trust check, then `steps on-start`.
+6. **docs-kit**, only when `docs-kit.json` is at the repo root (see [docs-kit](#docs-kit-when-the-repo-uses-it)): the waiting pins and the stale how-tos.
+7. Report: top-priority items, anything new, blockers, a recommended next step — and **any drift found in step 2**, which is a finding, not a footnote.
+8. **Project steps, `On start`** (see [Project steps](#project-steps-govkitsessionmd)): the trust check, then `steps on-start`.
 
 > If `scripts/docs-sync-check.mjs` is absent, this project predates it or opted out. Check `govkit.json`; run `/govkit-doctor` to see what else is missing.
 
@@ -78,8 +79,17 @@ After a merge, before ending the session:
    New work found during the session becomes an issue at once, with a type and exactly one launch category. An owner's question goes in the register as `D-###`, with `needs-decision` on its issue.
 3. **`docs/PRIORITY-ROADMAP.md`** — remove/mark the completed item; add a revision-history row (date + what changed).
 4. **`docs/PROJECT-HUB.md`** — extend the Session Handoff (or add an entry); update Current Status; add a `DEC-###` if an architectural decision was made.
-5. Ask: would `/govkit-session status` give an accurate picture to the next session? If not, fix the docs before closing.
-6. **Project steps, `On close`:** `steps on-close`.
+5. **docs-kit**, only when `docs-kit.json` is at the repo root: run `docs-kit check` and fix what this session broke; then ask whether anything from the session should be pinned (`/docs-kit-pin`). See [docs-kit](#docs-kit-when-the-repo-uses-it).
+6. Ask: would `/govkit-session status` give an accurate picture to the next session? If not, fix the docs before closing.
+7. **Project steps, `On close`:** `steps on-close`.
+
+## docs-kit (when the repo uses it)
+
+[docs-kit](https://github.com/techsilon-oss/docs-kit) owns the docs layout, pins and how-tos; govkit only reads them ([guide](../../docs/modules/docs-kit.md)). In a repo without `docs-kit.json`, skip this section: nothing about docs-kit is shown or run.
+
+- **Pins:** run `node "${CLAUDE_PLUGIN_ROOT}/skills/govkit-session/docs-kit.mjs" status` from the repo root. It reads only, and lists the waiting pins (`pin_status: pinned`), oldest first. It also says when `govkit.json` turned docs-kit off: then skip the rest.
+- **The check:** `npx --no-install docs-kit check` (add `--json` to read it). This is the repo's own docs-kit, so it is **not pre-approved**: run it with the Bash tool and let the normal permission prompt ask. At **status**, report its errors, and the how-tos it warns about for `last_checked` (the stale how-tos). At **close**, an error in a file this session changed is fixed before closing; others are reported. If docs-kit isn't installed (`npx` fails), say so and point at the guide's fix; never install it from here.
+- **Pin at close:** ask the user once whether a discussion or a set of steps from the session should be kept, and on yes run `/docs-kit-pin` (or `/docs-kit-pin --howto <subject>`). Never pin without asking.
 
 ## Project steps (`.govkit/session.md`)
 
