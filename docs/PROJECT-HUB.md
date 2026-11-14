@@ -10,7 +10,7 @@ last checked 2026-11-14
 - **Released:** the latest `v*` tag; `CHANGELOG.md` has the history.
 - **Health:** `npm test`, and CI on every PR (`.github/workflows/ci.yml`). `main` is protected: a PR and green **Validate and test**, **DCO sign-off** and **Plain words** are required. `v*` tags can't be moved or deleted (ruleset).
 - **Last session:** #52 and #49 are done (0.12.2 and 0.13.0 shipped, each tagged with a Release). #53 is done: 0.13.1 shipped (Apache-2.0 with a `NOTICE`, the README footer, and the org's DCO and plain-words checks in CI), and the two checks are required on `main`, with a ruleset protecting `v*` tags. govkit runs its own weekly status report on the pinned issue #41 (Mondays ~07:00 UTC, `skipQuietDays`). govkit tracks its own work with the tracker (register #38; categories now/next/later/triage). The e2e repo `jisujit/govkit-e2e` is kept, its schedule disabled (enable, run, disable for each manual test).
-- **Now:** #50 (no client or consumer project names, DEC-007; PR #59). #51 (supabase-account rejects Supabase project-scoped tokens).
+- **Now:** #51 (supabase-account rejects Supabase project-scoped tokens).
 - **Next, in order:** #47 (Before work / Before release steps), #48 (close: archive handoffs, record lessons), #61 (govkit default standard; a house standard adds to it), #29 (alias removal, not before 2026-11-28). #15 and #25 are ideas.
 
 ## Key Decisions Log
@@ -64,3 +64,4 @@ last checked 2026-11-14
 - 0.13.1 (#56, for #53): Apache-2.0 from 0.13.1 (earlier releases keep MIT or CC0), `NOTICE`, DCO and plain-words jobs in CI. Every commit is now signed off (`git commit -s`). Shipped 0.13.1, tagged with a Release; DCO sign-off and Plain words made required on `main`; tag ruleset "Protect release tags" on `refs/tags/v*` (no update, no deletion).
 - Lesson: the release check fails on the next PR until the last merge is tagged. Tag right after each merge, then rebase the next PR.
 - Local `npm test` on Windows fails some tests with `EPERM`/`ENOTEMPTY` while removing temp folders, on a clean `main` too. Linux CI is the check.
+- Triaged #47, #48, #50, #51. D-001 decided (b): DEC-007 replaces DEC-001. Shipped 0.13.2 (#59, for #50), tagged with a Release: no client or consumer project names in files or issue text; no automated name check (a list of names would itself name them). Opened #61: govkit ships a default standard, and a house standard adds to it.
