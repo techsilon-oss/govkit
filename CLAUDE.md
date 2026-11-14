@@ -1,6 +1,6 @@
 # govkit — rules for working in this repo
 
-last checked 2026-10-29
+last checked 2026-11-14
 
 govkit is a Claude Code plugin that scaffolds guardrails into other repos. It runs those same guardrails on itself, in place (see DEC-003). Status, decisions and handoffs: [`docs/PROJECT-HUB.md`](docs/PROJECT-HUB.md). Open work: GitHub issues.
 
